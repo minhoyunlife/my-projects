@@ -1,0 +1,19 @@
+---
+name: Feature request
+about: 이 프로젝트에 유용하게 쓰일 기능 등에 대한 아이디어 제시
+title: ""
+labels: enhancement
+assignees: ""
+---
+
+## 어떤 기능인가요?
+
+> 추가하려는 기능에 대해 간결하게 설명해주세요
+
+## 작업 상세 내용
+
+- [ ] TODO
+- [ ] TODO
+- [ ] TODO
+
+## 참고할만한 자료(선택)
