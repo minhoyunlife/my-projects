@@ -10,4 +10,3 @@ COPY packages/backend ./packages/backend
 RUN pnpm --filter backend install --frozen-lockfile
 
 CMD ["pnpm", "--filter", "backend", "run", "start:dev"]
-
