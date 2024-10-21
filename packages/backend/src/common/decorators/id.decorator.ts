@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-import { PrimaryColumn, PrimaryColumnOptions } from 'typeorm';
+import { BeforeInsert, PrimaryColumn, PrimaryColumnOptions } from 'typeorm';
 
 /**
  * 엔티티 클래스의 ID를 NanoID 형식으로 생성 및 저장하기 위한 데코레이터
@@ -14,8 +14,15 @@ export function NanoId(
     PrimaryColumn({
       type: 'varchar',
       length: length,
-      default: () => nanoid(length),
       ...options,
     })(target, propertyKey);
+
+    target[`generate${propertyKey}`] = function () {
+      if (!this[propertyKey]) {
+        this[propertyKey] = nanoid(length);
+      }
+    };
+
+    BeforeInsert()(target, `generate${propertyKey}`);
   };
 }
