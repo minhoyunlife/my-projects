@@ -16,7 +16,7 @@ import { Genre } from '@/src/modules/genres/genres.entity';
  * 작품 정보를 DB에서 관리하기 위한 엔티티
  */
 @Entity()
-@Check(`"rating" >= 0 AND "rating" <= 5 AND "rating" % 0.25 = 0`)
+@Check(`"rating" >= 0 AND "rating" <= 20`)
 export class Artwork {
   /**
    * 작품의 고유 ID
@@ -64,7 +64,10 @@ export class Artwork {
   /**
    * 작품 대상 게임에 대한 개인적인 평점
    */
-  @Column('decimal', { precision: 3, scale: 2, nullable: true })
+  @Column('smallint', {
+    nullable: true,
+    comment: '0-20 사이의 정수값 (4로 나누면 실제 별점이 됨)',
+  })
   rating: number;
 
   /**
