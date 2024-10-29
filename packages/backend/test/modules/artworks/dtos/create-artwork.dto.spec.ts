@@ -4,7 +4,7 @@ import { validate } from 'class-validator';
 import { Platform } from '@/src/common/enums/platform.enum';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 
-describe('CreateArtworkDto', () => {
+describeWithoutDB('CreateArtworkDto', () => {
   const validDtoData: Partial<CreateArtworkDto> = {
     title: '테스트 작품 제목',
     imageUrl: 'https://example.com/test-image.jpg',

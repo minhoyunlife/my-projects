@@ -4,7 +4,7 @@ import { TransactionalRepository } from '@/src/common/repositories/transactional
 import { Artwork } from '@/src/modules/artworks/artworks.entity';
 import { Genre } from '@/src/modules/genres/genres.entity';
 
-describe('TransactionalRepository', () => {
+describeWithoutDB('TransactionalRepository', () => {
   describe('forTransaction()', () => {
     let mockArtworkRepository: Partial<TransactionalRepository<Artwork>>;
     let mockGenreRepository: Partial<TransactionalRepository<Genre>>;
