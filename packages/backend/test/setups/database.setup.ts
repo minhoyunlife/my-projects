@@ -14,25 +14,58 @@ export const TEST_DB_CONFIG = {
 let dataSource: DataSource;
 
 /**
- * 테스트 데이터베이스가 준비 상태인지를 확인
+ * 테스트 데이터베이스 컨테이너가 준비 상태인지를 확인
  */
-async function waitForDatabase(maxRetries = 10) {
+async function waitForDatabaseContainer(maxRetries = 10): Promise<Boolean> {
   for (let i = 1; i < maxRetries; i++) {
     try {
       execSync('docker compose exec -T db-test pg_isready -U postgres', {
         stdio: 'ignore',
       });
       console.log('Test database is ready!');
-      return;
+      return true;
     } catch (error) {
+      console.log(`Waiting for database ready... attempt ${i}/${maxRetries}`);
+
       if (i === maxRetries) {
-        throw new Error('Test database failed to become ready in time');
+        return false;
       }
 
-      console.log(`Waiting for database... attempt ${i}/${maxRetries}`);
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
+  return false;
+}
+
+/**
+ * 데이터베이스 연결 초기화
+ */
+async function initializeDatabase(retries = 3): Promise<DataSource> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const ds = new DataSource({
+        ...TEST_DB_CONFIG,
+        synchronize: false, // 일단 셋업 단계에서는 동기화를 비활성화
+      });
+
+      await ds.initialize();
+      return ds;
+    } catch (error) {
+      console.error(
+        `Database connection attempt ${i + 1}/${retries} failed:`,
+        error.message,
+      );
+
+      if (i === retries - 1) {
+        throw new Error(
+          `Failed to initialize database after ${retries} attempts`,
+        );
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+  }
+  throw new Error('Unexpected error in initializeDatabase');
 }
 
 /**
@@ -44,18 +77,16 @@ export async function setup() {
       stdio: 'inherit',
     });
 
-    await waitForDatabase();
+    const isContainerReady = await waitForDatabaseContainer();
+    if (!isContainerReady) {
+      throw new Error('Postgres container failed to become ready.');
+    }
 
-    dataSource = new DataSource({
-      ...TEST_DB_CONFIG,
-      synchronize: false, // 일단 셋업 단계에서는 동기화를 비활성화
-    });
+    dataSource = await initializeDatabase();
 
-    await dataSource.initialize();
     console.log('Connection to test database is successful!');
   } catch (error) {
     console.error('Setup failed:', error);
-    // 오류가 발생했을 때, 테스트 데이터베이스 컨테이너를 종료합니다.
     await teardown();
     throw error;
   }
