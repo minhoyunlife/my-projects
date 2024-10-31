@@ -21,9 +21,8 @@ export class Artwork {
   /**
    * 작품의 고유 ID
    */
-  @PrimaryColumn('varchar', { length: 21 })
-  @Index()
   @NanoId()
+  @Index()
   id: string;
 
   /**
