@@ -3,10 +3,8 @@ import { DataSource } from 'typeorm';
 import { Genre } from '@/src/modules/genres/genres.entity';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { GenresFactory } from '@/test/factories/genres.factory';
-import {
-  clearTables,
-  createRepositoryTestingModule,
-} from '@/test/utils/database.util';
+import { clearTables, saveEntities } from '@/test/utils/database.util';
+import { createRepositoryTestingModule } from '@/test/utils/module-builder.util';
 
 describeWithDB('GenresRepository', () => {
   let repository: GenresRepository;
@@ -44,9 +42,11 @@ describeWithDB('GenresRepository', () => {
     });
 
     it('일부 장르만 존재하는 경우, 기존에 없는 장르만 생성하고 반환함', async () => {
-      const existingGenre = await GenresFactory.create(repository, {
-        name: 'Action',
-      });
+      const existingGenre = await saveEntities(repository, [
+        GenresFactory.createTestData({
+          name: 'Action',
+        }),
+      ]);
 
       const genreNames = ['Action', 'RPG', 'Adventure'];
       const result = await repository.bulkCreateIfNotExist(genreNames);
@@ -55,7 +55,7 @@ describeWithDB('GenresRepository', () => {
       const existingGenreInResult = result.find(
         (genre) => genre.name === 'Action',
       );
-      expect(existingGenreInResult.id).toBe(existingGenre.id); // 기존 장르의 ID가 유지되는지 확인
+      expect(existingGenreInResult.id).toBe(existingGenre[0].id); // 기존 장르의 ID가 유지되는지 확인
 
       const saved = await repository.find();
       expect(saved).toHaveLength(3);
@@ -65,10 +65,10 @@ describeWithDB('GenresRepository', () => {
     });
 
     it('모든 장르가 이미 존재하는 경우, 기존 장르들을 그대로 반환함', async () => {
-      const existingGenres = await Promise.all([
-        GenresFactory.create(repository, { name: 'Action' }),
-        GenresFactory.create(repository, { name: 'RPG' }),
-        GenresFactory.create(repository, { name: 'Adventure' }),
+      const existingGenres = await saveEntities(repository, [
+        GenresFactory.createTestData({ name: 'Action' }),
+        GenresFactory.createTestData({ name: 'RPG' }),
+        GenresFactory.createTestData({ name: 'Adventure' }),
       ]);
 
       const result = await repository.bulkCreateIfNotExist([

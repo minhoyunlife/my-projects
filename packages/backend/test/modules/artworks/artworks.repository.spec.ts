@@ -3,25 +3,26 @@ import { DataSource } from 'typeorm';
 import { Artwork } from '@/src/modules/artworks/artworks.entity';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { Genre } from '@/src/modules/genres/genres.entity';
+import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
-import {
-  clearTables,
-  createRepositoryTestingModule,
-} from '@/test/utils/database.util';
+import { clearTables, saveEntities } from '@/test/utils/database.util';
+import { createRepositoryTestingModule } from '@/test/utils/module-builder.util';
 
 describeWithDB('ArtworksRepository', () => {
-  let repository: ArtworksRepository;
+  let artworkRepo: ArtworksRepository;
+  let genreRepo: GenresRepository;
   let dataSource: DataSource;
   let savedGenres: Genre[];
 
   beforeAll(async () => {
     const module = await createRepositoryTestingModule({
       entities: [Artwork, Genre],
-      providers: [ArtworksRepository],
+      providers: [ArtworksRepository, GenresRepository],
     });
 
-    repository = module.get<ArtworksRepository>(ArtworksRepository);
+    artworkRepo = module.get<ArtworksRepository>(ArtworksRepository);
+    genreRepo = module.get<GenresRepository>(GenresRepository);
     dataSource = module.get<DataSource>(DataSource);
   });
 
@@ -32,15 +33,16 @@ describeWithDB('ArtworksRepository', () => {
   beforeEach(async () => {
     await clearTables(dataSource, [Artwork, Genre]);
 
-    savedGenres = [await GenresFactory.create(dataSource.getRepository(Genre))];
+    const genreEntity = GenresFactory.createTestData();
+    savedGenres = await saveEntities(genreRepo, [genreEntity]);
   });
 
   describe('createOne', () => {
     it('작품 데이터를 성공적으로 생성함', async () => {
       const artworkData = ArtworksFactory.createTestData({}, savedGenres);
-      const result = await repository.createOne(artworkData);
+      const result = await artworkRepo.createOne(artworkData);
 
-      const saved = await repository.findOne({
+      const saved = await artworkRepo.findOne({
         where: { id: result.id },
         relations: ['genres'],
       });
@@ -60,7 +62,7 @@ describeWithDB('ArtworksRepository', () => {
           title: undefined,
         });
 
-        await expect(repository.createOne(artworkData)).rejects.toThrow();
+        await expect(artworkRepo.createOne(artworkData)).rejects.toThrow();
       });
 
       it('imageUrl이 없으면 에러가 발생함', async () => {
@@ -68,7 +70,7 @@ describeWithDB('ArtworksRepository', () => {
           imageUrl: undefined,
         });
 
-        await expect(repository.createOne(artworkData)).rejects.toThrow();
+        await expect(artworkRepo.createOne(artworkData)).rejects.toThrow();
       });
     });
   });
