@@ -6,11 +6,8 @@ import { baseConfig } from './vitest.config.base';
 export default mergeConfig(baseConfig, {
   test: {
     globalSetup: 'test/setups/database.setup.ts',
-    poolOptions: {
-      threads: {
-        singleThread: true,
-      },
-    }, // 테스트 파일 간의 데이터 간섭을 방지하기 위해
+    setupFiles: ['test/utils/matcher.util.ts'],
+    fileParallelism: false, // 테스트 파일 간 병렬 실행을 방지 (순차 실행하도록)
     testTimeout: 10000,
     env: {
       TEST_WITH_DB: 'true',

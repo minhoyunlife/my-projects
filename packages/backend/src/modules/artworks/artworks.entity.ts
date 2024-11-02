@@ -1,12 +1,4 @@
-import {
-  Entity,
-  Column,
-  PrimaryColumn,
-  Index,
-  Check,
-  JoinTable,
-  ManyToMany,
-} from 'typeorm';
+import { Entity, Column, Index, Check, JoinTable, ManyToMany } from 'typeorm';
 
 import { NanoId } from '@/src/common/decorators/id.decorator';
 import { Platform } from '@/src/common/enums/platform.enum';

@@ -1,64 +1,27 @@
 import { Type } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
-import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { DataSource } from 'typeorm';
-
-import { TEST_DB_CONFIG } from '@/test/setups/database.setup';
-
-type TestModuleOptions = {
-  entities: Type<any>[];
-  providers?: Type<any>[];
-  controllers?: Type<any>[];
-  imports?: any[];
-};
+import { DataSource, DeepPartial, ObjectLiteral, Repository } from 'typeorm';
 
 /**
- * 리포지토리 테스트용 모듈 생성
+ * 복수의 지정된 테스트 엔티티 데이터를 바탕으로 엔티티를 생성 후 DB에 저장
+ * @param {Repository<T>} repository - 엔티티를 저장할 리포지토리
+ * @param {Partial<T>[]} entities - 저장할 엔티티 목록
+ * @returns {Promise<T[]>} 저장된 엔티티 목록
  */
-export async function createRepositoryTestingModule({
-  entities,
-  providers = [],
-}: Omit<TestModuleOptions, 'controllers' | 'imports'>) {
-  return Test.createTestingModule({
-    imports: [
-      TypeOrmModule.forRoot({
-        ...TEST_DB_CONFIG,
-        entities,
-        synchronize: true,
-      }),
-      TypeOrmModule.forFeature(entities),
-    ],
-    providers,
-  }).compile();
+export async function saveEntities<T extends ObjectLiteral>(
+  repository: Repository<T>,
+  entities: Partial<T>[],
+): Promise<T[]> {
+  const created = entities.map((entity) =>
+    repository.create(entity as DeepPartial<T>),
+  );
+  return repository.save(created);
 }
 
 /**
- * 컨트롤러 테스트용 모듈 생성
- */
-export async function createControllerTestingModule({
-  entities,
-  controllers = [],
-  providers = [],
-  imports = [],
-}: TestModuleOptions) {
-  return Test.createTestingModule({
-    imports: [
-      TypeOrmModule.forRoot({
-        ...TEST_DB_CONFIG,
-        entities,
-        synchronize: true,
-      }),
-      TypeOrmModule.forFeature(entities),
-      ...imports,
-    ],
-    controllers,
-    providers,
-  }).compile();
-}
-
-/**
- * 테이블 데이터 초기화
+ * 지정한 엔티티에 해당하는 데이터베이스 테이블을 truncate
+ * @param {DataSource} dataSource - 데이터 소스
+ * @param {Type<any>[]} entities - 대상 엔티티의 배열
  */
 export async function clearTables(
   dataSource: DataSource,

@@ -1,6 +1,9 @@
-/// <reference types="./globals" />
-
 import { describe as vitestDescribe } from 'vitest';
+
+declare global {
+  var describeWithDB: typeof describe;
+  var describeWithoutDB: typeof describe;
+}
 
 /**
  * vitest의 describe 커스텀 래퍼 함수
