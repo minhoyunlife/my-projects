@@ -17,7 +17,7 @@ function get_package_names_from_code_changes() {
 
 # 의존성 변경사항이 발생한 패키지 이름만을 따로 추출해서 배열화
 function get_package_names_from_deps_changes() {
-  pnpm list --filter="...[$base_branch]" --json | \
+  pnpm list --filter="...[origin/$base_branch]" --json | \
   jq '[.[] | select(.name != "my-projects") | .name | sub("^@my-projects/"; "")]'
 }
 
