@@ -28,6 +28,8 @@ function merge() {
   echo "$code_changes" "$lock_changes" | jq -s "add | unique"
 }
 
+echo $(git diff --name-only origin/$base_branch..HEAD)
+
 # 메인 로직
 code_changes=$(get_package_names_from_code_changes)
 lock_changes=$(get_package_names_from_deps_changes)
