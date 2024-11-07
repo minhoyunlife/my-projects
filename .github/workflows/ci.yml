@@ -58,4 +58,7 @@ jobs:
           node-version: "20"
           cache: "pnpm"
       - name: Verify package
-        uses: ./.github/actions/verify-${{ matrix.packages }}
+        uses: jenseng/dynamic-uses@v1 # uses 는 리터럴 문자밖에 사용하지 못하므로, 이를 우회하기 위해 액션 도입
+        with:
+          uses: ./.github/actions/verify-${{ matrix.packages }}
+          with: "{}"
