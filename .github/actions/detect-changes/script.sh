@@ -27,7 +27,7 @@ function get_package_names_from_deps_changes() {
 function merge() {
   local code_changes="$1"
   local lock_changes="$2"
-  echo "$code_changes" "$lock_changes" | jq -s "add | unique"
+  echo "$code_changes" "$lock_changes" | jq -c -s "add | unique"
 }
 
 # 메인 로직
@@ -35,4 +35,4 @@ code_changes=$(get_package_names_from_code_changes)
 lock_changes=$(get_package_names_from_deps_changes)
 all_changes=$(merge "$code_changes" "$lock_changes")
 
-echo "packages=${{ fromJson($all_changes) }}" >> $GITHUB_OUTPUT
+echo "packages=$all_changes" >> $GITHUB_OUTPUT
