@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 base_branch="$1"
 if [[ -z "$base_branch" ]]; then
   echo "Base branch argument is required."
@@ -12,7 +14,7 @@ function get_package_names_from_code_changes() {
   grep "^packages/" | \
   cut -d'/' -f2 | \
   sort -u | \
-  jq -R -s 'split(" ")[:-1]'
+  jq -R -s 'split("\n")[:-1]'
 }
 
 # 의존성 변경사항이 발생한 패키지 이름만을 따로 추출해서 배열화
