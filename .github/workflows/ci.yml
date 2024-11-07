@@ -9,7 +9,7 @@ on:
       - ".vscode/**"
       - "docker/**"
       - "docker-compose.yml"
-      - ".github/**"
+      #   - ".github/**"
       - "!.github/workflows/ci.yml" # 편의를 위해, 본 워크플로우의 변경 시에는 트리거되도록
 
 permissions:
@@ -33,7 +33,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
       - name: Detect which packages are changed
         id: check-changes
         uses: ./.github/actions/detect-changes
@@ -58,4 +57,7 @@ jobs:
           node-version: "20"
           cache: "pnpm"
       - name: Verify package
-        uses: ./.github/actions/verify-${{ matrix.packages }}
+        uses: jenseng/dynamic-uses@v1 # uses 는 리터럴 문자밖에 사용하지 못하므로, 이를 우회하기 위해 액션 도입
+        with:
+          uses: ./.github/actions/verify-${{ matrix.packages }}
+          with: "{}"
