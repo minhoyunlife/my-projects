@@ -8,11 +8,11 @@ fi
 
 # 코드 변경사항이 발생한 패키지 이름만을 따로 추출해서 배열화
 function get_package_names_from_code_changes() {
-  git diff --name-only origin/$base_branch..HEAD -- | \
+  git diff --name-only origin/$base_branch..HEAD | \
   grep "^packages/" | \
   cut -d'/' -f2 | \
   sort -u | \
-  jq -R -s 'split("\n")[:-1]'
+  jq -R -s 'split(" ")[:-1]'
 }
 
 # 의존성 변경사항이 발생한 패키지 이름만을 따로 추출해서 배열화
@@ -27,8 +27,6 @@ function merge() {
   local lock_changes="$2"
   echo "$code_changes" "$lock_changes" | jq -s "add | unique"
 }
-
-echo $(git diff --name-only origin/$base_branch..HEAD)
 
 # 메인 로직
 code_changes=$(get_package_names_from_code_changes)
