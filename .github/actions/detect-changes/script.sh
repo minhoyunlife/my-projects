@@ -8,7 +8,7 @@ fi
 
 # 코드 변경사항이 발생한 패키지 이름만을 따로 추출해서 배열화
 function get_package_names_from_code_changes() {
-  git diff --name-only "$base_branch"...HEAD | \
+  git diff --name-only "$base_branch"..HEAD | \
   grep "^packages/" | \
   cut -d'/' -f2 | \
   sort -u | \
