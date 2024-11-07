@@ -1,0 +1,17 @@
+name: Detect which packages are changed
+description: Detects changes and filter monorepo packages
+
+outputs:
+  packages:
+    description: Changed packages list in JSON format
+    value: ${{ steps.check-changes.outputs.packages }}
+
+runs:
+  using: composite
+  steps:
+    - name: Extract package names which are changed
+      id: check-changes
+      shell: bash
+      run: |
+        chmod +x .github/actions/detect-changes/script.sh
+        .github/actions/detect-changes/script.sh ${{ github.event.repository.default_branch }}
