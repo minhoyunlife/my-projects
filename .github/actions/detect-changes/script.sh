@@ -33,4 +33,5 @@ code_changes=$(get_package_names_from_code_changes)
 lock_changes=$(get_package_names_from_deps_changes)
 all_changes=$(merge "$code_changes" "$lock_changes")
 
+echo "Changed packages are: $all_changes"
 echo "packages=$all_changes" >> $GITHUB_OUTPUT
