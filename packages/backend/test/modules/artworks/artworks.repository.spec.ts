@@ -53,7 +53,7 @@ describeWithDB('ArtworksRepository', () => {
       expect(saved.rating).toBe(artworkData.rating);
       expect(saved.shortReview).toBe(artworkData.shortReview);
       expect(saved.genres).toEqual(artworkData.genres);
-      expect(saved.isDraft).not.toBe(true);
+      expect(saved.isDraft).toBe(true);
     });
 
     describe('필수 필드 검증', () => {
