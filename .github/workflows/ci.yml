@@ -9,7 +9,7 @@ on:
       - ".vscode/**"
       - "docker/**"
       - "docker-compose.yml"
-      #   - ".github/**"
+      - ".github/**"
       - "!.github/workflows/ci.yml" # 편의를 위해, 본 워크플로우의 변경 시에는 트리거되도록
 
 permissions:
@@ -47,6 +47,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
