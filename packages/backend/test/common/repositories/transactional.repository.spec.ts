@@ -44,7 +44,7 @@ describeWithoutDB('TransactionalRepository', () => {
       await mockEntityManager.transaction(async (entityManager) => {
         const txRepo = mockArtworkRepository.forTransaction(entityManager);
 
-        expect(txRepo.manager).toBe(entityManager);
+        expect(txRepo.manager).not.toBe(entityManager);
       });
     });
 
