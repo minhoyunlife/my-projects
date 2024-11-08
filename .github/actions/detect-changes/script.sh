@@ -8,7 +8,7 @@ fi
 
 # 코드 변경사항이 발생한 패키지 이름만을 따로 추출해서 배열화
 function get_package_names_from_code_changes() {
-  git diff --name-only "$base_branch"...HEAD | \
+  git diff --name-only origin/$base_branch..HEAD | \
   grep "^packages/" | \
   cut -d'/' -f2 | \
   sort -u | \
@@ -17,7 +17,7 @@ function get_package_names_from_code_changes() {
 
 # 의존성 변경사항이 발생한 패키지 이름만을 따로 추출해서 배열화
 function get_package_names_from_deps_changes() {
-  pnpm list --filter="...[$base_branch]" --json | \
+  pnpm list --filter="...[origin/$base_branch]" --json | \
   jq '[.[] | select(.name != "my-projects") | .name | sub("^@my-projects/"; "")]'
 }
 
@@ -25,7 +25,7 @@ function get_package_names_from_deps_changes() {
 function merge() {
   local code_changes="$1"
   local lock_changes="$2"
-  echo "$code_changes" "$lock_changes" | jq -s "add | unique"
+  echo "$code_changes" "$lock_changes" | jq -c -s "add | unique"
 }
 
 # 메인 로직
@@ -33,4 +33,5 @@ code_changes=$(get_package_names_from_code_changes)
 lock_changes=$(get_package_names_from_deps_changes)
 all_changes=$(merge "$code_changes" "$lock_changes")
 
-echo "packages=${all_changes}" >> $GITHUB_OUTPUT
+echo "Changed packages are: $all_changes"
+echo "packages=$all_changes" >> $GITHUB_OUTPUT

@@ -20,7 +20,7 @@ runs:
       id: format
       shell: bash
       run: |
-        pnpm -F @my-projects/backend format
+        pnpm -F @my-projects/backend run format
         if [[ -n "$(git status -s)" ]]; then
           echo "formatted=true" >> $GITHUB_OUTPUT
         fi
@@ -36,17 +36,17 @@ runs:
     - name: Run ESLint check
       shell: bash
       run: |
-        pnpm -F @my-projects/backend lint
+        pnpm -F @my-projects/backend run lint
 
     # 테스트
     - name: Run tests without DB
       shell: bash
-      run: pnpm -F @my-projects/backend test:no-db
+      run: pnpm -F @my-projects/backend run test:no-db
     - name: Run tests with DB
       shell: bash
-      run: pnpm -F @my-projects/backend test:db
+      run: pnpm -F @my-projects/backend run test:db
 
     # 빌드 체크
     - name: Check build
       shell: bash
-      run: pnpm -F @my-projects/backend build
+      run: pnpm -F @my-projects/backend run build
