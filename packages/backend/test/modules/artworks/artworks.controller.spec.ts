@@ -42,7 +42,7 @@ describeWithDB('ArtworksController', () => {
   describe('POST /artworks', () => {
     const createDto: CreateArtworkDto = {
       title: '테스트 작품명',
-      imageUrl: 'https://example.com/image.jpg',
+      imageKey: 'artworks/2024/03/abc123def456',
       createdAt: '2024-11-01',
       playedOn: Platform.STEAM,
       genres: ['Action', 'RPG'],
@@ -50,7 +50,7 @@ describeWithDB('ArtworksController', () => {
       shortReview: '정말 재미있는 게임!',
     };
 
-    it('유효한 DTO로 작품 생성 시 DB에 정상적으로 저장되어야 함', async () => {
+    it('유효한 DTO로 작품 생성 시 DB에 정상적으로 저장됨', async () => {
       const response = await request(app.getHttpServer())
         .post('/artworks')
         .send(createDto)

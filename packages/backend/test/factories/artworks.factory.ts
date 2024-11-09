@@ -9,7 +9,7 @@ export class ArtworksFactory {
   ): Partial<Artwork> {
     return {
       title: '테스트 작품',
-      imageUrl: 'https://example.com/image.jpg',
+      imageKey: 'artworks/2024/03/abc123def456',
       createdAt: new Date('2024-11-01'),
       playedOn: Platform.STEAM,
       rating: 10,

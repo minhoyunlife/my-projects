@@ -15,7 +15,7 @@ export class ArtworkResponse {
   constructor(artwork: Artwork) {
     this.id = artwork.id;
     this.title = artwork.title;
-    this.imageUrl = artwork.imageUrl;
+    this.imageUrl = 'https://example.com/img.png'; // TODO: 액세스 가능한 URL 로 변환하는 처리 구현 후 수정할 것.
     this.createdAt = artwork.createdAt?.toISOString() ?? '';
     this.genres =
       artwork.genres?.map((genre) => new GenreResponse(genre)) ?? [];

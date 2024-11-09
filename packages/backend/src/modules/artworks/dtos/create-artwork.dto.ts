@@ -6,7 +6,6 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsUrl,
   Max,
   Min,
   MinLength,
@@ -23,8 +22,8 @@ export class CreateArtworkDto {
 
   @NormalizeWhitespace()
   @IsNotEmpty()
-  @IsUrl()
-  imageUrl: string;
+  @IsString()
+  imageKey: string;
 
   @NormalizeWhitespace()
   @IsOptional()

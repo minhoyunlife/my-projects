@@ -42,7 +42,7 @@ describeWithoutDB('ArtworksService', () => {
   describe('createArtwork', () => {
     const dto: CreateArtworkDto = {
       title: '테스트 작품',
-      imageUrl: 'https://example.com/test.jpg',
+      imageKey: 'artworks/2024/03/abc123def456',
       playedOn: Platform.STEAM,
       genres: ['RPG'],
     };
@@ -52,7 +52,7 @@ describeWithoutDB('ArtworksService', () => {
       const expectedArtwork = {
         id: 'artwork-1',
         title: dto.title,
-        imageUrl: dto.imageUrl,
+        imageKey: dto.imageKey,
         playedOn: dto.playedOn,
         genres: mockGenres,
       };
