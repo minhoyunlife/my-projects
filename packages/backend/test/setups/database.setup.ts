@@ -2,14 +2,7 @@ import { execSync } from 'child_process';
 
 import { DataSource } from 'typeorm';
 
-export const TEST_DB_CONFIG = {
-  type: 'postgres' as const, // DataSourceOption 에서 리터럴 타입을 기대
-  host: process.env.TEST_DB_HOST || 'localhost',
-  port: Number(process.env.TEST_DB_PORT) || 5433,
-  username: process.env.TEST_DB_USERNAME || 'postgres',
-  password: process.env.TEST_DB_PASSWORD || 'password',
-  database: process.env.TEST_DB_NAME || 'test_db',
-};
+import { TEST_DB_CONFIG } from '@/test/test.config';
 
 let dataSource: DataSource;
 
@@ -45,6 +38,7 @@ async function initializeDatabase(retries = 3): Promise<DataSource> {
     try {
       const ds = new DataSource({
         ...TEST_DB_CONFIG,
+        entities: [],
         synchronize: false, // 일단 셋업 단계에서는 동기화를 비활성화
       });
 
