@@ -1,8 +1,9 @@
 import { INestApplication, Type, ValidationPipe } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { validationConfig } from '@/src/config/validation.config';
+import validationPipeConfig from '@/src/modules/config/settings/validation-pipe.config';
 import { TEST_DB_CONFIG } from '@/test/test.config';
 
 type TestModuleOptions = {
@@ -43,6 +44,9 @@ export async function createControllerTestingApp({
 }: TestModuleOptions): Promise<INestApplication> {
   const moduleRef = await Test.createTestingModule({
     imports: [
+      ConfigModule.forRoot({
+        load: [validationPipeConfig],
+      }),
       TypeOrmModule.forRoot({
         ...TEST_DB_CONFIG,
         entities,
@@ -56,7 +60,9 @@ export async function createControllerTestingApp({
   }).compile();
 
   const app = moduleRef.createNestApplication();
-  app.useGlobalPipes(new ValidationPipe(validationConfig));
+
+  const configService = app.get(ConfigService);
+  app.useGlobalPipes(new ValidationPipe(configService.get('validation')));
 
   return app;
 }
