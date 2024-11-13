@@ -26,10 +26,10 @@ export function validate(config: Record<string, unknown>) {
       property: err.property,
       value: err.value,
       constraints: err.constraints,
-      message: `
-        Environment Variables ${err.property} is wrong. 
-        input: ${err.value}, 
-        constraints: ${Object.values(err.constraints || {}).join(', ')}
+      message: `\
+        Environment Variables ${err.property} is wrong. \ 
+        input: ${err.value}, \
+        constraints: ${Object.values(err.constraints || {}).join(', ')}\
       `,
     }));
   });

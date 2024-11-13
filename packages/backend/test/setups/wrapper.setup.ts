@@ -1,3 +1,5 @@
+/// <reference types="vitest/globals" />
+
 import { describe as vitestDescribe } from 'vitest';
 
 declare global {
