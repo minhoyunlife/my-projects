@@ -5,7 +5,7 @@ import { Genre } from '@/src/modules/genres/genres.entity';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
 
-describeWithoutDB('ArtworkResponse', () => {
+describeWithoutDeps('ArtworkResponse', () => {
   const genres = [GenresFactory.createTestData({ id: 'some-nanoid' }) as Genre];
   const artwork = ArtworksFactory.createTestData({
     id: 'some-nanoid',
@@ -23,8 +23,9 @@ describeWithoutDB('ArtworkResponse', () => {
     expect(response.title).toBe(artwork.title);
   });
 
+  // TODO: 액세스 가능한 URL 로 변환하는 처리 구현 후 수정할 것.
   it('엔티티의 속성 값대로 imageUrl 이 반환됨', () => {
-    expect(response.imageUrl).toBe(artwork.imageUrl);
+    expect(response.imageUrl).toBe('https://example.com/img.png');
   });
 
   describe('createdAt', () => {

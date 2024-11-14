@@ -3,17 +3,12 @@ services:
     build:
       context: .
       dockerfile: docker/backend.Dockerfile
-    ports:
-      - "3000:3000"
     depends_on:
       - db
-    environment:
-      - NODE_ENV=development
-      - DB_HOST=db
-      - DB_PORT=5432
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=db
+    env_file:
+      - ./.env
+    ports:
+      - "${SERVER_PORT}:3000"
     volumes:
       - ./packages/backend:/app/packages/backend
     networks:
@@ -23,23 +18,25 @@ services:
 
   db:
     image: postgres:13-alpine
+    env_file:
+      - ./.env
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=db
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
     ports:
-      - "5432:5432"
+      - "${DB_PORT}:5432"
     networks:
       - project-network
     profiles:
       - dev
 
-  db-test:
+  test-db:
     image: postgres:13-alpine
     environment:
       - POSTGRES_USER=postgres
@@ -52,8 +49,24 @@ services:
       retries: 5
     ports:
       - "5433:5432"
-    networks:
-      - project-network
+    profiles:
+      - test
+
+  localstack:
+    image: localstack/localstack
+    environment:
+      - SERVICES=s3
+      - AWS_REGION=ap-northeast-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "4566:4566"
     profiles:
       - test
 

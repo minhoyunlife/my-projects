@@ -1,6 +1,10 @@
 import { BadRequestException, ValidationError } from '@nestjs/common';
+import { registerAs } from '@nestjs/config';
 
-export const validationConfig = {
+/**
+ * ValidationPipe 설정 파일
+ */
+export default registerAs('validation', () => ({
   whitelist: true,
   forbidNonWhitelisted: true,
   validationError: {
@@ -20,4 +24,4 @@ export const validationConfig = {
       errors,
     });
   },
-};
+}));

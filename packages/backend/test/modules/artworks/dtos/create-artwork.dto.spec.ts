@@ -4,10 +4,10 @@ import { validate } from 'class-validator';
 import { Platform } from '@/src/common/enums/platform.enum';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 
-describeWithoutDB('CreateArtworkDto', () => {
+describeWithoutDeps('CreateArtworkDto', () => {
   const validDtoData: Partial<CreateArtworkDto> = {
     title: '테스트 작품 제목',
-    imageUrl: 'https://example.com/test-image.jpg',
+    imageKey: 'artworks/2024/03/abc123def456',
     createdAt: '2022-01-01',
     playedOn: Platform.STEAM,
     genres: ['액션', '어드벤처'],
@@ -49,7 +49,7 @@ describeWithoutDB('CreateArtworkDto', () => {
     });
   });
 
-  describe('imageUrl', () => {
+  describe('imageKey', () => {
     it('값이 유효한 경우, 에러가 발생하지 않음', async () => {
       const dto = createDto();
       const errors = await validate(dto);
@@ -57,30 +57,21 @@ describeWithoutDB('CreateArtworkDto', () => {
       expect(errors).toHaveLength(0);
     });
 
-    it('값이 url 형식이 아닌 경우, 에러가 발생함', async () => {
-      const dto = createDto({ imageUrl: 'abcdef' });
-      const errors = await validate(dto);
-
-      expect(errors).toHaveLength(1);
-      expect(errors[0].property).toBe('imageUrl');
-      expect(errors[0].constraints).toHaveProperty('isUrl');
-    });
-
     it('값이 화이트 스페이스로만 이뤄진 경우, 에러가 발생함', async () => {
-      const dto = createDto({ imageUrl: '　' });
+      const dto = createDto({ imageKey: '　' });
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(1);
-      expect(errors[0].property).toBe('imageUrl');
+      expect(errors[0].property).toBe('imageKey');
       expect(errors[0].constraints).toHaveProperty('isNotEmpty');
     });
 
     it('값이 null인 경우, 에러가 발생함', async () => {
-      const dto = createDto({ imageUrl: null });
+      const dto = createDto({ imageKey: null });
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(1);
-      expect(errors[0].property).toBe('imageUrl');
+      expect(errors[0].property).toBe('imageKey');
       expect(errors[0].constraints).toHaveProperty('isNotEmpty');
     });
   });

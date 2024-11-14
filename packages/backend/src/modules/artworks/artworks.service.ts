@@ -28,7 +28,7 @@ export class ArtworksService {
       const genres = await genresTxRepo.bulkCreateIfNotExist(dto.genres);
       const artwork = await artworksTxRepo.createOne({
         title: dto.title,
-        imageUrl: dto.imageUrl,
+        imageKey: dto.imageKey,
         createdAt: new Date(dto.createdAt),
         playedOn: dto.playedOn,
         genres: genres,

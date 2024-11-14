@@ -24,10 +24,10 @@ export class Artwork {
   title: string;
 
   /**
-   * 작품의 이미지 URL
+   * 작품의 S3 이미지 키 값
    */
   @Column({ nullable: false })
-  imageUrl: string;
+  imageKey: string;
 
   /**
    * 작품 완성 일자

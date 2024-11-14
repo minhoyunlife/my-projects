@@ -7,14 +7,15 @@ import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
+import { createServiceTestingModule } from '@/test/utils/module-builder.util';
 
-describeWithoutDB('ArtworksService', () => {
+describeWithoutDeps('ArtworksService', () => {
   let service: ArtworksService;
   let artworksRepository: Partial<ArtworksRepository>;
   let genresRepository: Partial<GenresRepository>;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const module: TestingModule = await createServiceTestingModule({
       providers: [
         ArtworksService,
         {
@@ -32,7 +33,7 @@ describeWithoutDB('ArtworksService', () => {
           },
         },
       ],
-    }).compile();
+    });
 
     service = module.get<ArtworksService>(ArtworksService);
     artworksRepository = module.get<ArtworksRepository>(ArtworksRepository);
@@ -42,7 +43,7 @@ describeWithoutDB('ArtworksService', () => {
   describe('createArtwork', () => {
     const dto: CreateArtworkDto = {
       title: '테스트 작품',
-      imageUrl: 'https://example.com/test.jpg',
+      imageKey: 'artworks/2024/03/abc123def456',
       playedOn: Platform.STEAM,
       genres: ['RPG'],
     };
@@ -52,7 +53,7 @@ describeWithoutDB('ArtworksService', () => {
       const expectedArtwork = {
         id: 'artwork-1',
         title: dto.title,
-        imageUrl: dto.imageUrl,
+        imageKey: dto.imageKey,
         playedOn: dto.playedOn,
         genres: mockGenres,
       };

@@ -3,7 +3,7 @@ import typescriptParser from '@typescript-eslint/parser';
 import importPlugin from 'eslint-plugin-import';
 import prettierPlugin from 'eslint-plugin-prettier';
 import prettierConfig from 'eslint-config-prettier';
-import enforceTopLevelDbRelatedDescribe from './eslint-rules/enforce-top-level-db-related-describe.cjs';
+import enforceTopLevelDepsRelatedDescribe from './eslint-rules/enforce-top-level-deps-related-describe.cjs';
 
 export default [
   // 기본 타입스크립트 설정
@@ -83,13 +83,13 @@ export default [
     plugins: {
       'local-rules': {
         rules: {
-          'enforce-top-level-db-related-describe':
-            enforceTopLevelDbRelatedDescribe,
+          'enforce-top-level-deps-related-describe':
+            enforceTopLevelDepsRelatedDescribe,
         },
       },
     },
     rules: {
-      'local-rules/enforce-top-level-db-related-describe': 'error',
+      'local-rules/enforce-top-level-deps-related-describe': 'error',
     },
   },
 ];

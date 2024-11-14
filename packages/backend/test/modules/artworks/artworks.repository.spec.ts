@@ -9,7 +9,7 @@ import { GenresFactory } from '@/test/factories/genres.factory';
 import { clearTables, saveEntities } from '@/test/utils/database.util';
 import { createRepositoryTestingModule } from '@/test/utils/module-builder.util';
 
-describeWithDB('ArtworksRepository', () => {
+describeWithDeps('ArtworksRepository', () => {
   let artworkRepo: ArtworksRepository;
   let genreRepo: GenresRepository;
   let dataSource: DataSource;
@@ -48,7 +48,7 @@ describeWithDB('ArtworksRepository', () => {
       });
 
       expect(saved.title).toBe(artworkData.title);
-      expect(saved.imageUrl).toBe(artworkData.imageUrl);
+      expect(saved.imageKey).toBe(artworkData.imageKey);
       expect(saved.playedOn).toBe(artworkData.playedOn);
       expect(saved.rating).toBe(artworkData.rating);
       expect(saved.shortReview).toBe(artworkData.shortReview);
@@ -65,9 +65,9 @@ describeWithDB('ArtworksRepository', () => {
         await expect(artworkRepo.createOne(artworkData)).rejects.toThrow();
       });
 
-      it('imageUrl이 없으면 에러가 발생함', async () => {
+      it('imageKey가 없으면 에러가 발생함', async () => {
         const artworkData = ArtworksFactory.createTestData({
-          imageUrl: undefined,
+          imageKey: undefined,
         });
 
         await expect(artworkRepo.createOne(artworkData)).rejects.toThrow();
