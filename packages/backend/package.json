@@ -13,11 +13,11 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"./**/*.ts\" --fix",
-    "test:no-db": "vitest run -c \"test/vitest.config.no-db.ts\"",
-    "test:db": "vitest run -c \"test/vitest.config.db.ts\"",
-    "test:watch:no-db": "vitest watch -c \"test/vitest.config.no-db.ts\"",
-    "test:watch:db": "vitest watch -c \"test/vitest.config.db.ts\"",
-    "test:all": "npm run test:no-db && npm run test:db"
+    "test:no-deps": "vitest run -c \"test/vitest.config.no-deps.ts\"",
+    "test:deps": "vitest run -c \"test/vitest.config.deps.ts\"",
+    "test:watch:no-deps": "vitest watch -c \"test/vitest.config.no-deps.ts\"",
+    "test:watch:deps": "vitest watch -c \"test/vitest.config.deps.ts\"",
+    "test:all": "npm run test:no-deps && npm run test:deps"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.688.0",

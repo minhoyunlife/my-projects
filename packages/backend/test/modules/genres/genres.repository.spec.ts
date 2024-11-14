@@ -6,7 +6,7 @@ import { GenresFactory } from '@/test/factories/genres.factory';
 import { clearTables, saveEntities } from '@/test/utils/database.util';
 import { createRepositoryTestingModule } from '@/test/utils/module-builder.util';
 
-describeWithDB('GenresRepository', () => {
+describeWithDeps('GenresRepository', () => {
   let repository: GenresRepository;
   let dataSource: DataSource;
 

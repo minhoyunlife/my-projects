@@ -36,21 +36,37 @@ services:
     profiles:
       - dev
 
-  db-test:
+  test-db:
     image: postgres:13-alpine
-    env_file:
-      - ./.env
     environment:
-      - POSTGRES_USER=${TEST_DB_USER}
-      - POSTGRES_PASSWORD=${TEST_DB_PASSWORD}
-      - POSTGRES_DB=${TEST_DB_NAME}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=test_db
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${TEST_DB_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
     ports:
-      - "${TEST_DB_PORT}:5432"
+      - "5433:5432"
+    profiles:
+      - test
+
+  localstack:
+    image: localstack/localstack
+    environment:
+      - SERVICES=s3
+      - AWS_REGION=ap-northeast-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "4566:4566"
     profiles:
       - test
 

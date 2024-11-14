@@ -39,12 +39,12 @@ runs:
         pnpm -F @my-projects/backend run lint
 
     # 테스트
-    - name: Run tests without DB
+    - name: Run tests without containers
       shell: bash
-      run: pnpm -F @my-projects/backend run test:no-db
-    - name: Run tests with DB
+      run: pnpm -F @my-projects/backend run test:no-deps
+    - name: Run tests with containers
       shell: bash
-      run: pnpm -F @my-projects/backend run test:db
+      run: pnpm -F @my-projects/backend run test:deps
 
     # 빌드 체크
     - name: Check build

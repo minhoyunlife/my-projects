@@ -5,7 +5,7 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vitest/config';
 
 // 테스트 시 활용될 공통 설정
-export const baseConfig = defineConfig({
+export default defineConfig({
   root: resolve(__dirname, '..'),
   test: {
     globals: true,

@@ -8,7 +8,7 @@ import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 
-describeWithoutDB('ArtworksService', () => {
+describeWithoutDeps('ArtworksService', () => {
   let service: ArtworksService;
   let artworksRepository: Partial<ArtworksRepository>;
   let genresRepository: Partial<GenresRepository>;

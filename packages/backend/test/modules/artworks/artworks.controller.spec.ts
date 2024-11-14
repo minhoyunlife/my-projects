@@ -11,10 +11,11 @@ import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { Genre } from '@/src/modules/genres/genres.entity';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
+import { StorageService } from '@/src/modules/storage/storage.service';
 import { clearTables } from '@/test/utils/database.util';
 import { createControllerTestingApp } from '@/test/utils/module-builder.util';
 
-describeWithDB('ArtworksController', () => {
+describeWithDeps('ArtworksController', () => {
   let app: INestApplication;
   let dataSource: DataSource;
 
@@ -22,7 +23,12 @@ describeWithDB('ArtworksController', () => {
     app = await createControllerTestingApp({
       entities: [Artwork, Genre],
       controllers: [ArtworksController],
-      providers: [ArtworksService, ArtworksRepository, GenresRepository],
+      providers: [
+        ArtworksService,
+        StorageService,
+        ArtworksRepository,
+        GenresRepository,
+      ],
     });
 
     dataSource = app.get<DataSource>(DataSource);

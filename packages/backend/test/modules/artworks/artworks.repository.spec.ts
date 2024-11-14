@@ -9,7 +9,7 @@ import { GenresFactory } from '@/test/factories/genres.factory';
 import { clearTables, saveEntities } from '@/test/utils/database.util';
 import { createRepositoryTestingModule } from '@/test/utils/module-builder.util';
 
-describeWithDB('ArtworksRepository', () => {
+describeWithDeps('ArtworksRepository', () => {
   let artworkRepo: ArtworksRepository;
   let genreRepo: GenresRepository;
   let dataSource: DataSource;

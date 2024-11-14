@@ -5,7 +5,7 @@ import { Genre } from '@/src/modules/genres/genres.entity';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
 
-describeWithoutDB('ArtworkResponse', () => {
+describeWithoutDeps('ArtworkResponse', () => {
   const genres = [GenresFactory.createTestData({ id: 'some-nanoid' }) as Genre];
   const artwork = ArtworksFactory.createTestData({
     id: 'some-nanoid',
