@@ -1,8 +1,10 @@
 import { INestApplication } from '@nestjs/common';
 
+import Sharp from 'sharp';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 
+import { ImageFileType } from '@/src/common/enums/file-type.enum';
 import { Platform } from '@/src/common/enums/platform.enum';
 import { ArtworksController } from '@/src/modules/artworks/artworks.controller';
 import { Artwork } from '@/src/modules/artworks/artworks.entity';
@@ -81,6 +83,83 @@ describeWithDeps('ArtworksController', () => {
         .post('/artworks')
         .send(invalidDto)
         .expect(400);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+  });
+
+  describe('POST /artworks/images', () => {
+    it('유효한 이미지로 업로드할 경우, 처리가 성공함', async () => {
+      const imageData = await Sharp({
+        create: {
+          width: 2000,
+          height: 2000,
+          channels: 3,
+          background: 'green',
+        },
+      })
+        .png()
+        .toBuffer();
+
+      const response = await request(app.getHttpServer())
+        .post('/artworks/images')
+        .attach('image', imageData, {
+          filename: 'test.png',
+          contentType: ImageFileType.PNG,
+        })
+        .expect((res) => {
+          if (res.status === 500) {
+            console.error('Server Error Response:', res.body);
+          }
+          return res;
+        })
+        .expect(201);
+
+      await expect(response).toMatchOpenAPISpec();
+      expect(response.body.imageKey).toBeDefined();
+    });
+
+    it('이미지 파일이 누락될 경우, 400 에러가 반환됨', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/artworks/images')
+        .expect(400);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+
+    it('이미지 파일 형식이 사양 외인 경우, 400 에러가 반환됨', async () => {
+      const imageData = await Sharp({
+        create: {
+          width: 2000,
+          height: 2000,
+          channels: 3,
+          background: 'green',
+        },
+      })
+        .gif()
+        .toBuffer();
+
+      const response = await request(app.getHttpServer())
+        .post('/artworks/images')
+        .attach('image', imageData, {
+          filename: 'test.gif',
+          contentType: 'image/gif',
+        })
+        .expect(400);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+
+    it('이미지 파일 용량이 제한치를 초과할 경우, 413 에러가 반환됨', async () => {
+      const largeBuffer = Buffer.alloc(101 * 1024 * 1024); // 101MB
+
+      const response = await request(app.getHttpServer())
+        .post('/artworks/images')
+        .attach('image', largeBuffer, {
+          filename: 'larger.jpg',
+          contentType: ImageFileType.JPEG,
+        })
+        .expect(413);
 
       await expect(response).toMatchOpenAPISpec();
     });
