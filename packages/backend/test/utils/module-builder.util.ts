@@ -1,16 +1,45 @@
-import { INestApplication, Type, ValidationPipe } from '@nestjs/common';
+import {
+  DynamicModule,
+  INestApplication,
+  Provider,
+  Type,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import validationPipeConfig from '@/src/modules/config/settings/validation-pipe.config';
-import { TEST_DB_CONFIG } from '@/test/test.config';
+import { TEST_DB_CONFIG, TEST_S3_CONFIG } from '@/test/test.config';
 
 type TestModuleOptions = {
   entities: Type<any>[];
-  providers?: Type<any>[];
+  providers?: Provider[];
   controllers?: Type<any>[];
-  imports?: any[];
+  imports?: (DynamicModule | Type<any>)[];
+};
+
+const dummyS3Provider = {
+  provide: ConfigService,
+  useValue: {
+    get: (key: string) => {
+      const {
+        region,
+        credentials: { accessKeyId, secretAccessKey },
+        bucket,
+        endpoint,
+      } = TEST_S3_CONFIG;
+
+      const config = {
+        's3.region': region,
+        's3.accessKeyId': accessKeyId,
+        's3.secretAccessKey': secretAccessKey,
+        's3.bucket': bucket,
+        's3.endpoint': endpoint,
+      };
+      return config[key];
+    },
+  },
 };
 
 /**
@@ -30,6 +59,17 @@ export async function createRepositoryTestingModule({
       TypeOrmModule.forFeature(entities),
     ],
     providers,
+  }).compile();
+}
+
+/**
+ * 서비스 테스트용 모듈 생성
+ */
+export async function createServiceTestingModule({
+  providers = [],
+}: Omit<TestModuleOptions, 'entities' | 'controllers' | 'imports'>) {
+  return Test.createTestingModule({
+    providers: [dummyS3Provider, ...providers],
   }).compile();
 }
 
@@ -56,7 +96,7 @@ export async function createControllerTestingApp({
       ...imports,
     ],
     controllers,
-    providers,
+    providers: [dummyS3Provider, ...providers],
   }).compile();
 
   const app = moduleRef.createNestApplication();
