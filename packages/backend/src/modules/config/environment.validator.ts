@@ -2,6 +2,7 @@ import { ClassConstructor, plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 
 import { AppEnvironmentVariables } from '@/src/modules/config/environments/app.environment';
+import { AuthEnvironmentVariables } from '@/src/modules/config/environments/auth.environment';
 import { DatabaseEnvironmentVariables } from '@/src/modules/config/environments/database.environment';
 import { S3EnvironmentVariables } from '@/src/modules/config/environments/s3.environment';
 
@@ -10,6 +11,7 @@ const environmentVariables: ClassConstructor<any>[] = [
   AppEnvironmentVariables,
   DatabaseEnvironmentVariables,
   S3EnvironmentVariables,
+  AuthEnvironmentVariables,
 ];
 
 export function validate(config: Record<string, unknown>) {
@@ -27,7 +29,7 @@ export function validate(config: Record<string, unknown>) {
       value: err.value,
       constraints: err.constraints,
       message: `\
-        Environment Variables ${err.property} is wrong. \ 
+        Environment Variables ${err.property} is wrong. \
         input: ${err.value}, \
         constraints: ${Object.values(err.constraints || {}).join(', ')}\
       `,
