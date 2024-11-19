@@ -4,14 +4,14 @@ import { Genre } from '@/src/modules/genres/genres.entity';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { GenresFactory } from '@/test/factories/genres.factory';
 import { clearTables, saveEntities } from '@/test/utils/database.util';
-import { createRepositoryTestingModule } from '@/test/utils/module-builder.util';
+import { createTestingModuleWithDB } from '@/test/utils/module-builder.util';
 
 describeWithDeps('GenresRepository', () => {
   let repository: GenresRepository;
   let dataSource: DataSource;
 
   beforeAll(async () => {
-    const module = await createRepositoryTestingModule({
+    const module = await createTestingModuleWithDB({
       entities: [Genre],
       providers: [GenresRepository],
     });

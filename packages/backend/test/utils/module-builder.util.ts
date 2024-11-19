@@ -43,12 +43,13 @@ const dummyS3Provider = {
 };
 
 /**
- * 리포지토리 테스트용 모듈 생성
+ * 실제 DB 연결이 필요한 테스트를 위한, DB 의존성이 포함된 테스트 모듈
  */
-export async function createRepositoryTestingModule({
+export async function createTestingModuleWithDB({
+  imports = [],
   entities,
   providers = [],
-}: Omit<TestModuleOptions, 'controllers' | 'imports'>) {
+}: Omit<TestModuleOptions, 'controllers'>) {
   return Test.createTestingModule({
     imports: [
       TypeOrmModule.forRoot({
@@ -57,26 +58,30 @@ export async function createRepositoryTestingModule({
         synchronize: true,
       }),
       TypeOrmModule.forFeature(entities),
+      ...imports,
     ],
-    providers,
-  }).compile();
-}
-
-/**
- * 서비스 테스트용 모듈 생성
- */
-export async function createServiceTestingModule({
-  providers = [],
-}: Omit<TestModuleOptions, 'entities' | 'controllers' | 'imports'>) {
-  return Test.createTestingModule({
     providers: [dummyS3Provider, ...providers],
   }).compile();
 }
 
 /**
- * 컨트롤러 테스트용 어플리케이션 생성
+ * DB 연결 없는 단위 테스트를 위한, 단순 의존성 주입만 필요한 테스트 모듈
  */
-export async function createControllerTestingApp({
+export async function createTestingModuleWithoutDB({
+  imports = [],
+  providers = [],
+}: Omit<TestModuleOptions, 'entities' | 'controllers'>) {
+  return Test.createTestingModule({
+    imports,
+    providers: [dummyS3Provider, ...providers],
+  }).compile();
+}
+
+/**
+ * 컨트롤러 엔드포인트 테스트 등을 위한, 통합 테스트용 애플리케이션
+ * - ValidationPipe 등 전체 앱 컨텍스트 포함
+ */
+export async function createTestingApp({
   entities,
   controllers = [],
   providers = [],

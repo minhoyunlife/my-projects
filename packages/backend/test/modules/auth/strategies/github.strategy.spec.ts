@@ -1,16 +1,16 @@
 import { ConfigService } from '@nestjs/config';
-import { Test, TestingModule } from '@nestjs/testing';
 
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { GithubProfile } from '@/src/modules/auth/interfaces/github-profile.interface';
 import { GithubStrategy } from '@/src/modules/auth/strategies/github.strategy';
+import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
 
 describeWithoutDeps('GithubStrategy', () => {
   let strategy: GithubStrategy;
   let authService: AuthService;
 
   beforeAll(async () => {
-    const module = await Test.createTestingModule({
+    const module = await createTestingModuleWithoutDB({
       providers: [
         GithubStrategy,
         {
@@ -33,7 +33,7 @@ describeWithoutDeps('GithubStrategy', () => {
           },
         },
       ],
-    }).compile();
+    });
 
     strategy = module.get(GithubStrategy);
     authService = module.get(AuthService);

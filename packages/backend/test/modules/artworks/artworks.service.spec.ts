@@ -7,7 +7,7 @@ import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
-import { createServiceTestingModule } from '@/test/utils/module-builder.util';
+import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
 
 describeWithoutDeps('ArtworksService', () => {
   let service: ArtworksService;
@@ -15,7 +15,7 @@ describeWithoutDeps('ArtworksService', () => {
   let genresRepository: Partial<GenresRepository>;
 
   beforeEach(async () => {
-    const module: TestingModule = await createServiceTestingModule({
+    const module: TestingModule = await createTestingModuleWithoutDB({
       providers: [
         ArtworksService,
         {

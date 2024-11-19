@@ -7,7 +7,7 @@ import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
 import { clearTables, saveEntities } from '@/test/utils/database.util';
-import { createRepositoryTestingModule } from '@/test/utils/module-builder.util';
+import { createTestingModuleWithDB } from '@/test/utils/module-builder.util';
 
 describeWithDeps('ArtworksRepository', () => {
   let artworkRepo: ArtworksRepository;
@@ -16,7 +16,7 @@ describeWithDeps('ArtworksRepository', () => {
   let savedGenres: Genre[];
 
   beforeAll(async () => {
-    const module = await createRepositoryTestingModule({
+    const module = await createTestingModuleWithDB({
       entities: [Artwork, Genre],
       providers: [ArtworksRepository, GenresRepository],
     });
