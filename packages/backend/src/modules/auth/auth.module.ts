@@ -1,19 +1,26 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { InjectRepository, TypeOrmModule } from '@nestjs/typeorm';
 
+import { Repository } from 'typeorm';
+
+import { Environment } from '@/src/common/enums/environment.enum';
 import { AuthController } from '@/src/modules/auth/auth.controller';
 import { AuthService } from '@/src/modules/auth/auth.service';
-import { GithubStrategy } from '@/src/modules/auth/strategy/github.strategy';
+import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
+import { Totp } from '@/src/modules/auth/entities/totp.entity';
+import { GithubStrategy } from '@/src/modules/auth/strategies/github.strategy';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([Administrator, Totp]),
     PassportModule.register({ defaultStrategy: 'github' }),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get('JWT_SECRET'),
+        secret: configService.get('auth.jwtSecret'),
         signOptions: {
           issuer: 'MY:auth-service',
           audience: 'MY:admin-client',
@@ -22,7 +29,37 @@ import { GithubStrategy } from '@/src/modules/auth/strategy/github.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, GithubStrategy],
+  providers: [AuthService, ConfigService, GithubStrategy],
   exports: [AuthService],
 })
-export class AuthModule {}
+export class AuthModule implements OnModuleInit {
+  constructor(
+    private readonly configService: ConfigService,
+
+    @InjectRepository(Administrator)
+    private readonly administratorRepository: Repository<Administrator>,
+  ) {}
+
+  async onModuleInit() {
+    const isDev = this.configService.get('app.env') === Environment.DEV;
+    if (isDev) {
+      const adminEmail = this.configService.get('auth.adminEmail');
+      await this.seedAdminUser(adminEmail);
+    }
+  }
+
+  private async seedAdminUser(email: string) {
+    console.log('Seeding administrator user if it does not exist...');
+
+    const existingAdmin = await this.administratorRepository.findOneBy({
+      email,
+    });
+
+    if (!existingAdmin) {
+      this.administratorRepository.save({ email });
+      console.log('Admin account created.');
+    } else {
+      console.log('Admin account exists.');
+    }
+  }
+}
