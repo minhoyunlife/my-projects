@@ -8,6 +8,12 @@ import { authenticator } from 'otplib';
 import { DataSource, Repository } from 'typeorm';
 
 import { TokenType } from '@/src/common/enums/token-type.enum';
+import { NotAdminException } from '@/src/common/exceptions/auth/admin.exception';
+import {
+  TotpAlreadySetupException,
+  TotpMaxAttemptsExceededException,
+  TotpNotSetupException,
+} from '@/src/common/exceptions/auth/totp.exception';
 import { decrypt } from '@/src/common/utils/encryption.util';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
@@ -86,7 +92,9 @@ describeWithDeps('AuthService', () => {
         emails: [{ value: 'unknown@example.com' }],
       } as GithubProfile;
 
-      await expect(service.validateAdminUser(profile)).rejects.toThrowError();
+      await expect(service.validateAdminUser(profile)).rejects.toThrowError(
+        NotAdminException,
+      );
     });
   });
 
@@ -120,35 +128,41 @@ describeWithDeps('AuthService', () => {
     it('TOTP 초기 설정이 성공함', async () => {
       const result = await service.setupTotp(email);
 
-      expect(result).toHaveProperty('qrCodeUri');
-      expect(result).toHaveProperty('backupCodes');
+      expect(result).toHaveProperty('qrCodeUrl');
+      expect(result).toHaveProperty('manualEntryKey');
+      expect(result).toHaveProperty('setupToken');
 
       const savedTotp = await totpRepo.findOneBy({ adminEmail: email });
       expect(savedTotp).toBeDefined();
     });
 
-    it('초기 설정이 성공한 경우, QR코드의 URI에 설정한 email 과 issuer 가 들어감', async () => {
+    it('초기 설정이 성공한 경우, QR코드의 URL에 설정한 email 과 issuer 가 들어감', async () => {
       const result = await service.setupTotp(email);
 
-      expect(result.qrCodeUri).toContain(encodeURIComponent(email));
-      expect(result.qrCodeUri).toContain(
+      expect(result.qrCodeUrl).toContain(encodeURIComponent(email));
+      expect(result.qrCodeUrl).toContain(
         encodeURIComponent('My Projects Admin'),
       );
     });
 
-    it('초기 설정이 성공한 경우, 생성된 백업 코드가 올바른 형식을 가짐', async () => {
+    it('초기 설정이 성공한 경우, 수동 입력용 시크릿 키가 4글자 마다 스페이스 구분으로 반환됨', async () => {
       const result = await service.setupTotp(email);
 
-      expect(result.backupCodes).toHaveLength(8);
-      result.backupCodes.forEach((code) => {
-        expect(code).toMatch(/^[0-9A-F]{8}$/);
-      });
+      expect(result.manualEntryKey).toMatch(/^.{4} .{4} .{4} .{4}$/);
+    });
+
+    it('초기 설정이 성공한 경우, 임시 토큰이 반환됨', async () => {
+      const result = await service.setupTotp(email);
+
+      expect(result.setupToken).not.toBeNull();
     });
 
     it('해당 계정에 이미 TOTP 가 설정되어 있는 경우, 에러가 발생함', async () => {
       await service.setupTotp(email);
 
-      await expect(service.setupTotp(email)).rejects.toThrowError();
+      await expect(service.setupTotp(email)).rejects.toThrowError(
+        TotpAlreadySetupException,
+      );
     });
   });
 
@@ -159,7 +173,9 @@ describeWithDeps('AuthService', () => {
 
     it('올바른 TOTP 코드인 경우, 검증에 성공함', async () => {
       const totp = await totpRepo.findOneBy({ adminEmail: email });
-      const validCode = authenticator.generate(totp.encryptedSecret);
+      const validCode = authenticator.generate(
+        decrypt(totp.encryptedSecret, encryptionKey),
+      );
 
       const result = await service.verifyTotpCode(email, validCode);
       expect(result).toBe(true);
@@ -171,7 +187,7 @@ describeWithDeps('AuthService', () => {
 
       await expect(
         service.verifyTotpCode(invalidEmail, code),
-      ).rejects.toThrowError();
+      ).rejects.toThrowError(TotpNotSetupException);
     });
 
     it('잘못된 TOTP 코드인 경우, 검증에 실패함', async () => {
@@ -195,7 +211,9 @@ describeWithDeps('AuthService', () => {
         await service.verifyTotpCode(email, invalidCode); // 한 번 실패 후
 
         const totp = await totpRepo.findOneBy({ adminEmail: email });
-        const validCode = authenticator.generate(totp.encryptedSecret);
+        const validCode = authenticator.generate(
+          decrypt(totp.encryptedSecret, encryptionKey),
+        );
 
         await service.verifyTotpCode(email, validCode); // 검증 성공하면
 
@@ -218,7 +236,7 @@ describeWithDeps('AuthService', () => {
 
         await expect(
           service.verifyTotpCode(email, invalidCode),
-        ).rejects.toThrowError();
+        ).rejects.toThrowError(TotpMaxAttemptsExceededException);
       });
 
       it('마지막 실패 시도로부터 15분이 지난 후에 다시 실패 시도를 한 경우, 실패 횟수가 1이 됨', async () => {
@@ -273,7 +291,7 @@ describeWithDeps('AuthService', () => {
 
       await expect(
         service.verifyBackupCode(invalidEmail, decryptedCode),
-      ).rejects.toThrowError();
+      ).rejects.toThrowError(TotpNotSetupException);
     });
 
     it('잘못된 백업 코드인 경우, 검증에 실패함', async () => {

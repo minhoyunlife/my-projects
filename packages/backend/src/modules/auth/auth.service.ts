@@ -8,6 +8,14 @@ import { authenticator } from 'otplib';
 import { Repository } from 'typeorm';
 
 import { TokenType } from '@/src/common/enums/token-type.enum';
+import { NotAdminException } from '@/src/common/exceptions/auth/admin.exception';
+import {
+  TotpAlreadySetupException,
+  TotpMaxAttemptsExceededException,
+  TotpNotSetupException,
+  TotpSetupFailedException,
+  TotpVerificationFailedException,
+} from '@/src/common/exceptions/auth/totp.exception';
 import { decrypt, encrypt } from '@/src/common/utils/encryption.util';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
 import { Totp } from '@/src/modules/auth/entities/totp.entity';
@@ -48,7 +56,7 @@ export class AuthService {
       email: profileEmail,
     });
     if (!administrator) {
-      throw new Error('Not an authorized administrator');
+      throw new NotAdminException();
     }
 
     return {
@@ -76,37 +84,52 @@ export class AuthService {
   /**
    * TOTP 초기 설정
    */
-  async setupTotp(
-    email: string,
-  ): Promise<{ qrCodeUri: string; backupCodes: string[] }> {
+  async setupTotp(email: string): Promise<{
+    qrCodeUrl: string;
+    manualEntryKey: string;
+    setupToken: string;
+  }> {
     const totp = await this.totpRepository.findOneBy({ adminEmail: email });
     if (totp) {
-      throw new Error('TOTP has already been set up for the email');
+      throw new TotpAlreadySetupException();
     }
 
-    const secret = authenticator.generateSecret();
+    try {
+      const secret = authenticator.generateSecret();
+      const manualEntryKey = secret.replace(/(.{4})/g, '$1 ').trim();
 
-    const backupCodes = [...Array(this.BACKUP_CODES_COUNT)].map(() =>
-      randomBytes(4).toString('hex').toUpperCase(),
-    );
-
-    const encryptedBackupCodes = backupCodes.map((code) =>
-      encrypt(code, this.configService.get('database.encryption_key')),
-    );
-
-    await this.totpRepository.save({
-      adminEmail: email,
-      encryptedSecret: encrypt(
+      const encryptedSecret = encrypt(
         secret,
         this.configService.get('database.encryption_key'),
-      ),
-      backupCodes: encryptedBackupCodes,
-    });
+      );
 
-    return {
-      qrCodeUri: authenticator.keyuri(email, this.TOTP_ISSUER, secret),
-      backupCodes,
-    };
+      const backupCodes = [...Array(this.BACKUP_CODES_COUNT)].map(() =>
+        randomBytes(4).toString('hex').toUpperCase(),
+      );
+
+      const encryptedBackupCodes = backupCodes.map((code) =>
+        encrypt(code, this.configService.get('database.encryption_key')),
+      );
+
+      await this.totpRepository.save({
+        adminEmail: email,
+        encryptedSecret: encryptedSecret,
+        backupCodes: encryptedBackupCodes,
+      });
+
+      const setupToken = await this.createTempToken({
+        email,
+        isAdmin: true,
+      });
+
+      return {
+        qrCodeUrl: authenticator.keyuri(email, this.TOTP_ISSUER, secret),
+        manualEntryKey,
+        setupToken,
+      };
+    } catch (error) {
+      throw new TotpSetupFailedException();
+    }
   }
 
   /**
@@ -115,21 +138,33 @@ export class AuthService {
   async verifyTotpCode(email: string, code: string): Promise<boolean> {
     const totp = await this.totpRepository.findOneBy({ adminEmail: email });
     if (!totp) {
-      throw new Error('TOTP is not set up by provided email');
+      throw new TotpNotSetupException();
     }
 
-    const isValid = authenticator.verify({
-      token: code,
-      secret: totp.encryptedSecret,
-    });
+    try {
+      const decryptedSecret = decrypt(
+        totp.encryptedSecret,
+        this.configService.get('database.encryption_key'),
+      );
 
-    if (!isValid) {
-      await this.recordFailedAttempt(totp);
-      return false;
+      const isValid = authenticator.verify({
+        token: code,
+        secret: decryptedSecret,
+      });
+
+      if (!isValid) {
+        await this.recordFailedAttempt(totp);
+        return false;
+      }
+
+      await this.resetFailedAttempt(totp);
+      return true;
+    } catch (error) {
+      if (error instanceof TotpMaxAttemptsExceededException) {
+        throw error;
+      }
+      throw new TotpVerificationFailedException();
     }
-
-    await this.resetFailedAttempt(totp);
-    return true;
   }
 
   /**
@@ -138,16 +173,20 @@ export class AuthService {
   async verifyBackupCode(email: string, code: string): Promise<boolean> {
     const totp = await this.totpRepository.findOneBy({ adminEmail: email });
     if (!totp) {
-      throw new Error('TOTP is not set up by provided email');
+      throw new TotpNotSetupException();
     }
 
-    return totp.backupCodes.some((encryptedCode) => {
-      const decryptedCode = decrypt(
-        encryptedCode,
-        this.configService.get('database.encryption_key'),
-      );
-      return decryptedCode === code.toUpperCase();
-    });
+    try {
+      return totp.backupCodes.some((encryptedCode) => {
+        const decryptedCode = decrypt(
+          encryptedCode,
+          this.configService.get('database.encryption_key'),
+        );
+        return decryptedCode === code.toUpperCase();
+      });
+    } catch (error) {
+      throw new TotpVerificationFailedException();
+    }
   }
 
   /**
@@ -184,9 +223,7 @@ export class AuthService {
       totp.failedAttempts += 1;
 
       if (totp.failedAttempts > this.MAX_TOTP_ATTEMPTS) {
-        throw new Error(
-          'Too many failed attempts. Please try again after 15 minutes',
-        );
+        throw new TotpMaxAttemptsExceededException();
       }
     }
 

@@ -2,6 +2,12 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
 import { TokenType } from '@/src/common/enums/token-type.enum';
+import {
+  InvalidTokenException,
+  InvalidTokenFormatException,
+  InvalidTokenTypeException,
+  TokenNotProvidedException,
+} from '@/src/common/exceptions/auth/token.exception';
 import { Administrator } from '@/src/modules/auth/interfaces/Administrator.interface';
 import {
   AccessTokenPayload,
@@ -24,25 +30,32 @@ abstract class TokenAuthGuard<T extends TokenPayload> implements CanActivate {
 
     const authHeader = request.headers.authorization;
     if (!authHeader) {
-      throw new Error('No token provided');
+      throw new TokenNotProvidedException();
     }
 
     const [type, token] = authHeader.split(' ');
     if (type !== 'Bearer') {
-      throw new Error('Invalid token type');
+      throw new InvalidTokenFormatException();
     }
 
-    const payload = this.jwtService.verify<T>(token);
-    if (payload.type !== this.tokenType) {
-      throw new Error('Invalid token type');
+    try {
+      const payload = this.jwtService.verify<T>(token);
+      if (payload.type !== this.tokenType) {
+        throw new InvalidTokenTypeException();
+      }
+
+      request.user = {
+        email: payload.email,
+        isAdmin: payload.isAdmin,
+      } as Administrator;
+
+      return true;
+    } catch (error) {
+      if (error instanceof InvalidTokenTypeException) {
+        throw error;
+      }
+      throw new InvalidTokenException();
     }
-
-    request.user = {
-      email: payload.email,
-      isAdmin: payload.isAdmin,
-    } as Administrator;
-
-    return true;
   }
 }
 

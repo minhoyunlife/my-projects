@@ -3,6 +3,12 @@ import { JwtService } from '@nestjs/jwt';
 
 import { TokenType } from '@/src/common/enums/token-type.enum';
 import {
+  InvalidTokenException,
+  InvalidTokenFormatException,
+  InvalidTokenTypeException,
+  TokenNotProvidedException,
+} from '@/src/common/exceptions/auth/token.exception';
+import {
   BearerAuthGuard,
   TempAuthGuard,
 } from '@/src/modules/auth/guards/auth.guard';
@@ -75,7 +81,9 @@ describeWithoutDeps('AuthGuard', () => {
         headers: {},
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrowError();
+      await expect(guard.canActivate(context)).rejects.toThrowError(
+        TokenNotProvidedException,
+      );
     });
 
     it('Authorization 타입이 Bearer가 아닌 경우, 에러가 발생함', async () => {
@@ -83,7 +91,9 @@ describeWithoutDeps('AuthGuard', () => {
         headers: { authorization: 'invalid-token' },
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrowError();
+      await expect(guard.canActivate(context)).rejects.toThrowError(
+        InvalidTokenFormatException,
+      );
     });
 
     it('페이로드의 타입이 temporary가 아닌 경우, 에러가 발생함', async () => {
@@ -99,7 +109,9 @@ describeWithoutDeps('AuthGuard', () => {
 
       vi.mocked(jwtService.verify).mockReturnValue(payload);
 
-      await expect(guard.canActivate(context)).rejects.toThrowError();
+      await expect(guard.canActivate(context)).rejects.toThrowError(
+        InvalidTokenTypeException,
+      );
     });
 
     it('토큰이 유효하지 않은 경우, 에러가 발생함', async () => {
@@ -111,7 +123,9 @@ describeWithoutDeps('AuthGuard', () => {
         throw new Error();
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrowError();
+      await expect(guard.canActivate(context)).rejects.toThrowError(
+        InvalidTokenException,
+      );
     });
   });
 
@@ -168,7 +182,9 @@ describeWithoutDeps('AuthGuard', () => {
         headers: {},
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrowError();
+      await expect(guard.canActivate(context)).rejects.toThrowError(
+        TokenNotProvidedException,
+      );
     });
 
     it('Authorization 타입이 Bearer가 아닌 경우, 에러가 발생함', async () => {
@@ -176,7 +192,9 @@ describeWithoutDeps('AuthGuard', () => {
         headers: { authorization: 'invalid-token' },
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrowError();
+      await expect(guard.canActivate(context)).rejects.toThrowError(
+        InvalidTokenFormatException,
+      );
     });
 
     it('페이로드의 타입이 access가 아닌 경우, 에러가 발생함', async () => {
@@ -192,7 +210,9 @@ describeWithoutDeps('AuthGuard', () => {
 
       vi.mocked(jwtService.verify).mockReturnValue(payload);
 
-      await expect(guard.canActivate(context)).rejects.toThrowError();
+      await expect(guard.canActivate(context)).rejects.toThrowError(
+        InvalidTokenTypeException,
+      );
     });
 
     it('토큰이 유효하지 않은 경우, 에러가 발생함', async () => {
@@ -204,7 +224,9 @@ describeWithoutDeps('AuthGuard', () => {
         throw new Error();
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrowError();
+      await expect(guard.canActivate(context)).rejects.toThrowError(
+        InvalidTokenException,
+      );
     });
   });
 });

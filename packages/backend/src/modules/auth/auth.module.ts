@@ -1,5 +1,6 @@
 import { Module, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { APP_FILTER } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { InjectRepository, TypeOrmModule } from '@nestjs/typeorm';
@@ -8,6 +9,7 @@ import { Repository } from 'typeorm';
 
 import { Environment } from '@/src/common/enums/environment.enum';
 import { AuthController } from '@/src/modules/auth/auth.controller';
+import { AuthExceptionFilter } from '@/src/modules/auth/auth.filter';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
 import { Totp } from '@/src/modules/auth/entities/totp.entity';
@@ -29,7 +31,15 @@ import { GithubStrategy } from '@/src/modules/auth/strategies/github.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, ConfigService, GithubStrategy],
+  providers: [
+    AuthService,
+    ConfigService,
+    GithubStrategy,
+    {
+      provide: APP_FILTER,
+      useClass: AuthExceptionFilter,
+    },
+  ],
   exports: [AuthService],
 })
 export class AuthModule implements OnModuleInit {

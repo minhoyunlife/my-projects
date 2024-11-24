@@ -1,9 +1,10 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 
 import { Strategy } from 'passport-github2';
 
+import { InvalidGithubProfileException } from '@/src/common/exceptions/auth/strategy.exception';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { GithubProfile } from '@/src/modules/auth/interfaces/github-profile.interface';
 
@@ -23,7 +24,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
 
   async validate(_: string, __: string, profile: GithubProfile) {
     if (profile.emails?.length === 0) {
-      throw new Error('Invalid Github profile');
+      throw new InvalidGithubProfileException();
     }
     return await this.authService.validateAdminUser(profile);
   }
