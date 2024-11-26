@@ -125,9 +125,12 @@ export async function initializeS3(retries = 3): Promise<S3Client> {
  */
 export async function setup() {
   try {
-    execSync('docker compose --profile test up -d', {
-      stdio: 'inherit',
-    });
+    execSync(
+      'docker compose --profile test down && docker compose --profile test up -d',
+      {
+        stdio: 'inherit',
+      },
+    );
 
     const [isDBReady, isLocalStackReady] = await Promise.all([
       waitForDatabaseContainer(),

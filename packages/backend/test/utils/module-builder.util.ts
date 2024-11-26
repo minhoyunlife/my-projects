@@ -1,3 +1,5 @@
+import { randomBytes } from 'crypto';
+
 import {
   DynamicModule,
   INestApplication,
@@ -9,6 +11,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import cookieParser from 'cookie-parser';
+
+import { AuthModule } from '@/src/modules/auth/auth.module';
+import { GithubStrategy } from '@/src/modules/auth/strategies/github.strategy';
 import validationPipeConfig from '@/src/modules/config/settings/validation-pipe.config';
 import { TEST_DB_CONFIG, TEST_S3_CONFIG } from '@/test/test.config';
 
@@ -17,29 +23,6 @@ type TestModuleOptions = {
   providers?: Provider[];
   controllers?: Type<any>[];
   imports?: (DynamicModule | Type<any>)[];
-};
-
-const dummyS3Provider = {
-  provide: ConfigService,
-  useValue: {
-    get: (key: string) => {
-      const {
-        region,
-        credentials: { accessKeyId, secretAccessKey },
-        bucket,
-        endpoint,
-      } = TEST_S3_CONFIG;
-
-      const config = {
-        's3.region': region,
-        's3.accessKeyId': accessKeyId,
-        's3.secretAccessKey': secretAccessKey,
-        's3.bucket': bucket,
-        's3.endpoint': endpoint,
-      };
-      return config[key];
-    },
-  },
 };
 
 /**
@@ -52,6 +35,7 @@ export async function createTestingModuleWithDB({
 }: Omit<TestModuleOptions, 'controllers'>) {
   return Test.createTestingModule({
     imports: [
+      testConfigModule,
       TypeOrmModule.forRoot({
         ...TEST_DB_CONFIG,
         entities,
@@ -60,7 +44,7 @@ export async function createTestingModuleWithDB({
       TypeOrmModule.forFeature(entities),
       ...imports,
     ],
-    providers: [dummyS3Provider, ...providers],
+    providers,
   }).compile();
 }
 
@@ -72,8 +56,8 @@ export async function createTestingModuleWithoutDB({
   providers = [],
 }: Omit<TestModuleOptions, 'entities' | 'controllers'>) {
   return Test.createTestingModule({
-    imports,
-    providers: [dummyS3Provider, ...providers],
+    imports: [testConfigModule, ...imports],
+    providers,
   }).compile();
 }
 
@@ -89,19 +73,18 @@ export async function createTestingApp({
 }: TestModuleOptions): Promise<INestApplication> {
   const moduleRef = await Test.createTestingModule({
     imports: [
-      ConfigModule.forRoot({
-        load: [validationPipeConfig],
-      }),
+      testConfigModule,
       TypeOrmModule.forRoot({
         ...TEST_DB_CONFIG,
         entities,
         synchronize: true,
       }),
       TypeOrmModule.forFeature(entities),
+      AuthModule,
       ...imports,
     ],
     controllers,
-    providers: [dummyS3Provider, ...providers],
+    providers,
   }).compile();
 
   const app = moduleRef.createNestApplication();
@@ -109,5 +92,33 @@ export async function createTestingApp({
   const configService = app.get(ConfigService);
   app.useGlobalPipes(new ValidationPipe(configService.get('validation')));
 
+  app.use(cookieParser());
+
   return app;
 }
+
+const testConfigModule = ConfigModule.forRoot({
+  load: [
+    () => ({
+      validation: validationPipeConfig(), // 실제 환경 그대로
+      auth: {
+        clientId: 'test-client-id',
+        clientSecret: 'test-client-secret',
+        callbackUrl: 'http://localhost:3000/auth/github/callback',
+        jwtSecret: 'test-secret-key',
+        adminWebUrl: 'http://localhost:3000',
+        adminEmail: 'test@test.com',
+      },
+      database: {
+        encryptionKey: randomBytes(32).toString('base64'),
+      },
+      s3: {
+        region: TEST_S3_CONFIG.region,
+        accessKeyId: TEST_S3_CONFIG.credentials.accessKeyId,
+        secretAccessKey: TEST_S3_CONFIG.credentials.secretAccessKey,
+        bucket: TEST_S3_CONFIG.bucket,
+        endpoint: TEST_S3_CONFIG.endpoint,
+      },
+    }),
+  ],
+});

@@ -97,20 +97,36 @@ export class OpenAPIValidator {
       throw new Error(`No operation found for ${method} ${path}`);
     }
 
-    const responseSchema =
-      operation.responses[status]?.content?.['application/json']?.schema;
-    if (!responseSchema) {
-      throw new Error(`No response schema found for ${status}`);
-    }
+    const responseContent = operation.responses[status]?.content;
+    if (!responseContent) {
+      // 스펙 정의 상 200 등의 경우에는 리스폰스 바디가 없을 수 있으나, 그럼에도 불구하고 바디가 있는 경우 에러
+      if (
+        body !== undefined &&
+        body !== null &&
+        body !== '' &&
+        !(typeof body === 'object' && Object.keys(body).length === 0) // {} 을 상정(res.end() 등)
+      ) {
+        throw new Error(
+          `Expected empty response for ${status} but got: ${JSON.stringify(body)}`,
+        );
+      }
+    } else {
+      // 리스폰스 바디가 있는 경우의 검증 처리
+      const responseSchema =
+        operation.responses[status]?.content?.['application/json']?.schema;
+      if (!responseSchema) {
+        throw new Error(`No response schema found for ${status}`);
+      }
 
-    const validate = this.ajv.compile(responseSchema);
-    const valid = validate(body);
+      const validate = this.ajv.compile(responseSchema);
+      const valid = validate(body);
 
-    if (!valid) {
-      const errors = validate.errors
-        ?.map((err) => `${err.instancePath} ${err.message}`)
-        .join('\n');
-      throw new Error(`Validation failed:\n${errors}`);
+      if (!valid) {
+        const errors = validate.errors
+          ?.map((err) => `${err.instancePath} ${err.message}`)
+          .join('\n');
+        throw new Error(`Validation failed:\n${errors}`);
+      }
     }
   }
 }

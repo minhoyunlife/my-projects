@@ -5,4 +5,5 @@
 export enum TokenType {
   TEMPORARY = 'temporary',
   ACCESS = 'access',
+  REFRESH = 'refresh',
 }

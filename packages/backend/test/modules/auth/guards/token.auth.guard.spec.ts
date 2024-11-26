@@ -11,10 +11,10 @@ import {
 import {
   BearerAuthGuard,
   TempAuthGuard,
-} from '@/src/modules/auth/guards/auth.guard';
+} from '@/src/modules/auth/guards/token.auth.guard';
 import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
 
-describeWithoutDeps('AuthGuard', () => {
+describeWithoutDeps('TokenAuthGuard', () => {
   function createExecutionContext({
     headers = {},
   }: {

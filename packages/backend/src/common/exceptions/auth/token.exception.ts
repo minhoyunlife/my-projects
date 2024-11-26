@@ -5,7 +5,7 @@ import { BaseException } from '@/src/common/exceptions/base.exception';
 export class TokenNotProvidedException extends BaseException {
   constructor(
     message: string = 'Token not provided',
-    status: HttpStatus = HttpStatus.BAD_REQUEST,
+    status: HttpStatus = HttpStatus.UNAUTHORIZED,
   ) {
     super(message, status);
   }

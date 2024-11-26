@@ -10,6 +10,10 @@ import { Repository } from 'typeorm';
 import { TokenType } from '@/src/common/enums/token-type.enum';
 import { NotAdminException } from '@/src/common/exceptions/auth/admin.exception';
 import {
+  InvalidTokenException,
+  InvalidTokenTypeException,
+} from '@/src/common/exceptions/auth/token.exception';
+import {
   TotpAlreadySetupException,
   TotpMaxAttemptsExceededException,
   TotpNotSetupException,
@@ -21,15 +25,19 @@ import { Administrator } from '@/src/modules/auth/entities/administrator.entity'
 import { Totp } from '@/src/modules/auth/entities/totp.entity';
 import { Administrator as AdminUser } from '@/src/modules/auth/interfaces/Administrator.interface';
 import { GithubProfile } from '@/src/modules/auth/interfaces/github-profile.interface';
+import { RefreshTokenPayload } from '@/src/modules/auth/interfaces/token.interface';
 
 export class AuthService {
   private readonly BACKUP_CODES_COUNT = 8;
   private readonly TOTP_ISSUER = 'My Projects Admin'; // TOTP 앱에 표시될 서비스명
   private readonly TOTP_RESET_INTERVAL = 15 * 60 * 1000; // TOTP 인증 시도 실패의 초기화 간격(마지막 실패 후 이 시간이 지나면 리셋)
-  private readonly MAX_TOTP_ATTEMPTS = 5;
-  private readonly TOKEN_EXPIRY = {
-    [TokenType.TEMPORARY]: '5m',
-    [TokenType.ACCESS]: '1d',
+  private readonly MAX_TOTP_ATTEMPTS = 5; // TOTP 인증 시도 실패 횟수 최대치(백업 코드 인증 시도 실패도 이 횟수에 포함)
+
+  // 토큰 만료 시간(초 단위)
+  public readonly TOKEN_EXPIRY = {
+    [TokenType.TEMPORARY]: 5 * 60, // 5분
+    [TokenType.ACCESS]: 15 * 60, // 15분
+    [TokenType.REFRESH]: 7 * 24 * 60 * 60, // 7일
   } as const;
 
   constructor(
@@ -66,22 +74,6 @@ export class AuthService {
   }
 
   /**
-   * TOTP 인증 전 임시 토큰 생성
-   */
-  async createTempToken(user: AdminUser): Promise<string> {
-    return this.jwtService.sign(
-      {
-        email: user.email,
-        isAdmin: user.isAdmin,
-        type: TokenType.TEMPORARY,
-      },
-      {
-        expiresIn: this.TOKEN_EXPIRY[TokenType.TEMPORARY],
-      },
-    );
-  }
-
-  /**
    * TOTP 초기 설정
    */
   async setupTotp(email: string): Promise<{
@@ -100,7 +92,7 @@ export class AuthService {
 
       const encryptedSecret = encrypt(
         secret,
-        this.configService.get('database.encryption_key'),
+        this.configService.get('database.encryptionKey'),
       );
 
       const backupCodes = [...Array(this.BACKUP_CODES_COUNT)].map(() =>
@@ -108,7 +100,7 @@ export class AuthService {
       );
 
       const encryptedBackupCodes = backupCodes.map((code) =>
-        encrypt(code, this.configService.get('database.encryption_key')),
+        encrypt(code, this.configService.get('database.encryptionKey')),
       );
 
       await this.totpRepository.save({
@@ -133,60 +125,127 @@ export class AuthService {
   }
 
   /**
-   * TOTP 코드에 의한 인증
+   * 저장된 백업 코드 목록을 조회
    */
-  async verifyTotpCode(email: string, code: string): Promise<boolean> {
+  async getBackupCodes(email: string): Promise<string[]> {
     const totp = await this.totpRepository.findOneBy({ adminEmail: email });
     if (!totp) {
       throw new TotpNotSetupException();
     }
 
-    try {
-      const decryptedSecret = decrypt(
-        totp.encryptedSecret,
-        this.configService.get('database.encryption_key'),
-      );
+    return totp.backupCodes.map((code) =>
+      decrypt(code, this.configService.get('database.encryptionKey')),
+    );
+  }
 
-      const isValid = authenticator.verify({
+  /**
+   * TOTP 코드에 의한 인증
+   */
+  async verifyTotpCode(email: string, code: string): Promise<void> {
+    const totp = await this.totpRepository.findOneBy({ adminEmail: email });
+    if (!totp) {
+      throw new TotpNotSetupException();
+    }
+
+    const decryptedSecret = decrypt(
+      totp.encryptedSecret,
+      this.configService.get('database.encryptionKey'),
+    );
+
+    let isValid: boolean;
+    try {
+      isValid = authenticator.verify({
         token: code,
         secret: decryptedSecret,
       });
-
-      if (!isValid) {
-        await this.recordFailedAttempt(totp);
-        return false;
-      }
-
-      await this.resetFailedAttempt(totp);
-      return true;
     } catch (error) {
-      if (error instanceof TotpMaxAttemptsExceededException) {
-        throw error;
-      }
+      await this.recordFailedAttempt(totp);
       throw new TotpVerificationFailedException();
     }
+
+    if (!isValid) {
+      await this.recordFailedAttempt(totp);
+      throw new TotpVerificationFailedException();
+    }
+
+    await this.resetFailedAttempt(totp);
   }
 
   /**
    * 백업 코드에 의한 인증
    */
-  async verifyBackupCode(email: string, code: string): Promise<boolean> {
+  async verifyBackupCode(email: string, code: string): Promise<void> {
     const totp = await this.totpRepository.findOneBy({ adminEmail: email });
     if (!totp) {
       throw new TotpNotSetupException();
     }
 
-    try {
-      return totp.backupCodes.some((encryptedCode) => {
+    const isVerified = totp.backupCodes.some((encryptedCode) => {
+      try {
         const decryptedCode = decrypt(
           encryptedCode,
-          this.configService.get('database.encryption_key'),
+          this.configService.get('database.encryptionKey'),
         );
         return decryptedCode === code.toUpperCase();
-      });
-    } catch (error) {
+      } catch {
+        return false;
+      }
+    });
+
+    if (!isVerified) {
+      await this.recordFailedAttempt(totp);
       throw new TotpVerificationFailedException();
     }
+
+    await this.resetFailedAttempt(totp);
+  }
+
+  /**
+   * 리프레시 토큰 검증 후 사용자 정보 반환
+   */
+  async verifyRefreshToken(refreshToken: string): Promise<AdminUser> {
+    let payload: RefreshTokenPayload;
+
+    try {
+      payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: this.configService.get('auth.jwtSecret'),
+      });
+    } catch (error) {
+      throw new InvalidTokenException();
+    }
+
+    if (payload.type !== TokenType.REFRESH) {
+      throw new InvalidTokenTypeException();
+    }
+
+    const administrator = await this.administratorRepository.findOneBy({
+      email: payload.email,
+    });
+    if (!administrator) {
+      throw new NotAdminException();
+    }
+
+    return {
+      email: administrator.email,
+      isAdmin: true,
+    };
+  }
+
+  /**
+   * TOTP 인증 전 임시 토큰 생성
+   */
+  async createTempToken(user: AdminUser): Promise<string> {
+    return this.jwtService.sign(
+      {
+        email: user.email,
+        isAdmin: user.isAdmin,
+        type: TokenType.TEMPORARY,
+      },
+      {
+        secret: this.configService.get('auth.jwtSecret'),
+        expiresIn: this.TOKEN_EXPIRY[TokenType.TEMPORARY],
+      },
+    );
   }
 
   /**
@@ -200,7 +259,25 @@ export class AuthService {
         type: TokenType.ACCESS,
       },
       {
+        secret: this.configService.get('auth.jwtSecret'),
         expiresIn: this.TOKEN_EXPIRY[TokenType.ACCESS],
+      },
+    );
+  }
+
+  /**
+   * 리프레시 토큰 발급
+   */
+  async createRefreshToken(user: AdminUser): Promise<string> {
+    return this.jwtService.sign(
+      {
+        email: user.email,
+        isAdmin: user.isAdmin,
+        type: TokenType.REFRESH,
+      },
+      {
+        secret: this.configService.get('auth.jwtSecret'),
+        expiresIn: this.TOKEN_EXPIRY[TokenType.REFRESH],
       },
     );
   }
@@ -211,24 +288,32 @@ export class AuthService {
    * - 총 실패 횟수가 다섯번이 넘으면 에러를 발생
    */
   private async recordFailedAttempt(totp: Totp): Promise<void> {
-    const now = new Date();
+    const resetIntervalSeconds = this.TOTP_RESET_INTERVAL / 1000;
 
-    if (
-      totp.lastFailedAttempt &&
-      now.getTime() - totp.lastFailedAttempt.getTime() >
-        this.TOTP_RESET_INTERVAL
-    ) {
-      totp.failedAttempts = 1;
-    } else {
-      totp.failedAttempts += 1;
+    const result = await this.totpRepository
+      .createQueryBuilder()
+      .update(Totp)
+      .set({
+        failedAttempts: () => `
+          CASE 
+            WHEN "lastFailedAttempt" IS NULL 
+            THEN 1
+            WHEN (CURRENT_TIMESTAMP - "lastFailedAttempt") > interval '${resetIntervalSeconds} seconds'
+            THEN 1 
+            ELSE "failedAttempts" + 1 
+          END
+        `,
+        lastFailedAttempt: () => 'CURRENT_TIMESTAMP',
+      })
+      .where('adminEmail = :email', { email: totp.adminEmail })
+      .returning(['failedAttempts'])
+      .execute();
 
-      if (totp.failedAttempts > this.MAX_TOTP_ATTEMPTS) {
-        throw new TotpMaxAttemptsExceededException();
-      }
+    // 최대 시도 횟수 체크
+    const { failedAttempts } = result.raw[0];
+    if (failedAttempts > this.MAX_TOTP_ATTEMPTS) {
+      throw new TotpMaxAttemptsExceededException();
     }
-
-    totp.lastFailedAttempt = now;
-    await this.totpRepository.save(totp);
   }
 
   /**

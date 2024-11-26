@@ -24,3 +24,10 @@ export interface TempTokenPayload extends TokenPayload {
 export interface AccessTokenPayload extends TokenPayload {
   type: TokenType.ACCESS;
 }
+
+/**
+ * 리프레시 토큰 인터페이스
+ */
+export interface RefreshTokenPayload extends TokenPayload {
+  type: TokenType.REFRESH;
+}
