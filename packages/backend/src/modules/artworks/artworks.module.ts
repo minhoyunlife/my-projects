@@ -7,10 +7,16 @@ import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { Genre } from '@/src/modules/genres/genres.entity';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
+import { StorageService } from '@/src/modules/storage/storage.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Artwork, Genre])],
   controllers: [ArtworksController],
-  providers: [ArtworksRepository, ArtworksService, GenresRepository],
+  providers: [
+    ArtworksRepository,
+    ArtworksService,
+    GenresRepository,
+    StorageService,
+  ],
 })
 export class ArtworksModule {}

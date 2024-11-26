@@ -15,14 +15,14 @@ import { Genre } from '@/src/modules/genres/genres.entity';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { StorageService } from '@/src/modules/storage/storage.service';
 import { clearTables } from '@/test/utils/database.util';
-import { createControllerTestingApp } from '@/test/utils/module-builder.util';
+import { createTestingApp } from '@/test/utils/module-builder.util';
 
 describeWithDeps('ArtworksController', () => {
   let app: INestApplication;
   let dataSource: DataSource;
 
   beforeAll(async () => {
-    app = await createControllerTestingApp({
+    app = await createTestingApp({
       entities: [Artwork, Genre],
       controllers: [ArtworksController],
       providers: [

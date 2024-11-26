@@ -23,4 +23,8 @@ export class DatabaseEnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   DB_NAME: string;
+
+  @IsString()
+  @IsNotEmpty()
+  DB_ENCRYPTION_KEY: string;
 }

@@ -4,13 +4,13 @@ import Sharp from 'sharp';
 import { ImageFileType } from '@/src/common/enums/file-type.enum';
 import { StorageService } from '@/src/modules/storage/storage.service';
 import { TEST_S3_CONFIG } from '@/test/test.config';
-import { createServiceTestingModule } from '@/test/utils/module-builder.util';
+import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
 
 describeWithDeps('StorageService', () => {
   let service: StorageService;
 
   beforeAll(async () => {
-    const module = await createServiceTestingModule({
+    const module = await createTestingModuleWithoutDB({
       providers: [StorageService],
     });
 
