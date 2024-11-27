@@ -9,12 +9,18 @@ runs:
     # 의존성 관련 체크
     - name: Verify lockfile
       shell: bash
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: pnpm install --no-frozen-lockfile --lockfile-only
     - name: Check duplicate dependencies
       shell: bash
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: pnpm dedupe --check
     - name: Install dependencies
       shell: bash
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: pnpm install --frozen-lockfile
 
     # 코드 품질 관련 체크
