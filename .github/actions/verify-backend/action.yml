@@ -4,6 +4,8 @@ description: Runs verification steps for backend package
 runs:
   using: composite
   steps:
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     # 의존성 관련 체크
     - name: Verify lockfile
       shell: bash
