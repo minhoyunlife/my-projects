@@ -1,26 +1,28 @@
 name: Verify Backend
 description: Runs verification steps for backend package
+inputs:
+  github-token:
+    description: GitHub token for package registry
+    required: true
 
 runs:
   using: composite
   steps:
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     # 의존성 관련 체크
     - name: Verify lockfile
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
       run: pnpm install --no-frozen-lockfile --lockfile-only
     - name: Check duplicate dependencies
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
       run: pnpm dedupe --check
     - name: Install dependencies
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
       run: pnpm install --frozen-lockfile
 
     # 코드 품질 관련 체크
