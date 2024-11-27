@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: docker/backend.Dockerfile
+      args:
+        GITHUB_TOKEN: ${GITHUB_TOKEN}
     depends_on:
       - db
     env_file:
@@ -11,6 +13,7 @@ services:
       - "${SERVER_PORT}:3000"
     volumes:
       - ./packages/backend:/app/packages/backend
+      - /app/packages/backend/node_modules
     networks:
       - project-network
     profiles:
@@ -31,6 +34,27 @@ services:
       retries: 5
     ports:
       - "${DB_PORT}:5432"
+    networks:
+      - project-network
+    profiles:
+      - dev
+
+  cms-frontend:
+    build:
+      context: .
+      dockerfile: docker/cms-frontend.Dockerfile
+      args:
+        GITHUB_TOKEN: ${GITHUB_TOKEN}
+    depends_on:
+      - backend
+      - db
+    env_file:
+      - ./.env
+    ports:
+      - "${CMS_FRONTEND_PORT}:5173"
+    volumes:
+      - ./packages/cms-frontend:/app/packages/cms-frontend
+      - /app/packages/cms-frontend/node_modules
     networks:
       - project-network
     profiles:
