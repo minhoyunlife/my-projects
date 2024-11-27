@@ -1,0 +1,49 @@
+name: Verify CMS Frontend
+description: Runs verification steps for cms-frontend package
+
+runs:
+  using: composite
+  steps:
+    # 의존성 관련 체크
+    - name: Verify lockfile
+      shell: bash
+      run: pnpm install --no-frozen-lockfile --lockfile-only
+    - name: Check duplicate dependencies
+      shell: bash
+      run: pnpm dedupe --check
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    # 코드 품질 관련 체크
+    - name: Format code
+      id: format
+      shell: bash
+      run: |
+        pnpm -F @my-projects/cms-frontend run format
+        if [[ -n "$(git status -s)" ]]; then
+          echo "formatted=true" >> $GITHUB_OUTPUT
+        fi
+    - name: Commit formatting changes if exist
+      if: steps.format.outputs.formatted == 'true'
+      shell: bash
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add -A
+        git commit -m "chore: apply prettier formatting" || echo "No changes to commit"
+        git push
+    - name: Run ESLint check
+      shell: bash
+      run: |
+        pnpm -F @my-projects/cms-frontend run lint
+
+    # 테스트
+    - name: Run tests
+      shell: bash
+      run: pnpm -F @my-projects/cms-frontend run test
+
+    # 빌드 체크
+    - name: Check build
+      shell: bash
+      run: pnpm -F @my-projects/cms-frontend run build
