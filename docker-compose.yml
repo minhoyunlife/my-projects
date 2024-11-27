@@ -3,6 +3,10 @@ services:
     build:
       context: .
       dockerfile: docker/backend.Dockerfile
+      cache_from:
+        - type=local,src=.docker-cache/backend
+      cache_to:
+        - type=local,dest=.docker-cache/backend,mode=max
       args:
         GITHUB_TOKEN: ${GITHUB_TOKEN}
     depends_on:
@@ -43,6 +47,10 @@ services:
     build:
       context: .
       dockerfile: docker/cms-frontend.Dockerfile
+      cache_from:
+        - type=local,src=.docker-cache/cms-frontend
+      cache_to:
+        - type=local,dest=.docker-cache/cms-frontend,mode=max
       args:
         GITHUB_TOKEN: ${GITHUB_TOKEN}
     depends_on:
