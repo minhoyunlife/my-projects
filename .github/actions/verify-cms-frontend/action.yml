@@ -1,5 +1,5 @@
-name: Verify Backend
-description: Runs verification steps for backend package
+name: Verify CMS Frontend
+description: Runs verification steps for cms-frontend package
 inputs:
   packages-token:
     description: GitHub token for package registry
@@ -30,7 +30,7 @@ runs:
       id: format
       shell: bash
       run: |
-        pnpm -F @my-projects/backend run format
+        pnpm -F @my-projects/cms-frontend run format
         if [[ -n "$(git status -s)" ]]; then
           echo "formatted=true" >> $GITHUB_OUTPUT
         fi
@@ -46,17 +46,14 @@ runs:
     - name: Run ESLint check
       shell: bash
       run: |
-        pnpm -F @my-projects/backend run lint
+        pnpm -F @my-projects/cms-frontend run lint
 
     # 테스트
-    - name: Run tests without containers
+    - name: Run tests
       shell: bash
-      run: pnpm -F @my-projects/backend run test:no-deps
-    - name: Run tests with containers
-      shell: bash
-      run: pnpm -F @my-projects/backend run test:deps
+      run: pnpm -F @my-projects/cms-frontend run test
 
     # 빌드 체크
     - name: Check build
       shell: bash
-      run: pnpm -F @my-projects/backend run build
+      run: pnpm -F @my-projects/cms-frontend run build

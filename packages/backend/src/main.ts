@@ -14,5 +14,9 @@ import { AppModule } from '@/src/app.module';
 
   app.use(cookieParser());
 
+  app.enableCors({
+    origin: process.env.ADMIN_WEB_URL,
+  });
+
   await app.listen(configService.get('app').port);
 })();

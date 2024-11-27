@@ -6,5 +6,6 @@
     "start": "pnpm -r run start",
     "build": "pnpm -r run build",
     "test": "pnpm -r run test"
-  }
+  },
+  "packageManager": "pnpm@9.10.0"
 }
