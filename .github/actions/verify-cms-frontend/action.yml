@@ -1,7 +1,7 @@
 name: Verify CMS Frontend
 description: Runs verification steps for cms-frontend package
 inputs:
-  github-token:
+  packages-token:
     description: GitHub token for package registry
     required: true
 
@@ -12,17 +12,17 @@ runs:
     - name: Verify lockfile
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GITHUB_TOKEN: ${{ inputs.packages-token }}
       run: pnpm install --no-frozen-lockfile --lockfile-only
     - name: Check duplicate dependencies
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GITHUB_TOKEN: ${{ inputs.packages-token }}
       run: pnpm dedupe --check
     - name: Install dependencies
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GITHUB_TOKEN: ${{ inputs.packages-token }}
       run: pnpm install --frozen-lockfile
 
     # 코드 품질 관련 체크

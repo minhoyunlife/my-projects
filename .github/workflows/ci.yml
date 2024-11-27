@@ -66,5 +66,5 @@ jobs:
           uses: ./.github/actions/verify-${{ matrix.packages }}
           with: |
             {
-              "github-token": "${{ secrets.GITHUB_TOKEN }}"
+              "github-token": "${{ secrets.PACKAGES_TOKEN }}"
             }
