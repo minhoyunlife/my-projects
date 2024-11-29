@@ -16,6 +16,7 @@ import { AppModule } from '@/src/app.module';
 
   app.enableCors({
     origin: process.env.ADMIN_WEB_URL,
+    credentials: true,
   });
 
   await app.listen(configService.get('app').port);
