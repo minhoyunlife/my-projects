@@ -12,17 +12,17 @@ import { isApiError } from "@/src/lib/api/types";
 type UseAuth = {
   isLoading: boolean;
   is2FARequired: boolean;
-  handleGithubLogin: () => Promise<void>;
+  handleGithubLogin: () => void;
   handleGithubCallback: () => Promise<void>;
   verify2FA: (code: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
-const handleAuthError = async (
+const handleAuthError = (
   router: ReturnType<typeof useRouter>,
   redirectTo: string,
 ) => {
-  await router.push(redirectTo);
+  router.push(redirectTo);
 };
 
 const handleGitHubCallbackError = async (
@@ -30,12 +30,12 @@ const handleGitHubCallbackError = async (
   router: ReturnType<typeof useRouter>,
 ) => {
   if (!isApiError(error)) {
-    await handleAuthError(router, "/login?error=github_auth_failed");
+    handleAuthError(router, "/login?error=github_auth_failed");
     return;
   }
 
   // 콜백 처리에서는 403 밖에 없음
-  await handleAuthError(router, "/login?error=not_admin");
+  handleAuthError(router, "/login?error=not_admin");
 };
 
 const handle2FAError = async (
@@ -43,7 +43,7 @@ const handle2FAError = async (
   router: ReturnType<typeof useRouter>,
 ) => {
   if (!isApiError(error)) {
-    await handleAuthError(router, "/2fa?error=unknown");
+    handleAuthError(router, "/2fa?error=unknown");
     return;
   }
 
@@ -62,7 +62,7 @@ const handle2FAError = async (
       route = "/2fa?error=invalid_code";
   }
 
-  await handleAuthError(router, route);
+  handleAuthError(router, route);
 };
 
 /**
@@ -81,7 +81,7 @@ export function useAuth(): UseAuth {
   const [isLoading, setIsLoading] = useState(false);
   const [is2FARequired, setIs2FARequired] = useState(false);
 
-  const handleGithubLogin = useCallback(async () => {
+  const handleGithubLogin = useCallback(() => {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;
     window.location.href = `${baseUrl}/auth/github`;
   }, []);
