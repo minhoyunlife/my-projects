@@ -23,7 +23,7 @@ import {
 import { decrypt, encrypt } from '@/src/common/utils/encryption.util';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
 import { Totp } from '@/src/modules/auth/entities/totp.entity';
-import { Administrator as AdminUser } from '@/src/modules/auth/interfaces/Administrator.interface';
+import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 import { GithubProfile } from '@/src/modules/auth/interfaces/github-profile.interface';
 import { RefreshTokenPayload } from '@/src/modules/auth/interfaces/token.interface';
 
@@ -70,6 +70,7 @@ export class AuthService {
     return {
       email: administrator.email,
       isAdmin: true,
+      isTotpEnabled: administrator.isTotpEnabled,
     };
   }
 
@@ -203,7 +204,7 @@ export class AuthService {
   /**
    * 리프레시 토큰 검증 후 사용자 정보 반환
    */
-  async verifyRefreshToken(refreshToken: string): Promise<AdminUser> {
+  async verifyRefreshToken(refreshToken: string): Promise<Partial<AdminUser>> {
     let payload: RefreshTokenPayload;
 
     try {
@@ -234,7 +235,7 @@ export class AuthService {
   /**
    * TOTP 인증 전 임시 토큰 생성
    */
-  async createTempToken(user: AdminUser): Promise<string> {
+  async createTempToken(user: Partial<AdminUser>): Promise<string> {
     return this.jwtService.sign(
       {
         email: user.email,
@@ -251,7 +252,7 @@ export class AuthService {
   /**
    * TOTP 인증 성공 후 실제 액세스 토큰을 발급
    */
-  async createAccessToken(user: AdminUser): Promise<string> {
+  async createAccessToken(user: Partial<AdminUser>): Promise<string> {
     return this.jwtService.sign(
       {
         email: user.email,
@@ -268,7 +269,7 @@ export class AuthService {
   /**
    * 리프레시 토큰 발급
    */
-  async createRefreshToken(user: AdminUser): Promise<string> {
+  async createRefreshToken(user: Partial<AdminUser>): Promise<string> {
     return this.jwtService.sign(
       {
         email: user.email,

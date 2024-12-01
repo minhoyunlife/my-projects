@@ -9,7 +9,7 @@ import {
   InvalidTokenTypeException,
   TokenNotProvidedException,
 } from '@/src/common/exceptions/auth/token.exception';
-import { Administrator } from '@/src/modules/auth/interfaces/Administrator.interface';
+import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 import {
   AccessTokenPayload,
   TempTokenPayload,
@@ -51,7 +51,7 @@ abstract class TokenAuthGuard<T extends TokenPayload> implements CanActivate {
       request.user = {
         email: payload.email,
         isAdmin: payload.isAdmin,
-      } as Administrator;
+      } as AdminUser;
 
       return true;
     } catch (error) {

@@ -72,13 +72,13 @@ describeWithDeps('AuthController', () => {
 
   // NOTE: Github 인증 처리 과정이 복잡하므로 Supertest 를 사용하지 않고 컨트롤러 자체의 테스트로 수행
   describe('GET /auth/github/callback', () => {
-    it('인증 성공 후 임시 토큰과 함께 관리자 페이지로 리다이렉트됨', async () => {
-      const mockRequest = {
-        user: AdministratorsFactory.createTestData() as Administrator,
-      };
-      const mockResponse = {
-        redirect: vi.fn(),
-      };
+    it('초기 설정이 필요한 경우, 인증 성공 후 임시 토큰과 함께 2FA 설정 페이지로 리다이렉트됨', async () => {
+      const user = AdministratorsFactory.createTestData({
+        isTotpEnabled: false,
+      }) as Administrator;
+
+      const mockRequest = { user };
+      const mockResponse = { redirect: vi.fn() };
 
       await controller.githubAuthCallback(
         mockRequest as any,
@@ -89,7 +89,28 @@ describeWithDeps('AuthController', () => {
 
       const redirectUrl = new URL(mockResponse.redirect.mock.calls[0][0]);
       expect(redirectUrl.origin).toBe(configService.get('auth.adminWebUrl'));
-      expect(redirectUrl.pathname).toBe('/auth/2fa');
+      expect(redirectUrl.pathname).toBe('/2fa-setup');
+      expect(redirectUrl.searchParams.has('token')).toBe(true);
+    });
+
+    it('초기 설정이 불필요한 경우, 인증 성공 후 임시 토큰과 함께 2FA 인증 페이지로 리다이렉트됨', async () => {
+      const user = AdministratorsFactory.createTestData({
+        isTotpEnabled: true,
+      }) as Administrator;
+
+      const mockRequest = { user };
+      const mockResponse = { redirect: vi.fn() };
+
+      await controller.githubAuthCallback(
+        mockRequest as any,
+        mockResponse as any,
+      );
+
+      expect(mockResponse.redirect).toHaveBeenCalled();
+
+      const redirectUrl = new URL(mockResponse.redirect.mock.calls[0][0]);
+      expect(redirectUrl.origin).toBe(configService.get('auth.adminWebUrl'));
+      expect(redirectUrl.pathname).toBe('/2fa');
       expect(redirectUrl.searchParams.has('token')).toBe(true);
     });
   });

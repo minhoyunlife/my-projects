@@ -2,6 +2,7 @@ import { ConfigService } from '@nestjs/config';
 
 import { InvalidGithubProfileException } from '@/src/common/exceptions/auth/strategy.exception';
 import { AuthService } from '@/src/modules/auth/auth.service';
+import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 import { GithubProfile } from '@/src/modules/auth/interfaces/github-profile.interface';
 import { GithubStrategy } from '@/src/modules/auth/strategies/github.strategy';
 import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
@@ -49,7 +50,7 @@ describeWithoutDeps('GithubStrategy', () => {
       const expectedResult = {
         email: 'test@example.com',
         isAdmin: true,
-      };
+      } as AdminUser;
 
       vi.mocked(authService.validateAdminUser).mockResolvedValue(
         expectedResult,

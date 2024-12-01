@@ -74,7 +74,7 @@ describeWithDeps('AuthService', () => {
   });
 
   beforeEach(async () => {
-    await administratorRepo.save({ email });
+    await administratorRepo.save({ email, isTotpEnabled: false });
   });
 
   afterEach(async () => {
@@ -84,6 +84,8 @@ describeWithDeps('AuthService', () => {
 
   describe('validateAdminUser()', () => {
     it('등록된 관리자인 경우, 유저 정보를 반환함', async () => {
+      const administrator = await administratorRepo.findOneBy({ email });
+
       const profile = {
         emails: [{ value: email }],
       } as GithubProfile;
@@ -91,8 +93,9 @@ describeWithDeps('AuthService', () => {
       const result = await service.validateAdminUser(profile);
 
       expect(result).toEqual({
-        email,
+        email: administrator.email,
         isAdmin: true,
+        isTotpEnabled: administrator.isTotpEnabled,
       });
     });
 

@@ -30,7 +30,7 @@ import {
   BearerAuthGuard,
   TempAuthGuard,
 } from '@/src/modules/auth/guards/token.auth.guard';
-import { Administrator } from '@/src/modules/auth/interfaces/administrator.interface';
+import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -46,20 +46,25 @@ export class AuthController {
   @Get('github/callback')
   @UseGuards(GithubAuthGuard)
   async githubAuthCallback(
-    @Req() req: Request & { user: Administrator },
+    @Req() req: Request & { user: AdminUser },
     @Res() res: Response,
   ) {
     const tempToken = await this.authService.createTempToken(req.user);
-
+    const needToSetup2FA = !req.user.isTotpEnabled;
     const adminWebUrl = this.configService.get('auth.adminWebUrl');
-    return res.redirect(`${adminWebUrl}/auth/2fa?token=${tempToken}`);
+
+    return res.redirect(
+      needToSetup2FA
+        ? `${adminWebUrl}/2fa-setup?token=${tempToken}`
+        : `${adminWebUrl}/2fa?token=${tempToken}`,
+    );
   }
 
   @Post('2fa/setup')
   @UseGuards(TempAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   async setupTotp(
-    @Req() req: Request & { user: Administrator },
+    @Req() req: Request & { user: AdminUser },
   ): Promise<SetupTotpResponseDto> {
     return this.authService.setupTotp(req.user.email);
   }
@@ -68,7 +73,7 @@ export class AuthController {
   @UseGuards(TempAuthGuard)
   @HttpCode(HttpStatus.OK)
   async verifyTotp(
-    @Req() req: Request & { user: Administrator },
+    @Req() req: Request & { user: AdminUser },
     @Body() verifyTotpDto: VerifyTotpRequestDto,
     @Res() res: Response,
   ): Promise<void> {
@@ -96,7 +101,7 @@ export class AuthController {
   @UseGuards(TempAuthGuard)
   @HttpCode(HttpStatus.OK)
   async verifyBackupCode(
-    @Req() req: Request & { user: Administrator },
+    @Req() req: Request & { user: AdminUser },
     @Body() verifyBackupCodeDto: VerifyBackupCodeRequestDto,
     @Res() res: Response,
   ): Promise<void> {
@@ -119,7 +124,7 @@ export class AuthController {
   @Post('refresh')
   @UseGuards(CookieAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async refresh(@Req() req: Request & { user: Administrator }) {
+  async refresh(@Req() req: Request & { user: AdminUser }) {
     const accessToken = await this.authService.createAccessToken(req.user);
 
     return {

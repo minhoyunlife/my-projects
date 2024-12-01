@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 
 import { TokenNotProvidedException } from '@/src/common/exceptions/auth/token.exception';
 import { AuthService } from '@/src/modules/auth/auth.service';
-import { Administrator } from '@/src/modules/auth/interfaces/Administrator.interface';
+import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 
 @Injectable()
 export class CookieAuthGuard implements CanActivate {
@@ -17,7 +17,7 @@ export class CookieAuthGuard implements CanActivate {
     }
 
     const user = await this.authService.verifyRefreshToken(refreshToken);
-    request.user = user as Administrator;
+    request.user = user as AdminUser;
 
     return true;
   }
