@@ -1,12 +1,10 @@
 import { ExecutionContext } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JsonWebTokenError, JwtService } from '@nestjs/jwt';
 
 import { TokenType } from '@/src/common/enums/token-type.enum';
 import {
   InvalidTokenException,
-  InvalidTokenFormatException,
-  InvalidTokenTypeException,
-  TokenNotProvidedException,
+  JwtAuthFailedException,
 } from '@/src/common/exceptions/auth/token.exception';
 import {
   BearerAuthGuard,
@@ -82,7 +80,7 @@ describeWithoutDeps('TokenAuthGuard', () => {
       });
 
       await expect(guard.canActivate(context)).rejects.toThrowError(
-        TokenNotProvidedException,
+        InvalidTokenException,
       );
     });
 
@@ -92,7 +90,7 @@ describeWithoutDeps('TokenAuthGuard', () => {
       });
 
       await expect(guard.canActivate(context)).rejects.toThrowError(
-        InvalidTokenFormatException,
+        InvalidTokenException,
       );
     });
 
@@ -110,21 +108,21 @@ describeWithoutDeps('TokenAuthGuard', () => {
       vi.mocked(jwtService.verify).mockReturnValue(payload);
 
       await expect(guard.canActivate(context)).rejects.toThrowError(
-        InvalidTokenTypeException,
+        InvalidTokenException,
       );
     });
 
-    it('토큰이 유효하지 않은 경우, 에러가 발생함', async () => {
+    it('JWT 토큰 검증에 실패한 경우, 에러가 발생함', async () => {
       const context = createExecutionContext({
         headers: { authorization: 'Bearer invalid-token' },
       });
 
       vi.mocked(jwtService.verify).mockImplementation(() => {
-        throw new Error();
+        throw new JsonWebTokenError('jwt error');
       });
 
       await expect(guard.canActivate(context)).rejects.toThrowError(
-        InvalidTokenException,
+        JwtAuthFailedException,
       );
     });
   });
@@ -183,7 +181,7 @@ describeWithoutDeps('TokenAuthGuard', () => {
       });
 
       await expect(guard.canActivate(context)).rejects.toThrowError(
-        TokenNotProvidedException,
+        InvalidTokenException,
       );
     });
 
@@ -193,7 +191,7 @@ describeWithoutDeps('TokenAuthGuard', () => {
       });
 
       await expect(guard.canActivate(context)).rejects.toThrowError(
-        InvalidTokenFormatException,
+        InvalidTokenException,
       );
     });
 
@@ -211,21 +209,21 @@ describeWithoutDeps('TokenAuthGuard', () => {
       vi.mocked(jwtService.verify).mockReturnValue(payload);
 
       await expect(guard.canActivate(context)).rejects.toThrowError(
-        InvalidTokenTypeException,
+        InvalidTokenException,
       );
     });
 
-    it('토큰이 유효하지 않은 경우, 에러가 발생함', async () => {
+    it('JWT 토큰 검증에 실패한 경우, 에러가 발생함', async () => {
       const context = createExecutionContext({
         headers: { authorization: 'Bearer invalid-token' },
       });
 
       vi.mocked(jwtService.verify).mockImplementation(() => {
-        throw new Error();
+        throw new JsonWebTokenError('jwt error');
       });
 
       await expect(guard.canActivate(context)).rejects.toThrowError(
-        InvalidTokenException,
+        JwtAuthFailedException,
       );
     });
   });

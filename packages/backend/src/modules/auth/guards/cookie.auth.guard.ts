@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 
-import { TokenNotProvidedException } from '@/src/common/exceptions/auth/token.exception';
+import { RefreshTokenNotProvidedException } from '@/src/common/exceptions/auth/token.exception';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 
@@ -13,7 +13,7 @@ export class CookieAuthGuard implements CanActivate {
 
     const refreshToken = request.cookies.refreshToken;
     if (!refreshToken) {
-      throw new TokenNotProvidedException('Refresh token not provided');
+      throw new RefreshTokenNotProvidedException();
     }
 
     const user = await this.authService.verifyRefreshToken(refreshToken);

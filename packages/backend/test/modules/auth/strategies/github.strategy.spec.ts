@@ -21,19 +21,6 @@ describeWithoutDeps('GithubStrategy', () => {
             validateAdminUser: vi.fn(),
           },
         },
-        {
-          provide: ConfigService,
-          useValue: {
-            get: (key: string) => {
-              const config = {
-                'auth.clientId': 'dummy',
-                'auth.clientSecret': 'dummy',
-                'auth.callbackUrl': 'dummy',
-              };
-              return config[key];
-            },
-          },
-        },
       ],
     });
 

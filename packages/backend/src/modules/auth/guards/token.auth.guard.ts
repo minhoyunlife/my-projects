@@ -1,13 +1,11 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
+import { JsonWebTokenError, JwtService } from '@nestjs/jwt';
 
 import { TokenType } from '@/src/common/enums/token-type.enum';
 import {
   InvalidTokenException,
-  InvalidTokenFormatException,
-  InvalidTokenTypeException,
-  TokenNotProvidedException,
+  JwtAuthFailedException,
 } from '@/src/common/exceptions/auth/token.exception';
 import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 import {
@@ -30,22 +28,23 @@ abstract class TokenAuthGuard<T extends TokenPayload> implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
 
-    const authHeader = request.headers.authorization;
-    if (!authHeader) {
-      throw new TokenNotProvidedException();
-    }
-
-    const [type, token] = authHeader.split(' ');
-    if (type !== 'Bearer') {
-      throw new InvalidTokenFormatException();
-    }
-
     try {
+      const authHeader = request.headers.authorization;
+      if (!authHeader) {
+        throw new Error('Authorization headers not provided'); // 400
+      }
+
+      const [type, token] = authHeader.split(' ');
+      if (type !== 'Bearer') {
+        throw new Error('Invalid token format'); // 400
+      }
+
       const payload = this.jwtService.verify<T>(token, {
         secret: this.configService.get('auth.jwtSecret'),
       });
+
       if (payload.type !== this.tokenType) {
-        throw new InvalidTokenTypeException();
+        throw new Error('Invalid token type'); // 400
       }
 
       request.user = {
@@ -55,10 +54,10 @@ abstract class TokenAuthGuard<T extends TokenPayload> implements CanActivate {
 
       return true;
     } catch (error) {
-      if (error instanceof InvalidTokenTypeException) {
-        throw error;
+      if (error instanceof JsonWebTokenError) {
+        throw new JwtAuthFailedException(); // 401
       }
-      throw new InvalidTokenException();
+      throw new InvalidTokenException(); // 400
     }
   }
 }

@@ -1,6 +1,6 @@
 import { ExecutionContext } from '@nestjs/common';
 
-import { TokenNotProvidedException } from '@/src/common/exceptions/auth/token.exception';
+import { RefreshTokenNotProvidedException } from '@/src/common/exceptions/auth/token.exception';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { CookieAuthGuard } from '@/src/modules/auth/guards/cookie.auth.guard';
 import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
@@ -63,7 +63,7 @@ describeWithoutDeps('CookieAuthGuard', () => {
     const context = createExecutionContext({ cookies: {} });
 
     await expect(guard.canActivate(context)).rejects.toThrowError(
-      TokenNotProvidedException,
+      RefreshTokenNotProvidedException,
     );
   });
 });
