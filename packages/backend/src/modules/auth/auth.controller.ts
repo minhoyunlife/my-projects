@@ -145,7 +145,7 @@ export class AuthController {
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: this.configService.get('app.env') === Environment.PROD,
-      sameSite: 'none', // TODO: 프론트엔드 환경에 따라 수정 필요
+      sameSite: 'none',
       maxAge: this.authService.TOKEN_EXPIRY[TokenType.REFRESH] * 1000,
     });
   }

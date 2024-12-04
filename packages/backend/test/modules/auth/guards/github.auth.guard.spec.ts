@@ -2,7 +2,10 @@ import { ExecutionContext } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TestingModule } from '@nestjs/testing';
 
-import { NotAdminException } from '@/src/common/exceptions/auth/admin.exception';
+import {
+  GithubAuthErrorCode,
+  GithubAuthException,
+} from '@/src/common/exceptions/auth/github-auth.exception';
 import { GithubAuthGuard } from '@/src/modules/auth/guards/github.auth.guard';
 import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
 
@@ -42,7 +45,15 @@ describeWithoutDeps('GithubAuthGuard', () => {
     const context = createExecutionContext();
     const response = context.switchToHttp().getResponse();
 
-    guard.handleRequest(new NotAdminException(), null, null, context);
+    guard.handleRequest(
+      new GithubAuthException(
+        GithubAuthErrorCode.NOT_ADMIN,
+        'Email of payload is not admin',
+      ),
+      null,
+      null,
+      context,
+    );
 
     expect(response.redirect).toHaveBeenCalledWith(
       `${configService.get('auth.adminWebUrl')}/login?error=not_admin`,

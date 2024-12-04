@@ -4,7 +4,10 @@ import { PassportStrategy } from '@nestjs/passport';
 
 import { Strategy } from 'passport-github2';
 
-import { InvalidGithubProfileException } from '@/src/common/exceptions/auth/strategy.exception';
+import {
+  GithubAuthErrorCode,
+  GithubAuthException,
+} from '@/src/common/exceptions/auth/github-auth.exception';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { GithubProfile } from '@/src/modules/auth/interfaces/github-profile.interface';
 
@@ -24,7 +27,10 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
 
   async validate(_: string, __: string, profile: GithubProfile) {
     if (profile.emails?.length === 0) {
-      throw new InvalidGithubProfileException();
+      throw new GithubAuthException(
+        GithubAuthErrorCode.INVALID_PROFILE,
+        'Invalid Github profile',
+      );
     }
     return await this.authService.validateAdminUser(profile);
   }

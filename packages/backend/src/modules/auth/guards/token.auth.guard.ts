@@ -1,11 +1,11 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JsonWebTokenError, JwtService } from '@nestjs/jwt';
+import { JsonWebTokenError, JwtService, TokenExpiredError } from '@nestjs/jwt';
 
 import { TokenType } from '@/src/common/enums/token-type.enum';
 import {
-  InvalidTokenException,
-  JwtAuthFailedException,
+  TokenErrorCode,
+  TokenException,
 } from '@/src/common/exceptions/auth/token.exception';
 import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 import {
@@ -28,37 +28,50 @@ abstract class TokenAuthGuard<T extends TokenPayload> implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
 
+    const authHeader = request.headers.authorization;
+    if (!authHeader) {
+      throw new TokenException(
+        TokenErrorCode.NOT_PROVIDED,
+        'Authorization headers not provided',
+      );
+    }
+
+    const [type, token] = authHeader.split(' ');
+    if (type !== 'Bearer') {
+      throw new TokenException(
+        TokenErrorCode.INVALID_FORMAT,
+        'Invalid token format',
+        { type: [`Expected 'Bearer' but ${type} provided`] },
+      );
+    }
+
+    let payload: T;
+
     try {
-      const authHeader = request.headers.authorization;
-      if (!authHeader) {
-        throw new Error('Authorization headers not provided'); // 400
-      }
-
-      const [type, token] = authHeader.split(' ');
-      if (type !== 'Bearer') {
-        throw new Error('Invalid token format'); // 400
-      }
-
-      const payload = this.jwtService.verify<T>(token, {
+      payload = this.jwtService.verify<T>(token, {
         secret: this.configService.get('auth.jwtSecret'),
       });
-
-      if (payload.type !== this.tokenType) {
-        throw new Error('Invalid token type'); // 400
-      }
-
-      request.user = {
-        email: payload.email,
-        isAdmin: payload.isAdmin,
-      } as AdminUser;
-
-      return true;
     } catch (error) {
-      if (error instanceof JsonWebTokenError) {
-        throw new JwtAuthFailedException(); // 401
+      if (error instanceof TokenExpiredError) {
+        throw new TokenException(TokenErrorCode.EXPIRED, 'Token expired');
       }
-      throw new InvalidTokenException(); // 400
+      throw new TokenException(TokenErrorCode.INVALID_TOKEN, 'Invalid token');
     }
+
+    if (payload.type !== this.tokenType) {
+      throw new TokenException(
+        TokenErrorCode.INVALID_TYPE,
+        'Invalid token type',
+        { type: [`Expected ${this.tokenType} but ${payload.type} provided`] },
+      );
+    }
+
+    request.user = {
+      email: payload.email,
+      isAdmin: payload.isAdmin,
+    } as AdminUser;
+
+    return true;
   }
 }
 

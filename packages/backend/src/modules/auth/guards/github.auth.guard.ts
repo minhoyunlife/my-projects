@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from '@nestjs/passport';
 
-import { NotAdminException } from '@/src/common/exceptions/auth/admin.exception';
+import {
+  GithubAuthErrorCode,
+  GithubAuthException,
+} from '@/src/common/exceptions/auth/github-auth.exception';
 
 @Injectable()
 export class GithubAuthGuard extends AuthGuard('github') {
@@ -14,7 +17,10 @@ export class GithubAuthGuard extends AuthGuard('github') {
     const adminWebUrl = this.configService.get('auth.adminWebUrl');
     const response = context.switchToHttp().getResponse();
 
-    if (err instanceof NotAdminException) {
+    if (
+      err instanceof GithubAuthException &&
+      err.getCode() === GithubAuthErrorCode.NOT_ADMIN
+    ) {
       return response.redirect(`${adminWebUrl}/login?error=not_admin`);
     }
 

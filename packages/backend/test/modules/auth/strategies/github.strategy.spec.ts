@@ -1,6 +1,9 @@
-import { ConfigService } from '@nestjs/config';
+import { HttpStatus } from '@nestjs/common';
 
-import { InvalidGithubProfileException } from '@/src/common/exceptions/auth/strategy.exception';
+import {
+  GithubAuthErrorCode,
+  GithubAuthException,
+} from '@/src/common/exceptions/auth/github-auth.exception';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 import { GithubProfile } from '@/src/modules/auth/interfaces/github-profile.interface';
@@ -52,9 +55,13 @@ describeWithoutDeps('GithubStrategy', () => {
         emails: [],
       } as GithubProfile;
 
-      await expect(strategy.validate('', '', profile)).rejects.toThrowError(
-        InvalidGithubProfileException,
-      );
+      try {
+        await strategy.validate('', '', profile);
+      } catch (error) {
+        expect(error).toBeInstanceOf(GithubAuthException);
+        expect(error.getCode()).toBe(GithubAuthErrorCode.INVALID_PROFILE);
+        expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      }
     });
   });
 });

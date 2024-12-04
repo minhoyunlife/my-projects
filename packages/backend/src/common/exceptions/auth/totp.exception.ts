@@ -2,47 +2,28 @@ import { HttpStatus } from '@nestjs/common';
 
 import { BaseException } from '@/src/common/exceptions/base.exception';
 
-export class TotpSetupFailedException extends BaseException {
-  constructor(
-    message: string = 'TOTP setup failed',
-    status: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR,
-  ) {
-    super(message, status);
-  }
+export enum TotpErrorCode {
+  SETUP_FAILED = 'TOTP_SETUP_FAILED',
+  CODE_MALFORMED = 'TOTP_CODE_MALFORMED',
+  VERIFICATION_FAILED = 'TOTP_VERIFICATION_FAILED',
+  NOT_SETUP = 'TOTP_NOT_SETUP',
+  MAX_ATTEMPTS_EXCEEDED = 'TOTP_MAX_ATTEMPTS_EXCEEDED',
 }
 
-export class TotpVerificationFailedException extends BaseException {
-  constructor(
-    message: string = 'TOTP verification failed',
-    status: HttpStatus = HttpStatus.UNAUTHORIZED,
-  ) {
-    super(message, status);
-  }
-}
+export const TOTP_ERROR_STATUS_MAP: Record<TotpErrorCode, HttpStatus> = {
+  [TotpErrorCode.SETUP_FAILED]: HttpStatus.INTERNAL_SERVER_ERROR,
+  [TotpErrorCode.CODE_MALFORMED]: HttpStatus.BAD_REQUEST,
+  [TotpErrorCode.VERIFICATION_FAILED]: HttpStatus.UNAUTHORIZED,
+  [TotpErrorCode.NOT_SETUP]: HttpStatus.BAD_REQUEST,
+  [TotpErrorCode.MAX_ATTEMPTS_EXCEEDED]: HttpStatus.TOO_MANY_REQUESTS,
+};
 
-export class TotpAlreadySetupException extends BaseException {
+export class TotpException extends BaseException {
   constructor(
-    message: string = 'TOTP already setup',
-    status: HttpStatus = HttpStatus.CONFLICT,
+    code: TotpErrorCode,
+    message: string,
+    errors?: Record<string, string[]>,
   ) {
-    super(message, status);
-  }
-}
-
-export class TotpNotSetupException extends BaseException {
-  constructor(
-    message: string = 'TOTP not setup',
-    status: HttpStatus = HttpStatus.BAD_REQUEST,
-  ) {
-    super(message, status);
-  }
-}
-
-export class TotpMaxAttemptsExceededException extends BaseException {
-  constructor(
-    message: string = 'TOTP verification tries over max attempt',
-    status: HttpStatus = HttpStatus.TOO_MANY_REQUESTS,
-  ) {
-    super(message, status);
+    super({ message, code, errors: errors ?? {} }, TOTP_ERROR_STATUS_MAP[code]);
   }
 }

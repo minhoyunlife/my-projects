@@ -1,24 +1,24 @@
 import { randomBytes } from 'crypto';
 
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, TokenExpiredError } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { authenticator } from 'otplib';
 import { Repository } from 'typeorm';
 
 import { TokenType } from '@/src/common/enums/token-type.enum';
-import { NotAdminException } from '@/src/common/exceptions/auth/admin.exception';
 import {
-  InvalidTokenException,
-  InvalidTokenTypeException,
+  GithubAuthErrorCode,
+  GithubAuthException,
+} from '@/src/common/exceptions/auth/github-auth.exception';
+import {
+  TokenErrorCode,
+  TokenException,
 } from '@/src/common/exceptions/auth/token.exception';
 import {
-  TotpAlreadySetupException,
-  TotpMaxAttemptsExceededException,
-  TotpNotSetupException,
-  TotpSetupFailedException,
-  TotpVerificationFailedException,
+  TotpErrorCode,
+  TotpException,
 } from '@/src/common/exceptions/auth/totp.exception';
 import { decrypt, encrypt } from '@/src/common/utils/encryption.util';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
@@ -30,12 +30,12 @@ import { RefreshTokenPayload } from '@/src/modules/auth/interfaces/token.interfa
 export class AuthService {
   private readonly BACKUP_CODES_COUNT = 8;
   private readonly TOTP_ISSUER = 'My Projects Admin'; // TOTP 앱에 표시될 서비스명
-  private readonly TOTP_RESET_INTERVAL = 15 * 60 * 1000; // TOTP 인증 시도 실패의 초기화 간격(마지막 실패 후 이 시간이 지나면 리셋)
+  private readonly TOTP_RESET_INTERVAL = 5 * 60 * 1000; // TOTP 인증 시도 실패의 초기화 간격(마지막 실패 후 이 시간이 지나면 리셋)
   private readonly MAX_TOTP_ATTEMPTS = 5; // TOTP 인증 시도 실패 횟수 최대치(백업 코드 인증 시도 실패도 이 횟수에 포함)
 
   // 토큰 만료 시간(초 단위)
   public readonly TOKEN_EXPIRY = {
-    [TokenType.TEMPORARY]: 5 * 60, // 5분
+    [TokenType.TEMPORARY]: 10 * 60, // 5분
     [TokenType.ACCESS]: 15 * 60, // 15분
     [TokenType.REFRESH]: 7 * 24 * 60 * 60, // 7일
   } as const;
@@ -64,7 +64,10 @@ export class AuthService {
       email: profileEmail,
     });
     if (!administrator) {
-      throw new NotAdminException();
+      throw new GithubAuthException(
+        GithubAuthErrorCode.NOT_ADMIN,
+        'Profile is not admin',
+      );
     }
 
     return {
@@ -82,11 +85,6 @@ export class AuthService {
     manualEntryKey: string;
     setupToken: string;
   }> {
-    const totp = await this.totpRepository.findOneBy({ adminEmail: email });
-    if (totp) {
-      throw new TotpAlreadySetupException();
-    }
-
     try {
       const secret = authenticator.generateSecret();
       const manualEntryKey = secret.replace(/(.{4})/g, '$1 ').trim();
@@ -108,6 +106,9 @@ export class AuthService {
         adminEmail: email,
         encryptedSecret: encryptedSecret,
         backupCodes: encryptedBackupCodes,
+        administrator: await this.administratorRepository.findOneBy({
+          email,
+        }),
       });
 
       const setupToken = await this.createTempToken({
@@ -121,7 +122,7 @@ export class AuthService {
         setupToken,
       };
     } catch (error) {
-      throw new TotpSetupFailedException();
+      throw new TotpException(TotpErrorCode.SETUP_FAILED, 'TOTP setup failed');
     }
   }
 
@@ -131,7 +132,7 @@ export class AuthService {
   async getBackupCodes(email: string): Promise<string[]> {
     const totp = await this.totpRepository.findOneBy({ adminEmail: email });
     if (!totp) {
-      throw new TotpNotSetupException();
+      throw new TotpException(TotpErrorCode.NOT_SETUP, 'TOTP does not exist');
     }
 
     return totp.backupCodes.map((code) =>
@@ -143,9 +144,14 @@ export class AuthService {
    * TOTP 코드에 의한 인증
    */
   async verifyTotpCode(email: string, code: string): Promise<void> {
-    const totp = await this.totpRepository.findOneBy({ adminEmail: email });
+    const totp = await this.totpRepository.findOne({
+      where: { adminEmail: email },
+      relations: {
+        administrator: true,
+      },
+    });
     if (!totp) {
-      throw new TotpNotSetupException();
+      throw new TotpException(TotpErrorCode.NOT_SETUP, 'TOTP does not exist');
     }
 
     const decryptedSecret = decrypt(
@@ -161,15 +167,24 @@ export class AuthService {
       });
     } catch (error) {
       await this.recordFailedAttempt(totp);
-      throw new TotpVerificationFailedException();
+      throw new TotpException(
+        TotpErrorCode.CODE_MALFORMED,
+        'Provided code is malformed',
+      );
     }
 
-    if (!isValid) {
+    if (isValid) {
+      totp.administrator.isTotpEnabled = true;
+      await this.administratorRepository.save(totp.administrator);
+
+      await this.resetFailedAttempt(totp);
+    } else {
       await this.recordFailedAttempt(totp);
-      throw new TotpVerificationFailedException();
+      throw new TotpException(
+        TotpErrorCode.VERIFICATION_FAILED,
+        'TOTP verification failed',
+      );
     }
-
-    await this.resetFailedAttempt(totp);
   }
 
   /**
@@ -178,7 +193,7 @@ export class AuthService {
   async verifyBackupCode(email: string, code: string): Promise<void> {
     const totp = await this.totpRepository.findOneBy({ adminEmail: email });
     if (!totp) {
-      throw new TotpNotSetupException();
+      throw new TotpException(TotpErrorCode.NOT_SETUP, 'TOTP does not exist');
     }
 
     const isVerified = totp.backupCodes.some((encryptedCode) => {
@@ -195,7 +210,10 @@ export class AuthService {
 
     if (!isVerified) {
       await this.recordFailedAttempt(totp);
-      throw new TotpVerificationFailedException();
+      throw new TotpException(
+        TotpErrorCode.VERIFICATION_FAILED,
+        'TOTP verification failed',
+      );
     }
 
     await this.resetFailedAttempt(totp);
@@ -212,18 +230,27 @@ export class AuthService {
         secret: this.configService.get('auth.jwtSecret'),
       });
     } catch (error) {
-      throw new InvalidTokenException();
+      if (error instanceof TokenExpiredError) {
+        throw new TokenException(TokenErrorCode.EXPIRED, 'Token expired');
+      }
+      throw new TokenException(TokenErrorCode.INVALID_TOKEN, 'Invalid token');
     }
 
     if (payload.type !== TokenType.REFRESH) {
-      throw new InvalidTokenTypeException();
+      throw new TokenException(
+        TokenErrorCode.INVALID_TYPE,
+        'Invalid token type',
+      );
     }
 
     const administrator = await this.administratorRepository.findOneBy({
       email: payload.email,
     });
     if (!administrator) {
-      throw new NotAdminException();
+      throw new GithubAuthException(
+        GithubAuthErrorCode.NOT_ADMIN,
+        'Email of payload is not admin',
+      );
     }
 
     return {
@@ -313,7 +340,10 @@ export class AuthService {
     // 최대 시도 횟수 체크
     const { failedAttempts } = result.raw[0];
     if (failedAttempts > this.MAX_TOTP_ATTEMPTS) {
-      throw new TotpMaxAttemptsExceededException();
+      throw new TotpException(
+        TotpErrorCode.MAX_ATTEMPTS_EXCEEDED,
+        'TOTP max attempts exceeded',
+      );
     }
   }
 
