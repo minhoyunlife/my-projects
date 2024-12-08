@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
-import QueryProvider from "@/src/components/query-provider";
-
+import QueryProvider from "@/src/components/providers/query-provider";
+import { Toaster } from "@/src/components/ui/toaster";
 import "@/src/app/globals.css";
 
 export const metadata: Metadata = {
@@ -27,9 +27,8 @@ export default function RootLayout({
     <html lang="ko">
       <body className="min-h-screen bg-background antialiased">
         <QueryProvider>
-          <main className="relative flex min-h-screen flex-col">
-            {children}
-          </main>
+          {children}
+          <Toaster />
         </QueryProvider>
       </body>
     </html>
