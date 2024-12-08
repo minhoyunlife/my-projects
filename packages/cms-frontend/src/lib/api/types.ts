@@ -3,6 +3,7 @@ export interface ApiError {
     status?: number;
     data?: {
       message: string;
+      code: string;
       errors?: { [key: string]: Array<string> };
     };
   };

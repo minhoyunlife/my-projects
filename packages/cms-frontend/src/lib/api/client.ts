@@ -3,22 +3,28 @@ import {
   ArtworksApi,
   AuthApi,
 } from "@minhoyunlife/my-ts-client";
+import axios from "axios";
 
-let accessToken: string | null = null;
+import { useAuthStore } from "@/src/store/auth";
+
+const apiClient = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
+});
+
+apiClient.interceptors.request.use((config) => {
+  const { accessToken, tempToken } = useAuthStore.getState();
+
+  const token = accessToken || tempToken;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 const configuration = new Configuration({
   basePath: process.env.NEXT_PUBLIC_API_URL,
-  accessToken: () => accessToken ?? "",
 });
 
-export const setAccessToken = (token: string) => {
-  accessToken = token;
-};
+export const authApi = new AuthApi(configuration, "", apiClient);
 
-export const clearAccessToken = () => {
-  accessToken = null;
-};
-
-export const artworksApi = new ArtworksApi(configuration);
-
-export const authApi = new AuthApi(configuration);
+export const artworksApi = new ArtworksApi(configuration, "", apiClient);
