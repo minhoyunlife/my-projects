@@ -180,8 +180,8 @@ importers:
         specifier: ^10.2.0
         version: 10.2.0(react@18.2.0)
       '@minhoyunlife/my-ts-client':
-        specifier: 1.2.8
-        version: 1.2.8
+        specifier: 1.2.9
+        version: 1.2.9
       '@radix-ui/react-slot':
         specifier: ^1.1.0
         version: 1.1.0(@types/react@18.3.12)(react@18.2.0)
@@ -191,6 +191,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.61.3
         version: 5.61.3(react@18.2.0)
+      axios:
+        specifier: ^1.7.8
+        version: 1.7.8
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -206,6 +209,9 @@ importers:
       next:
         specifier: 15.0.3
         version: 15.0.3(@babel/core@7.26.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      qrcode.react:
+        specifier: ^4.1.0
+        version: 4.1.0(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -218,6 +224,9 @@ importers:
       tailwindcss-animate:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@3.4.15(ts-node@10.9.2(@swc/core@1.7.35(@swc/helpers@0.5.13))(@types/node@20.17.8)(typescript@5.6.3)))
+      zustand:
+        specifier: ^5.0.1
+        version: 5.0.1(@types/react@18.3.12)(react@18.2.0)
     devDependencies:
       '@testing-library/jest-dom':
         specifier: ^6.6.3
@@ -948,8 +957,8 @@ packages:
     resolution: {integrity: sha512-Z7C/xXCiGWsg0KuKsHTKJxbWhpI3Vs5GwLfOean7MGyVFGqdRgBbAjOCh6u4bbjPc/8MJ2pZmK/0DLdCbivLDA==}
     engines: {node: '>=8'}
 
-  '@minhoyunlife/my-ts-client@1.2.8':
-    resolution: {integrity: sha512-GlzTgot7IuwOICLwkwbdPyPMUcI6H7txQoYWBJ2x1krYiDjIgZF086BB65FxSuqHi8a09YEEXozml0XKlPSbOQ==, tarball: https://npm.pkg.github.com/download/@minhoyunlife/my-ts-client/1.2.8/877e7dcd5d5517d7fe890694dcc7c8a4ad32ad5e}
+  '@minhoyunlife/my-ts-client@1.2.9':
+    resolution: {integrity: sha512-ost1oH34CtLMsXNYj6SW9Ic7KDzjuM1WE4737nVDcmU0VlC3v14OhnUNVpmtvVCVk1Zg+QibH7ktyMynFWzgqQ==, tarball: https://npm.pkg.github.com/download/@minhoyunlife/my-ts-client/1.2.9/de57f0ea6c0be132bf19e3f06dd73f58a35a156f}
 
   '@mole-inc/bin-wrapper@8.0.1':
     resolution: {integrity: sha512-sTGoeZnjI8N4KS+sW2AN95gDBErhAguvkw/tWdCjeM8bvxpz5lqrnd0vOJABA1A+Ic3zED7PYoLP/RANLgVotA==}
@@ -4334,6 +4343,11 @@ packages:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
 
+  qrcode.react@4.1.0:
+    resolution: {integrity: sha512-uqXVIIVD/IPgWLYxbOczCNAQw80XCM/LulYDADF+g2xDsPj5OoRwSWtIS4jGyp295wyjKstfG1qIv/I2/rNWpQ==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+
   qs@6.13.0:
     resolution: {integrity: sha512-+38qI9SOr8tfZ4QmJNplMUxqjbe7LKvvZgWdExBOmd+egZTtjLB67Gu0HRX3u/XOq7UU2Nx6nsjvS16Z9uwfpg==}
     engines: {node: '>=0.6'}
@@ -5345,6 +5359,24 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
+  zustand@5.0.1:
+    resolution: {integrity: sha512-pRET7Lao2z+n5R/HduXMio35TncTlSW68WsYBq2Lg1ASspsNGjpwLAsij3RpouyV6+kHMwwwzP0bZPD70/Jx/w==}
+    engines: {node: '>=12.20.0'}
+    peerDependencies:
+      '@types/react': '>=18.0.0'
+      immer: '>=9.0.6'
+      react: '>=18.0.0'
+      use-sync-external-store: '>=1.2.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      immer:
+        optional: true
+      react:
+        optional: true
+      use-sync-external-store:
+        optional: true
+
 snapshots:
 
   '@adobe/css-tools@4.4.1': {}
@@ -6306,7 +6338,7 @@ snapshots:
 
   '@lukeed/csprng@1.1.0': {}
 
-  '@minhoyunlife/my-ts-client@1.2.8':
+  '@minhoyunlife/my-ts-client@1.2.9':
     dependencies:
       axios: 1.7.8
     transitivePeerDependencies:
@@ -9972,6 +10004,10 @@ snapshots:
 
   punycode@2.3.1: {}
 
+  qrcode.react@4.1.0(react@18.2.0):
+    dependencies:
+      react: 18.2.0
+
   qs@6.13.0:
     dependencies:
       side-channel: 1.0.6
@@ -11168,3 +11204,8 @@ snapshots:
   yn@3.1.1: {}
 
   yocto-queue@0.1.0: {}
+
+  zustand@5.0.1(@types/react@18.3.12)(react@18.2.0):
+    optionalDependencies:
+      '@types/react': 18.3.12
+      react: 18.2.0
