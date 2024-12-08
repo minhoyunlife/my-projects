@@ -1,4 +1,4 @@
-import { cn } from "@/src/lib/utils";
+import { cn } from "@/src/lib/utils/tailwindcss/utils";
 
 export function Logo({ className }: { className?: string }) {
   return (

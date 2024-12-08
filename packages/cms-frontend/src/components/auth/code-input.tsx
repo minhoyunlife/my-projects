@@ -1,7 +1,8 @@
 "use client";
 
-import { Input } from "@/src/components/ui/input";
 import { useRef, useState } from "react";
+
+import { Input } from "@/src/components/ui/input";
 
 interface CodeInputProps {
   length: number;
@@ -19,13 +20,14 @@ export function CodeInput({
 
   // 입력 값 변경 핸들러
   const handleChange = (index: number, value: string) => {
-    if (value && !validateChar(value)) return;
+    const upperCaseValue = value.toUpperCase();
+    if (upperCaseValue && !validateChar(upperCaseValue)) return;
 
     const newCode = [...code];
-    newCode[index] = value;
+    newCode[index] = upperCaseValue;
     setCode(newCode);
 
-    if (value && index < length - 1) {
+    if (upperCaseValue && index < length - 1) {
       inputRefs.current[index + 1]?.focus();
     }
 
@@ -50,22 +52,27 @@ export function CodeInput({
     event.preventDefault();
 
     const pastedData = event.clipboardData.getData("text").slice(0, length);
-    if (![...pastedData].every((char) => validateChar(char))) return;
+    const upperCasePastedData = pastedData.toUpperCase();
+    if (![...upperCasePastedData].every((char) => validateChar(char))) return;
 
     const newCode = [...code];
-    pastedData.split("").forEach((char, index) => {
+    upperCasePastedData.split("").forEach((char, index) => {
       newCode[index] = char;
     });
     setCode(newCode);
 
-    if (pastedData.length === length) {
+    if (upperCasePastedData.length === length) {
       inputRefs.current[length - 1]?.focus();
-      onComplete(pastedData);
+      onComplete(upperCasePastedData);
     }
   };
 
   return (
-    <div className="flex justify-between">
+    <div
+      className="w-full flex justify-between"
+      role="group"
+      aria-label="code-input"
+    >
       {code.map((char, index) => (
         <Input
           key={index}
@@ -76,8 +83,9 @@ export function CodeInput({
           maxLength={1}
           value={char}
           className={
-            "w-10 h-10 sm:w-12 sm:h-12 text-center text-base sm:text-lg [&>*:not(:last-child)]:mr-1.5 sm:[&>*:not(:last-child)]:mr-2"
+            "w-8 h-8 sm:w-12 sm:h-12 text-center text-base sm:text-lg [&>*:not(:last-child)]:mr-1.5 sm:[&>*:not(:last-child)]:mr-2"
           }
+          aria-label={`code-input-${index + 1}`}
           onChange={(e) => handleChange(index, e.target.value)}
           onKeyDown={(e) => handleKeyDown(index, e)}
           onPaste={handlePaste}

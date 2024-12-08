@@ -1,11 +1,12 @@
 "use client";
 
 import * as React from "react";
+
 import * as ToastPrimitives from "@radix-ui/react-toast";
 import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";
 
-import { cn } from "@/src/lib/utils";
+import { cn } from "@/src/lib/utils/tailwindcss/utils";
 
 const ToastProvider = ToastPrimitives.Provider;
 
@@ -49,6 +50,8 @@ const Toast = React.forwardRef<
     <ToastPrimitives.Root
       ref={ref}
       className={cn(toastVariants({ variant }), className)}
+      role="alert"
+      aria-live={variant === "destructive" ? "assertive" : "polite"}
       {...props}
     />
   );
