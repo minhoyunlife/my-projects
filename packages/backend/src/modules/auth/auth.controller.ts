@@ -145,7 +145,8 @@ export class AuthController {
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: this.configService.get('app.env') === Environment.PROD,
-      sameSite: 'none',
+      sameSite:
+        this.configService.get('app.env') === Environment.PROD ? 'none' : 'lax',
       maxAge: this.authService.TOKEN_EXPIRY[TokenType.REFRESH] * 1000,
     });
   }
@@ -154,7 +155,8 @@ export class AuthController {
     res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: this.configService.get('app.env') === Environment.PROD,
-      sameSite: 'none',
+      sameSite:
+        this.configService.get('app.env') === Environment.PROD ? 'none' : 'lax',
     });
   }
 }
