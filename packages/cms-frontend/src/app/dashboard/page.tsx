@@ -1,12 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-
 import { Button } from "@/src/components/ui/button";
 import { useAuth } from "@/src/hooks/use-auth";
 
 export default function DashboardPage() {
-  const router = useRouter();
   const { logout } = useAuth();
 
   return (

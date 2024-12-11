@@ -68,7 +68,7 @@ export default function TwoFactorAuthPage() {
   if (!token) return null;
 
   const handleCodeComplete = (code: string) => {
-    verify2FA(token, code);
+    verify2FA(token, code, mode);
   };
 
   return (

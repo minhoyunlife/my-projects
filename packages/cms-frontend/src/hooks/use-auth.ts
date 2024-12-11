@@ -50,6 +50,7 @@ export function useAuth() {
     }: {
       token: string | null;
       code: string;
+      mode: string | null;
     }) => {
       if (token) {
         setTempToken(token);
@@ -74,7 +75,7 @@ export function useAuth() {
         router.replace(ROUTES.DASHBOARD);
       }
     },
-    onError: (error) => {
+    onError: (error, variables) => {
       if (!isApiError(error) || !error.response?.data?.code) {
         handleAuthError(error, router, {
           path: ROUTES.LOGIN,
@@ -92,7 +93,7 @@ export function useAuth() {
               path: "",
               params: {
                 token: useAuthStore.getState().tempToken,
-                mode: new URLSearchParams(window.location.search).get("mode"),
+                mode: variables.mode,
                 error: "totp_verification_failed",
               },
             } // 파라미터만 넘겨주고 실제 라우팅 경로 해석은 handleAuthError 에서 처리
@@ -158,8 +159,8 @@ export function useAuth() {
     loginByGithub,
     setup2FA: () => setup2FAMutation.mutateAsync(),
     isSettingUp2FA: setup2FAMutation.isPending,
-    verify2FA: (token: string | null, code: string) =>
-      verify2FAMutation.mutate({ token, code }),
+    verify2FA: (token: string | null, code: string, mode: string | null) =>
+      verify2FAMutation.mutate({ token, code, mode }),
     isVerifying2FA: verify2FAMutation.isPending,
     verifyBackupCode: (code: string) =>
       verifyBackupCodeMutation.mutate({ code }),
