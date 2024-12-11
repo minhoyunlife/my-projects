@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { devtools } from "zustand/middleware";
+import { persist, devtools, createJSONStorage } from "zustand/middleware";
 
 interface AuthState {
   tempToken: string | undefined;
@@ -17,29 +17,38 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>()(
-  devtools(
-    (set) => ({
-      tempToken: undefined,
-      setupToken: undefined,
-      backupCodes: undefined,
-      accessToken: undefined,
-      setTempToken: (token) =>
-        set({ tempToken: token }, false, "auth/setTempToken"),
-      clearTempToken: () =>
-        set({ tempToken: undefined }, false, "auth/clearTempToken"),
-      setSetupToken: (token) =>
-        set({ setupToken: token }, false, "auth/setSetupToken"),
-      clearSetupToken: () =>
-        set({ setupToken: undefined }, false, "auth/clearSetupToken"),
-      setBackupCodes: (codes) =>
-        set({ backupCodes: codes }, false, "auth/setBackupCodes"),
-      clearBackupCodes: () =>
-        set({ backupCodes: undefined }, false, "auth/clearBackupCodes"),
-      setAccessToken: (token) =>
-        set({ accessToken: token }, false, "auth/setAccessToken"),
-      clearAccessToken: () =>
-        set({ accessToken: undefined }, false, "auth/clearAccessToken"),
-    }),
-    { name: "Auth Store" },
+  persist(
+    devtools(
+      (set) => ({
+        tempToken: undefined,
+        setupToken: undefined,
+        backupCodes: undefined,
+        accessToken: undefined,
+        setTempToken: (token) =>
+          set({ tempToken: token }, false, "auth/setTempToken"),
+        clearTempToken: () =>
+          set({ tempToken: undefined }, false, "auth/clearTempToken"),
+        setSetupToken: (token) =>
+          set({ setupToken: token }, false, "auth/setSetupToken"),
+        clearSetupToken: () =>
+          set({ setupToken: undefined }, false, "auth/clearSetupToken"),
+        setBackupCodes: (codes) =>
+          set({ backupCodes: codes }, false, "auth/setBackupCodes"),
+        clearBackupCodes: () =>
+          set({ backupCodes: undefined }, false, "auth/clearBackupCodes"),
+        setAccessToken: (token) =>
+          set({ accessToken: token }, false, "auth/setAccessToken"),
+        clearAccessToken: () =>
+          set({ accessToken: undefined }, false, "auth/clearAccessToken"),
+      }),
+      { name: "Auth Store" },
+    ),
+    {
+      name: "auth-store",
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        setupToken: state.setupToken,
+      }),
+    },
   ),
 );

@@ -86,6 +86,19 @@ export class AuthController {
     const refreshToken = await this.authService.createRefreshToken(req.user);
     this.setRefreshTokenCookie(res, refreshToken);
 
+    // 초기 설정인 경우에만 백업 코드 표시용 쿠키 설정
+    if (isInitialSetup) {
+      res.cookie('show', 'true', {
+        httpOnly: true,
+        maxAge: 30000, // 30초
+        sameSite:
+          this.configService.get('app.env') === Environment.PROD
+            ? 'none'
+            : 'lax',
+        secure: this.configService.get('app.env') === Environment.PROD,
+      });
+    }
+
     const response: Verify2faResponseDto = {
       accessToken,
       expiresIn: this.authService.TOKEN_EXPIRY[TokenType.ACCESS],
@@ -134,7 +147,7 @@ export class AuthController {
   }
 
   @Post('logout')
-  @UseGuards(BearerAuthGuard, CookieAuthGuard)
+  @UseGuards(CookieAuthGuard)
   @HttpCode(HttpStatus.OK)
   async logout(@Res() res: Response): Promise<void> {
     this.clearRefreshTokenCookie(res);
