@@ -9,13 +9,15 @@ import { CodeInput } from "@/src/components/auth/code-input";
 import { Spinner } from "@/src/components/ui/spinner";
 import { isAuthErrorCode } from "@/src/constants/errors/auth/code";
 import { getErrorMessage } from "@/src/constants/errors/auth/messages";
+import { ROUTES } from "@/src/constants/routes";
 import { useAuth } from "@/src/hooks/use-auth";
-import { usePreventBack } from "@/src/hooks/use-prevent-back";
-import { toast } from "@/src/hooks/use-toast";
+import { useToast } from "@/src/hooks/use-toast";
 import { useAuthStore } from "@/src/store/auth";
 
 export default function BackupVerifyPage() {
   const router = useRouter();
+  const { toast } = useToast();
+
   const { isVerifyingBackup, verifyBackupCode } = useAuth();
   const { setTempToken } = useAuthStore();
 
@@ -23,21 +25,18 @@ export default function BackupVerifyPage() {
   const token = searchParams.get("token");
   const error = searchParams.get("error");
 
-  // 뒤로가기 방지
-  usePreventBack();
-
   // 파라미터 체크 및 설정
   useEffect(() => {
     // 토큰 파라미터 체크
     if (!token) {
-      router.replace("/login");
+      router.replace(ROUTES.LOGIN);
       return;
     }
 
     // 상태 관리 중인 토큰과 파라미터 토큰이 동일한지 체크
     const { tempToken } = useAuthStore.getState();
     if (tempToken && tempToken !== token) {
-      router.replace("/login");
+      router.replace(ROUTES.LOGIN);
       return;
     }
 
@@ -90,7 +89,7 @@ export default function BackupVerifyPage() {
             </p>
           </div>
           <Link
-            href={`/2fa?token=${token}`}
+            href={`${ROUTES.TWO_FACTOR_VERIFICATION}?token=${token}`}
             className="block text-center text-sm text-primary hover:underline underline-offset-4 mt-4"
           >
             TOTP 코드로 인증하기

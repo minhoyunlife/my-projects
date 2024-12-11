@@ -4,14 +4,12 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/src/components/ui/button";
 import { Card } from "@/src/components/ui/card";
-import { usePreventBack } from "@/src/hooks/use-prevent-back";
+import { ROUTES } from "@/src/constants/routes";
 import { useAuthStore } from "@/src/store/auth";
 
 export default function BackupCodesPage() {
   const router = useRouter();
   const { backupCodes, clearBackupCodes } = useAuthStore();
-
-  usePreventBack();
 
   if (!backupCodes) return null;
 
@@ -32,7 +30,7 @@ export default function BackupCodesPage() {
   const handleConfirm = () => {
     clearBackupCodes();
 
-    router.push("/dashboard");
+    router.replace(ROUTES.DASHBOARD);
   };
 
   return (

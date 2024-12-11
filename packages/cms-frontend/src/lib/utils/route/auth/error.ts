@@ -1,6 +1,7 @@
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 import { AuthErrorCode } from "@/src/constants/errors/auth/code";
+import { ROUTES } from "@/src/constants/routes";
 import { isApiError } from "@/src/lib/api/types";
 import { createUrl } from "@/src/lib/utils/route/base";
 
@@ -17,55 +18,55 @@ export type AuthRoute = {
 export const ERROR_ROUTES_TO_LOGIN: Partial<Record<AuthErrorCode, AuthRoute>> =
   {
     [AuthErrorCode.TOKEN_NOT_PROVIDED]: {
-      path: "/login",
+      path: ROUTES.LOGIN,
       params: {
         error: AuthErrorCode.TOKEN_NOT_PROVIDED.toLowerCase(),
       },
     },
     [AuthErrorCode.INVALID_TOKEN]: {
-      path: "/login",
+      path: ROUTES.LOGIN,
       params: {
         error: AuthErrorCode.INVALID_TOKEN.toLowerCase(),
       },
     },
     [AuthErrorCode.TOKEN_EXPIRED]: {
-      path: "/login",
+      path: ROUTES.LOGIN,
       params: {
         error: AuthErrorCode.TOKEN_EXPIRED.toLowerCase(),
       },
     },
     [AuthErrorCode.INVALID_TOKEN_FORMAT]: {
-      path: "/login",
+      path: ROUTES.LOGIN,
       params: {
         error: AuthErrorCode.INVALID_TOKEN_FORMAT.toLowerCase(),
       },
     },
     [AuthErrorCode.INVALID_TOKEN_TYPE]: {
-      path: "/login",
+      path: ROUTES.LOGIN,
       params: {
         error: AuthErrorCode.INVALID_TOKEN_TYPE.toLowerCase(),
       },
     },
     [AuthErrorCode.TOTP_NOT_SETUP]: {
-      path: "/login",
+      path: ROUTES.LOGIN,
       params: {
         error: AuthErrorCode.TOTP_NOT_SETUP.toLowerCase(),
       },
     },
     [AuthErrorCode.TOTP_SETUP_FAILED]: {
-      path: "/login",
+      path: ROUTES.LOGIN,
       params: {
         error: AuthErrorCode.TOTP_SETUP_FAILED.toLowerCase(),
       },
     },
     [AuthErrorCode.NOT_ADMIN]: {
-      path: "/login",
+      path: ROUTES.LOGIN,
       params: {
         error: AuthErrorCode.NOT_ADMIN.toLowerCase(),
       },
     },
     [AuthErrorCode.UNKNOWN]: {
-      path: "/login",
+      path: ROUTES.LOGIN,
       params: {
         error: AuthErrorCode.UNKNOWN.toLowerCase(),
       },
@@ -74,19 +75,19 @@ export const ERROR_ROUTES_TO_LOGIN: Partial<Record<AuthErrorCode, AuthRoute>> =
 
 export const ERROR_ROUTES_TO_2FA: Partial<Record<AuthErrorCode, AuthRoute>> = {
   [AuthErrorCode.TOTP_VERIFICATION_FAILED]: {
-    path: "/2fa",
+    path: ROUTES.TWO_FACTOR_VERIFICATION,
     params: {
       error: AuthErrorCode.TOTP_VERIFICATION_FAILED.toLowerCase(),
     },
   },
   [AuthErrorCode.TOTP_MAX_ATTEMPTS_EXCEEDED]: {
-    path: "/2fa",
+    path: ROUTES.TWO_FACTOR_VERIFICATION,
     params: {
       error: AuthErrorCode.TOTP_MAX_ATTEMPTS_EXCEEDED.toLowerCase(),
     },
   },
   [AuthErrorCode.TOTP_CODE_MALFORMED]: {
-    path: "/2fa",
+    path: ROUTES.TWO_FACTOR_VERIFICATION,
     params: {
       error: AuthErrorCode.TOTP_CODE_MALFORMED.toLowerCase(),
     },
@@ -96,13 +97,13 @@ export const ERROR_ROUTES_TO_2FA: Partial<Record<AuthErrorCode, AuthRoute>> = {
 export const ERROR_ROUTES_TO_BACKUP: Partial<Record<AuthErrorCode, AuthRoute>> =
   {
     [AuthErrorCode.TOTP_VERIFICATION_FAILED]: {
-      path: "/backup/verify",
+      path: ROUTES.BACKUP_VERIFICATION,
       params: {
         error: AuthErrorCode.TOTP_VERIFICATION_FAILED.toLowerCase(),
       },
     },
     [AuthErrorCode.TOTP_MAX_ATTEMPTS_EXCEEDED]: {
-      path: "/backup/verify",
+      path: ROUTES.BACKUP_VERIFICATION,
       params: {
         error: AuthErrorCode.TOTP_MAX_ATTEMPTS_EXCEEDED.toLowerCase(),
       },
@@ -137,7 +138,7 @@ export const handleAuthError = (
   defaultRoute: AuthRoute,
 ) => {
   if (!isApiError(error) || !error.response?.data?.code) {
-    router.push(createUrl(defaultRoute));
+    router.replace(createUrl(defaultRoute));
     return;
   }
 
@@ -146,5 +147,5 @@ export const handleAuthError = (
     ...errorRoute,
     params: { ...defaultRoute.params, ...errorRoute.params },
   };
-  router.push(createUrl(mergedRoute));
+  router.replace(createUrl(mergedRoute));
 };

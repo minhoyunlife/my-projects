@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 
 import { AuthErrorCode } from "@/src/constants/errors/auth/code";
+import { ROUTES } from "@/src/constants/routes";
 import { authApi } from "@/src/lib/api/client";
 import { isApiError } from "@/src/lib/api/types";
 import { handleAuthError } from "@/src/lib/utils/route/auth/error";
@@ -25,7 +26,7 @@ export function useAuth() {
     if (!baseUrl) {
       throw new Error("base url is not defined");
     }
-    window.location.href = `${baseUrl}/auth/github`;
+    router.replace(`${baseUrl}/auth/github`);
   };
 
   const setup2FAMutation = useMutation({
@@ -36,7 +37,7 @@ export function useAuth() {
     },
     onError: (error) => {
       handleAuthError(error, router, {
-        path: "/login",
+        path: ROUTES.LOGIN,
         params: { error: "setup_failed" },
       });
     },
@@ -68,17 +69,15 @@ export function useAuth() {
 
       if (response.data.backupCodes) {
         setBackupCodes(response.data.backupCodes);
-        setTimeout(() => {
-          router.push("/backup/show");
-        }, 0); // 백업 코드 화면이 렌더링되는 시점에 대시보드로 리다이렉트되는 문제로 별도의 tick 에서 실행하여 방지
+        router.replace(ROUTES.BACKUP_SHOW);
       } else {
-        router.push("/dashboard");
+        router.replace(ROUTES.DASHBOARD);
       }
     },
     onError: (error) => {
       if (!isApiError(error) || !error.response?.data?.code) {
         handleAuthError(error, router, {
-          path: "/login",
+          path: ROUTES.LOGIN,
           params: { error: "unknown" },
         });
         return;
@@ -116,12 +115,12 @@ export function useAuth() {
       setAccessToken(response.data.accessToken);
       clearTempToken();
 
-      router.push("/dashboard");
+      router.replace(ROUTES.DASHBOARD);
     },
     onError: (error) => {
       if (!isApiError(error) || !error.response?.data?.code) {
         handleAuthError(error, router, {
-          path: "/login",
+          path: ROUTES.LOGIN,
           params: { error: "unknown" },
         });
         return;
@@ -151,7 +150,7 @@ export function useAuth() {
     mutationFn: () => authApi.logout(),
     onSettled: () => {
       clearAccessToken();
-      router.push("/login");
+      router.replace(ROUTES.LOGIN);
     }, // 성공/실패 상관없이 무조건 로그인 페이지로
   });
 

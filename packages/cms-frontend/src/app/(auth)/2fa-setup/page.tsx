@@ -9,8 +9,8 @@ import { QRCodeCanvas } from "qrcode.react";
 import { Button } from "@/src/components/ui/button";
 import { Card } from "@/src/components/ui/card";
 import { Spinner } from "@/src/components/ui/spinner";
+import { ROUTES } from "@/src/constants/routes";
 import { useAuth } from "@/src/hooks/use-auth";
-import { usePreventBack } from "@/src/hooks/use-prevent-back";
 import { useAuthStore } from "@/src/store/auth";
 
 export default function TwoFactorSetupPage() {
@@ -27,11 +27,9 @@ export default function TwoFactorSetupPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
-  usePreventBack();
-
   const initialize = useCallback(() => {
     if (!token) {
-      router.replace("/login");
+      router.replace(ROUTES.LOGIN);
       return;
     }
 
@@ -87,7 +85,11 @@ export default function TwoFactorSetupPage() {
 
             <Button
               className="w-full focus-visible:ring-1 focus-visible:ring-gray-300 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-500"
-              onClick={() => router.push(`/2fa?token=${token}&mode=setup`)}
+              onClick={() =>
+                router.replace(
+                  `${ROUTES.TWO_FACTOR_VERIFICATION}?token=${token}&mode=setup`,
+                )
+              }
             >
               인증하러 가기
             </Button>

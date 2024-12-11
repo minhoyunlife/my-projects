@@ -9,8 +9,8 @@ import { CodeInput } from "@/src/components/auth/code-input";
 import { Spinner } from "@/src/components/ui/spinner";
 import { isAuthErrorCode } from "@/src/constants/errors/auth/code";
 import { getErrorMessage } from "@/src/constants/errors/auth/messages";
+import { ROUTES } from "@/src/constants/routes";
 import { useAuth } from "@/src/hooks/use-auth";
-import { usePreventBack } from "@/src/hooks/use-prevent-back";
 import { useToast } from "@/src/hooks/use-toast";
 import { useAuthStore } from "@/src/store/auth";
 
@@ -27,26 +27,24 @@ export default function TwoFactorAuthPage() {
 
   const isSetupMode = mode === "setup";
 
-  usePreventBack();
-
   // 파라미터 체크 및 설정
   useEffect(() => {
     // 토큰 파라미터 체크
     if (!token) {
-      router.replace("/login");
+      router.replace(ROUTES.LOGIN);
       return;
     }
 
     // 상태 관리 중인 토큰과 파라미터 토큰이 동일한지 체크
     const { tempToken } = useAuthStore.getState();
     if (tempToken && tempToken !== token) {
-      router.replace("/login");
+      router.replace(ROUTES.LOGIN);
       return;
     }
 
     // 모드 파라미터 체크
     if (mode && mode !== "setup") {
-      router.replace("/login");
+      router.replace(ROUTES.LOGIN);
       return;
     }
 
@@ -99,7 +97,7 @@ export default function TwoFactorAuthPage() {
 
           {!isSetupMode && (
             <Link
-              href={`/backup/verify?token=${token}`}
+              href={`${ROUTES.BACKUP_VERIFICATION}?token=${token}`}
               className="block text-center text-sm text-primary hover:underline underline-offset-4 mt-4"
             >
               백업 코드로 인증하기

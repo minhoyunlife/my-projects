@@ -5,8 +5,7 @@ import {
 } from "@minhoyunlife/my-ts-client";
 import axios from "axios";
 
-import { queryClient } from "@/src/components/providers/query-provider";
-import { authQueries } from "@/src/lib/queries/auth";
+import { ROUTES } from "@/src/constants/routes";
 import { useAuthStore } from "@/src/store/auth";
 
 const apiClient = axios.create({
@@ -35,12 +34,12 @@ apiClient.interceptors.response.use(
   async (error) => {
     if (error.response?.data?.code === "TOKEN_EXPIRED") {
       try {
-        const response = await queryClient.fetchQuery(authQueries.refresh);
-        useAuthStore.getState().setAccessToken(response?.data.accessToken);
+        const { data } = await authApi.refreshToken();
+        useAuthStore.getState().setAccessToken(data.accessToken);
 
         return apiClient(error.config);
       } catch {
-        useAuthStore.getState().clearAccessToken();
+        window.location.href = ROUTES.LOGIN;
       }
     }
     return Promise.reject(error);

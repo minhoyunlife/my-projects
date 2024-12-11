@@ -11,7 +11,6 @@ import { useToast } from "@/src/hooks/use-toast";
 
 export default function LoginPage() {
   const { toast } = useToast();
-
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
 
