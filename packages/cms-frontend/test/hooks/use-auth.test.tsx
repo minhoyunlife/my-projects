@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 
-import { act, renderHook, waitFor } from "@testing-library/react";
 import type { AxiosResponse } from "axios";
 
 import QueryProvider from "@/src/components/providers/query-provider";

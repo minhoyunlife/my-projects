@@ -5,6 +5,8 @@ import AutoImport from "unplugin-auto-import/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
+import { testingLibraryPreset } from "./testing-library-preset";
+
 const PROJECT_ROOT = resolve(__dirname, "..");
 
 export default defineConfig({
@@ -12,13 +14,7 @@ export default defineConfig({
     react(),
     tsconfigPaths(),
     AutoImport({
-      imports: [
-        "vitest",
-        {
-          "@testing-library/react": ["render", "screen", "fireEvent"], // 그 밖에 주로 쓰일 만한 함수들이 있다면 추가할 것.
-          "@testing-library/user-event": [["default", "userEvent"]], // 그 밖에 주로 쓰일 만한 함수들이 있다면 추가할 것.
-        },
-      ],
+      imports: ["vitest", testingLibraryPreset],
       dts: resolve(PROJECT_ROOT, "./test/auto-imports.d.ts"),
       eslintrc: {
         enabled: true,
@@ -30,6 +26,11 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
+    setupFiles: [
+      "@testing-library/react",
+      "@testing-library/jest-dom/vitest",
+      "@testing-library/user-event",
+    ],
     exclude: ["../node_modules", "../.next"],
   },
 });
