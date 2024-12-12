@@ -32,6 +32,7 @@ export function GitHubLoginButton() {
       ) : (
         <>
           <SiGithub
+            data-testid="github-icon"
             className="mr-2 h-5 w-5"
             aria-hidden="true"
           />

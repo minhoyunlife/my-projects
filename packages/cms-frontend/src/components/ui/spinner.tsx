@@ -13,6 +13,7 @@ export function Spinner({
 }: SpinnerProps) {
   return (
     <div
+      data-testid="spinner"
       className={cn(
         "border-current rounded-full border-solid animate-spin border-t-transparent",
         className,
