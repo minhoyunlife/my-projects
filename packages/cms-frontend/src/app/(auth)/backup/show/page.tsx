@@ -39,7 +39,10 @@ export default function BackupCodesPage() {
 
       <div className="space-y-6 mb-8">
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
+          <p
+            aria-label="backup-codes-description"
+            className="text-sm text-muted-foreground"
+          >
             2단계 인증 기기에 접근할 수 없는 경우를 대비하여 아래의 백업 코드를
             안전한 곳에 저장해주세요.
           </p>
@@ -47,9 +50,10 @@ export default function BackupCodesPage() {
 
         <Card className="p-4">
           <div className="grid grid-cols-2 gap-2">
-            {backupCodes.map((code) => (
+            {backupCodes.map((code, index) => (
               <code
                 key={code}
+                data-testid={`backup-code-${index}`}
                 className="text-center bg-muted p-2 rounded font-mono"
               >
                 {code}
@@ -72,7 +76,10 @@ export default function BackupCodesPage() {
           >
             확인
           </Button>
-          <p className="text-xs text-center text-muted-foreground">
+          <p
+            aria-label="backup-codes-warning"
+            className="text-xs text-center text-muted-foreground"
+          >
             백업 코드는 이 페이지를 벗어나면 다시 확인할 수 없습니다
           </p>
         </div>
