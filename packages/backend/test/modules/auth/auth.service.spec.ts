@@ -1,23 +1,25 @@
 import { randomBytes } from 'crypto';
 
+import { HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, TokenExpiredError } from '@nestjs/jwt';
 import { getRepositoryToken } from '@nestjs/typeorm';
 
 import { authenticator } from 'otplib';
 import { DataSource, Repository } from 'typeorm';
 
 import { TokenType } from '@/src/common/enums/token-type.enum';
-import { NotAdminException } from '@/src/common/exceptions/auth/admin.exception';
 import {
-  InvalidTokenException,
-  InvalidTokenTypeException,
+  GithubAuthErrorCode,
+  GithubAuthException,
+} from '@/src/common/exceptions/auth/github-auth.exception';
+import {
+  TokenErrorCode,
+  TokenException,
 } from '@/src/common/exceptions/auth/token.exception';
 import {
-  TotpAlreadySetupException,
-  TotpMaxAttemptsExceededException,
-  TotpNotSetupException,
-  TotpVerificationFailedException,
+  TotpErrorCode,
+  TotpException,
 } from '@/src/common/exceptions/auth/totp.exception';
 import { decrypt } from '@/src/common/utils/encryption.util';
 import { AuthService } from '@/src/modules/auth/auth.service';
@@ -74,7 +76,7 @@ describeWithDeps('AuthService', () => {
   });
 
   beforeEach(async () => {
-    await administratorRepo.save({ email });
+    await administratorRepo.save({ email, isTotpEnabled: false });
   });
 
   afterEach(async () => {
@@ -84,6 +86,8 @@ describeWithDeps('AuthService', () => {
 
   describe('validateAdminUser()', () => {
     it('등록된 관리자인 경우, 유저 정보를 반환함', async () => {
+      const administrator = await administratorRepo.findOneBy({ email });
+
       const profile = {
         emails: [{ value: email }],
       } as GithubProfile;
@@ -91,8 +95,9 @@ describeWithDeps('AuthService', () => {
       const result = await service.validateAdminUser(profile);
 
       expect(result).toEqual({
-        email,
+        email: administrator.email,
         isAdmin: true,
+        isTotpEnabled: administrator.isTotpEnabled,
       });
     });
 
@@ -101,9 +106,13 @@ describeWithDeps('AuthService', () => {
         emails: [{ value: 'unknown@example.com' }],
       } as GithubProfile;
 
-      await expect(service.validateAdminUser(profile)).rejects.toThrowError(
-        NotAdminException,
-      );
+      try {
+        await service.validateAdminUser(profile);
+      } catch (error) {
+        expect(error).toBeInstanceOf(GithubAuthException);
+        expect(error.getCode()).toBe(GithubAuthErrorCode.NOT_ADMIN);
+        expect(error.getStatus()).toBe(HttpStatus.UNAUTHORIZED);
+      }
     });
   });
 
@@ -140,12 +149,19 @@ describeWithDeps('AuthService', () => {
       expect(result.setupToken).not.toBeNull();
     });
 
-    it('해당 계정에 이미 TOTP 가 설정되어 있는 경우, 에러가 발생함', async () => {
-      await service.setupTotp(email);
+    it('초기 설정이 실패한 경우, 에러가 발생함', async () => {
+      const mockGenerateSecret = vi.spyOn(authenticator, 'generateSecret');
+      mockGenerateSecret.mockImplementationOnce(() => {
+        throw new Error();
+      });
 
-      await expect(service.setupTotp(email)).rejects.toThrowError(
-        TotpAlreadySetupException,
-      );
+      try {
+        await service.setupTotp(email);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TotpException);
+        expect(error.getCode()).toBe(TotpErrorCode.SETUP_FAILED);
+        expect(error.getStatus()).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+      }
     });
   });
 
@@ -166,9 +182,13 @@ describeWithDeps('AuthService', () => {
     it('등록되지 않은 이메일인 경우, 에러가 발생함', async () => {
       const invalidEmail = 'unknown@example.com';
 
-      await expect(service.getBackupCodes(invalidEmail)).rejects.toThrowError(
-        TotpNotSetupException,
-      );
+      try {
+        await service.getBackupCodes(invalidEmail);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TotpException);
+        expect(error.getCode()).toBe(TotpErrorCode.NOT_SETUP);
+        expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      }
     });
   });
 
@@ -192,25 +212,51 @@ describeWithDeps('AuthService', () => {
       const invalidEmail = 'unknown@example.com';
       const code = '12345678';
 
-      await expect(
-        service.verifyTotpCode(invalidEmail, code),
-      ).rejects.toThrowError(TotpNotSetupException);
+      try {
+        await service.verifyTotpCode(invalidEmail, code);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TotpException);
+        expect(error.getCode()).toBe(TotpErrorCode.NOT_SETUP);
+        expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      }
     });
 
-    it('잘못된 TOTP 코드인 경우, 검증에 실패함', async () => {
-      const invalidCode = '12345678';
+    it('잘못된 형식의 TOTP 코드인 경우, 검증에 실패함', async () => {
+      const invalidCode = 'ABCDEFGH';
 
-      await expect(
-        service.verifyTotpCode(email, invalidCode),
-      ).rejects.toThrowError(TotpVerificationFailedException);
+      const mockVerify = vi.spyOn(authenticator, 'verify');
+      mockVerify.mockImplementationOnce(() => {
+        throw new Error('Invalid format');
+      });
+
+      try {
+        await service.verifyTotpCode(email, invalidCode);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TotpException);
+        expect(error.getCode()).toBe(TotpErrorCode.CODE_MALFORMED);
+        expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      }
+    });
+
+    it('TOTP 코드가 불일치할 경우, 검증에 실패함', async () => {
+      const invalidCode = '000000';
+
+      try {
+        await service.verifyTotpCode(email, invalidCode);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TotpException);
+        expect(error.getCode()).toBe(TotpErrorCode.VERIFICATION_FAILED);
+        expect(error.getStatus()).toBe(HttpStatus.UNAUTHORIZED);
+      }
     });
 
     describe('검증 실패 횟수에 대한 동작 검증', () => {
       it('검증에 실패할 경우, 실패 횟수가 증가함', async () => {
         const invalidCode = '12345678';
+
         await expect(
           service.verifyTotpCode(email, invalidCode),
-        ).rejects.toThrowError(TotpVerificationFailedException);
+        ).rejects.toThrowError(TotpException);
 
         const totp = await totpRepo.findOneBy({ adminEmail: email });
         expect(totp.failedAttempts).toBe(1);
@@ -220,7 +266,7 @@ describeWithDeps('AuthService', () => {
         const invalidCode = '12345678';
         await expect(
           service.verifyTotpCode(email, invalidCode),
-        ).rejects.toThrowError(TotpVerificationFailedException); // 한 번 실패 후
+        ).rejects.toThrowError(TotpException); // 한 번 실패 후
 
         const totp = await totpRepo.findOneBy({ adminEmail: email });
         const validCode = authenticator.generate(
@@ -235,45 +281,49 @@ describeWithDeps('AuthService', () => {
       });
 
       it('최대 검증 실패 가능횟수를 초과한 경우, 에러가 발생함', async () => {
-        const invalidCode = '12345678';
+        const invalidCode = '000000';
 
         // 최대 검증 실패 가능횟수는 5
         for (let i = 0; i < 5; i++) {
           await expect(
             service.verifyTotpCode(email, invalidCode),
-          ).rejects.toThrowError(TotpVerificationFailedException);
+          ).rejects.toThrowError(TotpException);
         }
 
         const totp = await totpRepo.findOneBy({ adminEmail: email });
         expect(totp.failedAttempts).toBe(5);
 
-        await expect(
-          service.verifyTotpCode(email, invalidCode),
-        ).rejects.toThrowError(TotpMaxAttemptsExceededException);
+        try {
+          await service.verifyTotpCode(email, invalidCode);
+        } catch (error) {
+          expect(error).toBeInstanceOf(TotpException);
+          expect(error.getCode()).toBe(TotpErrorCode.MAX_ATTEMPTS_EXCEEDED);
+          expect(error.getStatus()).toBe(HttpStatus.TOO_MANY_REQUESTS);
+        }
       });
 
-      it('마지막 실패 시도로부터 15분이 지난 후에 다시 실패 시도를 한 경우, 실패 횟수가 1이 됨', async () => {
-        const invalidCode = '12345678';
+      it('마지막 실패 시도로부터 5분이 지난 후에 다시 실패 시도를 한 경우, 실패 횟수가 1이 됨', async () => {
+        const invalidCode = '000000';
 
         await expect(
           service.verifyTotpCode(email, invalidCode),
-        ).rejects.toThrowError(TotpVerificationFailedException); // 마지막 실패 시도
+        ).rejects.toThrowError(TotpException); // 마지막 실패 시도
 
         const totp = await totpRepo.findOneBy({ adminEmail: email });
         expect(totp.failedAttempts).toBe(1);
 
-        // 위의 실패로 인해 세팅되었던 실패 시간을 15분 전으로 직접 되돌림
+        // 위의 실패로 인해 세팅되었던 실패 시간을 5분 전으로 직접 되돌림
         await totpRepo.update(
           { adminEmail: email },
           {
             lastFailedAttempt: () =>
-              "CURRENT_TIMESTAMP - interval '15 minutes 1 second'",
+              "CURRENT_TIMESTAMP - interval '5 minutes 1 second'",
           },
         );
 
         await expect(
           service.verifyTotpCode(email, invalidCode),
-        ).rejects.toThrowError(TotpVerificationFailedException);
+        ).rejects.toThrowError(TotpException);
 
         const updatedTotp = await totpRepo.findOneBy({ adminEmail: email });
         expect(updatedTotp.failedAttempts).toBe(1);
@@ -311,37 +361,45 @@ describeWithDeps('AuthService', () => {
         encryptionKey,
       );
 
-      await expect(
-        service.verifyBackupCode(invalidEmail, decryptedCode),
-      ).rejects.toThrowError(TotpNotSetupException);
+      try {
+        await service.verifyBackupCode(invalidEmail, decryptedCode);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TotpException);
+        expect(error.getCode()).toBe(TotpErrorCode.NOT_SETUP);
+        expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      }
     });
 
-    it('잘못된 백업 코드인 경우, 검증에 실패함', async () => {
-      const invalidCode = '12345678';
+    it('백업 코드가 불일치한 경우, 검증에 실패함', async () => {
+      const invalidCode = 'AAAAAAAA';
 
-      await expect(
-        service.verifyBackupCode(email, invalidCode),
-      ).rejects.toThrowError(TotpVerificationFailedException);
+      try {
+        await service.verifyBackupCode(email, invalidCode);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TotpException);
+        expect(error.getCode()).toBe(TotpErrorCode.VERIFICATION_FAILED);
+        expect(error.getStatus()).toBe(HttpStatus.UNAUTHORIZED);
+      }
     });
 
     describe('검증 실패 횟수에 대한 동작 검증', () => {
       it('검증에 실패할 경우, 실패 횟수가 증가함', async () => {
-        const invalidCode = '12345678';
+        const invalidCode = 'AAAAAAAA';
 
         await expect(
           service.verifyBackupCode(email, invalidCode),
-        ).rejects.toThrowError(TotpVerificationFailedException);
+        ).rejects.toThrowError(TotpException);
 
         const totp = await totpRepo.findOneBy({ adminEmail: email });
         expect(totp.failedAttempts).toBe(1);
       });
 
       it('검증에 성공할 경우, 실패 횟수가 초기화됨', async () => {
-        const invalidCode = '12345678';
+        const invalidCode = 'AAAAAAAA';
 
         await expect(
           service.verifyBackupCode(email, invalidCode),
-        ).rejects.toThrowError(TotpVerificationFailedException); // 한 번 실패 후
+        ).rejects.toThrowError(TotpException); // 한 번 실패 후
 
         const totp = await totpRepo.findOneBy({ adminEmail: email });
 
@@ -359,44 +417,48 @@ describeWithDeps('AuthService', () => {
       });
 
       it('최대 검증 실패 가능횟수를 초과한 경우, 에러가 발생함', async () => {
-        const invalidCode = '12345678';
+        const invalidCode = 'AAAAAAAA';
 
         for (let i = 0; i < 5; i++) {
           await expect(
             service.verifyBackupCode(email, invalidCode),
-          ).rejects.toThrowError(TotpVerificationFailedException);
+          ).rejects.toThrowError(TotpException);
         }
 
         const totp = await totpRepo.findOneBy({ adminEmail: email });
         expect(totp.failedAttempts).toBe(5);
 
-        await expect(
-          service.verifyBackupCode(email, invalidCode),
-        ).rejects.toThrowError(TotpMaxAttemptsExceededException);
+        try {
+          await service.verifyBackupCode(email, invalidCode);
+        } catch (error) {
+          expect(error).toBeInstanceOf(TotpException);
+          expect(error.getCode()).toBe(TotpErrorCode.MAX_ATTEMPTS_EXCEEDED);
+          expect(error.getStatus()).toBe(HttpStatus.TOO_MANY_REQUESTS);
+        }
       });
 
-      it('마지막 실패 시도로부터 15분이 지난 후에 다시 실패 시도를 한 경우, 실패 횟수가 1이 됨', async () => {
+      it('마지막 실패 시도로부터 5분이 지난 후에 다시 실패 시도를 한 경우, 실패 횟수가 1이 됨', async () => {
         const invalidCode = '12345678';
 
         await expect(
           service.verifyBackupCode(email, invalidCode),
-        ).rejects.toThrowError(TotpVerificationFailedException); // 마지막 실패 시도
+        ).rejects.toThrowError(TotpException); // 마지막 실패 시도
 
         const totp = await totpRepo.findOneBy({ adminEmail: email });
         expect(totp.failedAttempts).toBe(1);
 
-        // 위의 실패로 인해 세팅되었던 실패 시간을 15분 전으로 직접 되돌림
+        // 위의 실패로 인해 세팅되었던 실패 시간을 5분 전으로 직접 되돌림
         await totpRepo.update(
           { adminEmail: email },
           {
             lastFailedAttempt: () =>
-              "CURRENT_TIMESTAMP - interval '15 minutes 1 second'",
+              "CURRENT_TIMESTAMP - interval '5 minutes 1 second'",
           },
         );
 
         await expect(
           service.verifyBackupCode(email, invalidCode),
-        ).rejects.toThrowError(TotpVerificationFailedException);
+        ).rejects.toThrowError(TotpException);
 
         const updatedTotp = await totpRepo.findOneBy({ adminEmail: email });
         expect(updatedTotp.failedAttempts).toBe(1);
@@ -422,6 +484,22 @@ describeWithDeps('AuthService', () => {
       });
     });
 
+    it('만료된 리프레시 토큰인 경우, 에러가 발생함', async () => {
+      const expiredRefreshToken = 'expired.jwt.refresh.token';
+
+      vi.mocked(jwtService.verifyAsync).mockImplementation(() => {
+        throw new TokenExpiredError('Token expired', new Date());
+      });
+
+      try {
+        await service.verifyRefreshToken(expiredRefreshToken);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TokenException);
+        expect(error.getCode()).toBe(TokenErrorCode.EXPIRED);
+        expect(error.getStatus()).toBe(HttpStatus.UNAUTHORIZED);
+      }
+    });
+
     it('유효하지 않은 리프레시 토큰인 경우, 에러가 발생함', async () => {
       const invalidRefreshToken = 'invalid.jwt.refresh.token';
 
@@ -429,9 +507,13 @@ describeWithDeps('AuthService', () => {
         throw new Error();
       });
 
-      await expect(
-        service.verifyRefreshToken(invalidRefreshToken),
-      ).rejects.toThrowError(InvalidTokenException);
+      try {
+        await service.verifyRefreshToken(invalidRefreshToken);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TokenException);
+        expect(error.getCode()).toBe(TokenErrorCode.INVALID_TOKEN);
+        expect(error.getStatus()).toBe(HttpStatus.UNAUTHORIZED);
+      }
     });
 
     it('리프레시 토큰이 아닌 토큰인 경우, 에러가 발생함', async () => {
@@ -444,9 +526,13 @@ describeWithDeps('AuthService', () => {
 
       vi.mocked(jwtService.verifyAsync).mockResolvedValue(payload);
 
-      await expect(
-        service.verifyRefreshToken(accessToken),
-      ).rejects.toThrowError(InvalidTokenTypeException);
+      try {
+        await service.verifyRefreshToken(accessToken);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TokenException);
+        expect(error.getCode()).toBe(TokenErrorCode.INVALID_TYPE);
+        expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      }
     });
 
     it('등록되지 않은 이메일인 경우, 에러가 발생함', async () => {
@@ -459,9 +545,13 @@ describeWithDeps('AuthService', () => {
         type: TokenType.REFRESH,
       });
 
-      await expect(
-        service.verifyRefreshToken(refreshToken),
-      ).rejects.toThrowError(NotAdminException);
+      try {
+        await service.verifyRefreshToken(refreshToken);
+      } catch (error) {
+        expect(error).toBeInstanceOf(GithubAuthException);
+        expect(error.getCode()).toBe(GithubAuthErrorCode.NOT_ADMIN);
+        expect(error.getStatus()).toBe(HttpStatus.UNAUTHORIZED);
+      }
     });
   });
 

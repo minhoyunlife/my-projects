@@ -1,7 +1,11 @@
-import { ConfigService } from '@nestjs/config';
+import { HttpStatus } from '@nestjs/common';
 
-import { InvalidGithubProfileException } from '@/src/common/exceptions/auth/strategy.exception';
+import {
+  GithubAuthErrorCode,
+  GithubAuthException,
+} from '@/src/common/exceptions/auth/github-auth.exception';
 import { AuthService } from '@/src/modules/auth/auth.service';
+import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 import { GithubProfile } from '@/src/modules/auth/interfaces/github-profile.interface';
 import { GithubStrategy } from '@/src/modules/auth/strategies/github.strategy';
 import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
@@ -20,19 +24,6 @@ describeWithoutDeps('GithubStrategy', () => {
             validateAdminUser: vi.fn(),
           },
         },
-        {
-          provide: ConfigService,
-          useValue: {
-            get: (key: string) => {
-              const config = {
-                'auth.clientId': 'dummy',
-                'auth.clientSecret': 'dummy',
-                'auth.callbackUrl': 'dummy',
-              };
-              return config[key];
-            },
-          },
-        },
       ],
     });
 
@@ -49,7 +40,7 @@ describeWithoutDeps('GithubStrategy', () => {
       const expectedResult = {
         email: 'test@example.com',
         isAdmin: true,
-      };
+      } as AdminUser;
 
       vi.mocked(authService.validateAdminUser).mockResolvedValue(
         expectedResult,
@@ -64,9 +55,13 @@ describeWithoutDeps('GithubStrategy', () => {
         emails: [],
       } as GithubProfile;
 
-      await expect(strategy.validate('', '', profile)).rejects.toThrowError(
-        InvalidGithubProfileException,
-      );
+      try {
+        await strategy.validate('', '', profile);
+      } catch (error) {
+        expect(error).toBeInstanceOf(GithubAuthException);
+        expect(error.getCode()).toBe(GithubAuthErrorCode.INVALID_PROFILE);
+        expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      }
     });
   });
 });

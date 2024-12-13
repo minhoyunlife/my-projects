@@ -107,7 +107,7 @@ const testConfigModule = ConfigModule.forRoot({
         callbackUrl: 'http://localhost:3000/auth/github/callback',
         jwtSecret: 'test-secret-key',
         adminWebUrl: 'http://localhost:3000',
-        adminEmail: 'test@test.com',
+        adminEmail: 'test@example.com',
       },
       database: {
         encryptionKey: randomBytes(32).toString('base64'),

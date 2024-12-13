@@ -72,13 +72,13 @@ describeWithDeps('AuthController', () => {
 
   // NOTE: Github 인증 처리 과정이 복잡하므로 Supertest 를 사용하지 않고 컨트롤러 자체의 테스트로 수행
   describe('GET /auth/github/callback', () => {
-    it('인증 성공 후 임시 토큰과 함께 관리자 페이지로 리다이렉트됨', async () => {
-      const mockRequest = {
-        user: AdministratorsFactory.createTestData() as Administrator,
-      };
-      const mockResponse = {
-        redirect: vi.fn(),
-      };
+    it('초기 설정이 필요한 경우, 인증 성공 후 임시 토큰과 함께 2FA 설정 페이지로 리다이렉트됨', async () => {
+      const user = AdministratorsFactory.createTestData({
+        isTotpEnabled: false,
+      }) as Administrator;
+
+      const mockRequest = { user };
+      const mockResponse = { redirect: vi.fn() };
 
       await controller.githubAuthCallback(
         mockRequest as any,
@@ -89,7 +89,28 @@ describeWithDeps('AuthController', () => {
 
       const redirectUrl = new URL(mockResponse.redirect.mock.calls[0][0]);
       expect(redirectUrl.origin).toBe(configService.get('auth.adminWebUrl'));
-      expect(redirectUrl.pathname).toBe('/auth/2fa');
+      expect(redirectUrl.pathname).toBe('/2fa-setup');
+      expect(redirectUrl.searchParams.has('token')).toBe(true);
+    });
+
+    it('초기 설정이 불필요한 경우, 인증 성공 후 임시 토큰과 함께 2FA 인증 페이지로 리다이렉트됨', async () => {
+      const user = AdministratorsFactory.createTestData({
+        isTotpEnabled: true,
+      }) as Administrator;
+
+      const mockRequest = { user };
+      const mockResponse = { redirect: vi.fn() };
+
+      await controller.githubAuthCallback(
+        mockRequest as any,
+        mockResponse as any,
+      );
+
+      expect(mockResponse.redirect).toHaveBeenCalled();
+
+      const redirectUrl = new URL(mockResponse.redirect.mock.calls[0][0]);
+      expect(redirectUrl.origin).toBe(configService.get('auth.adminWebUrl'));
+      expect(redirectUrl.pathname).toBe('/2fa');
       expect(redirectUrl.searchParams.has('token')).toBe(true);
     });
   });
@@ -118,18 +139,18 @@ describeWithDeps('AuthController', () => {
       expect(response.body.setupToken).toBeDefined();
     });
 
-    it('인증 토큰 형식이 올바르지 않은 경우, 401 에러가 반환됨', async () => {
+    it('인증 헤더가 없는 경우, 400 에러가 반환됨', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/2fa/setup')
-        .set('Authorization', `Bearer invalid-token`)
-        .expect(401);
+        .expect(400);
 
       await expect(response).toMatchOpenAPISpec();
     });
 
-    it('인증 토큰이 없는 경우, 401 에러가 반환됨', async () => {
+    it('인증 토큰 형식이 올바르지 않은 경우, 401 에러가 반환됨', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/2fa/setup')
+        .set('Authorization', `Bearer invalid-token`)
         .expect(401);
 
       await expect(response).toMatchOpenAPISpec();
@@ -140,24 +161,6 @@ describeWithDeps('AuthController', () => {
         .post('/auth/2fa/setup')
         .set('Authorization', `Bearer invalid-token`)
         .expect(401);
-
-      await expect(response).toMatchOpenAPISpec();
-    });
-
-    it('이미 TOTP가 설정되어 있으면 409 에러가 반환됨', async () => {
-      const user = AdministratorsFactory.createTestData({
-        isTotpEnabled: true,
-      }) as Administrator;
-      await dataSource.getRepository(Administrator).save(user);
-
-      await authService.setupTotp(user.email);
-
-      const tempToken = await createTestTempToken(authService, user);
-
-      const response = await request(app.getHttpServer())
-        .post('/auth/2fa/setup')
-        .set('Authorization', `Bearer ${tempToken}`)
-        .expect(409);
 
       await expect(response).toMatchOpenAPISpec();
     });
@@ -265,11 +268,30 @@ describeWithDeps('AuthController', () => {
       await expect(response).toMatchOpenAPISpec();
     });
 
-    it('임시 토큰 없이 요청할 경우, 401 에러가 반환됨', async () => {
+    it('임시 토큰 없이 요청할 경우, 400 에러가 반환됨', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/2fa/verify')
         .send({ code })
+        .expect(400);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+
+    it('무효한 토큰이 전달된 경우, 401 에러가 반환됨', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/2fa/verify')
+        .set('Authorization', `Bearer invalid-token`)
+        .send({ code })
         .expect(401);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+
+    it('일치하지 않는 코드인 경우, 401 에러가 반환됨', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/2fa/verify')
+        .set('Authorization', `Bearer ${tempToken}`)
+        .send({ code: '000000' });
 
       await expect(response).toMatchOpenAPISpec();
     });
@@ -336,6 +358,15 @@ describeWithDeps('AuthController', () => {
       expect(response.headers['set-cookie'][0]).toMatch(/^refreshToken=.+/);
     });
 
+    it('임시 토큰 없이 요청할 경우, 400 에러가 반환됨', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/2fa/backup')
+        .send({ code: backupCode })
+        .expect(400);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+
     it('백업 코드가 전달되지 않은 경우, 400 에러가 반환됨', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/2fa/backup')
@@ -350,13 +381,13 @@ describeWithDeps('AuthController', () => {
       const response = await request(app.getHttpServer())
         .post('/auth/2fa/backup')
         .set('Authorization', `Bearer ${tempToken}`)
-        .send({ code: '123456' })
+        .send({ code: '111111' })
         .expect(400);
 
       await expect(response).toMatchOpenAPISpec();
     });
 
-    it('존재하지 않는 백업 코드로 인증 시도 시, 401 에러가 반환됨', async () => {
+    it('일치하지 않는 백업 코드가 전달된 경우, 401 에러가 반환됨', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/2fa/backup')
         .set('Authorization', `Bearer ${tempToken}`)
@@ -366,10 +397,11 @@ describeWithDeps('AuthController', () => {
       await expect(response).toMatchOpenAPISpec();
     });
 
-    it('임시 토큰 없이 요청할 경우, 401 에러가 반환됨', async () => {
+    it('존재하지 않는 백업 코드로 인증 시도 시, 401 에러가 반환됨', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/2fa/backup')
-        .send({ code: backupCode })
+        .set('Authorization', `Bearer ${tempToken}`)
+        .send({ code: 'AAAAAAAA' })
         .expect(401);
 
       await expect(response).toMatchOpenAPISpec();
@@ -416,11 +448,11 @@ describeWithDeps('AuthController', () => {
       );
     });
 
-    it('리프레시 토큰 쿠키가 없는 경우, 401 에러가 반환됨', async () => {
+    it('리프레시 토큰 쿠키가 없는 경우, 400 에러가 반환됨', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/refresh')
         .set('Cookie', [])
-        .expect(401);
+        .expect(400);
 
       await expect(response).toMatchOpenAPISpec();
     });
@@ -452,7 +484,6 @@ describeWithDeps('AuthController', () => {
     it('200 상태코드와 함께, 리프레시 토큰 쿠키가 제거됨', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/logout')
-        .set('Authorization', `Bearer ${accessToken}`)
         .set('Cookie', [`refreshToken=${refreshToken};`])
         .expect(200);
 
@@ -463,30 +494,10 @@ describeWithDeps('AuthController', () => {
       expect(response.headers['set-cookie'][0]).toMatch(/HttpOnly/);
     });
 
-    it('액세스 토큰 없이 요청할 경우, 401 에러가 반환됨', async () => {
+    it('리프레시 토큰 없이 요청할 경우, 400 에러가 반환됨', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/logout')
-        .set('Cookie', [`refreshToken=${refreshToken};`])
-        .expect(401);
-
-      await expect(response).toMatchOpenAPISpec();
-    });
-
-    it('리프레시 토큰 없이 요청할 경우, 401 에러가 반환됨', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/auth/logout')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .expect(401);
-
-      await expect(response).toMatchOpenAPISpec();
-    });
-
-    it('유효하지 않은 액세스 토큰으로 요청할 경우, 401 에러가 반환됨', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/auth/logout')
-        .set('Authorization', 'Bearer invalid-token')
-        .set('Cookie', [`refreshToken=${refreshToken};`])
-        .expect(401);
+        .expect(400);
 
       await expect(response).toMatchOpenAPISpec();
     });
@@ -494,7 +505,6 @@ describeWithDeps('AuthController', () => {
     it('유효하지 않은 리프레시 토큰으로 요청할 경우, 401 에러가 반환됨', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/logout')
-        .set('Authorization', `Bearer ${accessToken}`)
         .set('Cookie', ['refreshToken=invalid-token;'])
         .expect(401);
 

@@ -16,5 +16,5 @@ export default registerAs('database', () => ({
   synchronize: process.env.NODE_ENV !== Environment.PROD,
   logging: process.env.NODE_ENV !== Environment.PROD,
   ssl: process.env.NODE_ENV === Environment.PROD,
-  encryption_key: process.env.DB_ENCRYPTION_KEY,
+  encryptionKey: process.env.DB_ENCRYPTION_KEY,
 }));

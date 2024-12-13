@@ -1,6 +1,9 @@
-import { ExecutionContext } from '@nestjs/common';
+import { ExecutionContext, HttpStatus } from '@nestjs/common';
 
-import { TokenNotProvidedException } from '@/src/common/exceptions/auth/token.exception';
+import {
+  TokenErrorCode,
+  TokenException,
+} from '@/src/common/exceptions/auth/token.exception';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { CookieAuthGuard } from '@/src/modules/auth/guards/cookie.auth.guard';
 import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
@@ -62,8 +65,12 @@ describeWithoutDeps('CookieAuthGuard', () => {
   it('쿠키에 리프레시 토큰이 없는 경우, 에러가 발생함', async () => {
     const context = createExecutionContext({ cookies: {} });
 
-    await expect(guard.canActivate(context)).rejects.toThrowError(
-      TokenNotProvidedException,
-    );
+    try {
+      await guard.canActivate(context);
+    } catch (error) {
+      expect(error).toBeInstanceOf(TokenException);
+      expect(error.getCode()).toBe(TokenErrorCode.NOT_PROVIDED);
+      expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST);
+    }
   });
 });

@@ -20,7 +20,8 @@ export default registerAs('validation', () => ({
     });
 
     return new BadRequestException({
-      message: '입력 데이터가 유효하지 않습니다.',
+      message: 'Input data is invalid',
+      code: 'INVALID_INPUT_DATA',
       errors,
     });
   },

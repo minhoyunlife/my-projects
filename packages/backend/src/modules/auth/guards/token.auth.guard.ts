@@ -1,15 +1,13 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
+import { JsonWebTokenError, JwtService, TokenExpiredError } from '@nestjs/jwt';
 
 import { TokenType } from '@/src/common/enums/token-type.enum';
 import {
-  InvalidTokenException,
-  InvalidTokenFormatException,
-  InvalidTokenTypeException,
-  TokenNotProvidedException,
+  TokenErrorCode,
+  TokenException,
 } from '@/src/common/exceptions/auth/token.exception';
-import { Administrator } from '@/src/modules/auth/interfaces/Administrator.interface';
+import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 import {
   AccessTokenPayload,
   TempTokenPayload,
@@ -32,34 +30,48 @@ abstract class TokenAuthGuard<T extends TokenPayload> implements CanActivate {
 
     const authHeader = request.headers.authorization;
     if (!authHeader) {
-      throw new TokenNotProvidedException();
+      throw new TokenException(
+        TokenErrorCode.NOT_PROVIDED,
+        'Authorization headers not provided',
+      );
     }
 
     const [type, token] = authHeader.split(' ');
     if (type !== 'Bearer') {
-      throw new InvalidTokenFormatException();
+      throw new TokenException(
+        TokenErrorCode.INVALID_FORMAT,
+        'Invalid token format',
+        { type: [`Expected 'Bearer' but ${type} provided`] },
+      );
     }
+
+    let payload: T;
 
     try {
-      const payload = this.jwtService.verify<T>(token, {
+      payload = this.jwtService.verify<T>(token, {
         secret: this.configService.get('auth.jwtSecret'),
       });
-      if (payload.type !== this.tokenType) {
-        throw new InvalidTokenTypeException();
-      }
-
-      request.user = {
-        email: payload.email,
-        isAdmin: payload.isAdmin,
-      } as Administrator;
-
-      return true;
     } catch (error) {
-      if (error instanceof InvalidTokenTypeException) {
-        throw error;
+      if (error instanceof TokenExpiredError) {
+        throw new TokenException(TokenErrorCode.EXPIRED, 'Token expired');
       }
-      throw new InvalidTokenException();
+      throw new TokenException(TokenErrorCode.INVALID_TOKEN, 'Invalid token');
     }
+
+    if (payload.type !== this.tokenType) {
+      throw new TokenException(
+        TokenErrorCode.INVALID_TYPE,
+        'Invalid token type',
+        { type: [`Expected ${this.tokenType} but ${payload.type} provided`] },
+      );
+    }
+
+    request.user = {
+      email: payload.email,
+      isAdmin: payload.isAdmin,
+    } as AdminUser;
+
+    return true;
   }
 }
 

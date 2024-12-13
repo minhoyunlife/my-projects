@@ -2,6 +2,7 @@ import nextPlugin from "@next/eslint-plugin-next";
 import typescriptPlugin from "@typescript-eslint/eslint-plugin";
 import typescriptParser from "@typescript-eslint/parser";
 import prettierConfig from "eslint-config-prettier";
+import reactHooksPlugin from "eslint-plugin-react-hooks";
 import importPlugin from "eslint-plugin-import";
 import prettierPlugin from "eslint-plugin-prettier";
 import autoImportConfig from "./test/.eslintrc-auto-import.json" assert { type: "json" };
@@ -21,6 +22,7 @@ export default [
     },
     plugins: {
       "@typescript-eslint": typescriptPlugin,
+      "react-hooks": reactHooksPlugin,
       import: importPlugin,
       prettier: prettierPlugin,
       "@next/next": nextPlugin,
@@ -33,12 +35,30 @@ export default [
       },
     },
     rules: {
+      ...nextPlugin.configs.recommended.rules,
+      ...nextPlugin.configs["core-web-vitals"].rules,
       "no-undef": "off",
       "react/react-in-jsx-scope": "off",
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
       "@typescript-eslint/interface-name-prefix": "off",
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/explicit-module-boundary-types": "off",
       "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
+      "@typescript-eslint/consistent-type-imports": [
+        "error",
+        {
+          prefer: "type-imports",
+        },
+      ],
+      "@typescript-eslint/no-floating-promises": "error",
       "import/order": [
         "error",
         {

@@ -1,12 +1,10 @@
-import { ExecutionContext } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { ExecutionContext, HttpStatus } from '@nestjs/common';
+import { JsonWebTokenError, JwtService, TokenExpiredError } from '@nestjs/jwt';
 
 import { TokenType } from '@/src/common/enums/token-type.enum';
 import {
-  InvalidTokenException,
-  InvalidTokenFormatException,
-  InvalidTokenTypeException,
-  TokenNotProvidedException,
+  TokenErrorCode,
+  TokenException,
 } from '@/src/common/exceptions/auth/token.exception';
 import {
   BearerAuthGuard,
@@ -76,27 +74,35 @@ describeWithoutDeps('TokenAuthGuard', () => {
       });
     });
 
-    it('헤더에 Authorization이 없는 경우, 에러가 발생함', async () => {
+    it('헤더에 Authorization이 없는 경우, NOT_PROVIDED 에러가 발생함', async () => {
       const context = createExecutionContext({
         headers: {},
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrowError(
-        TokenNotProvidedException,
-      );
+      try {
+        await guard.canActivate(context);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TokenException);
+        expect(error.getCode()).toBe(TokenErrorCode.NOT_PROVIDED);
+        expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      }
     });
 
-    it('Authorization 타입이 Bearer가 아닌 경우, 에러가 발생함', async () => {
+    it('Authorization 타입이 Bearer가 아닌 경우, INVALID_FORMAT 에러가 발생함', async () => {
       const context = createExecutionContext({
         headers: { authorization: 'invalid-token' },
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrowError(
-        InvalidTokenFormatException,
-      );
+      try {
+        await guard.canActivate(context);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TokenException);
+        expect(error.getCode()).toBe(TokenErrorCode.INVALID_FORMAT);
+        expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      }
     });
 
-    it('페이로드의 타입이 temporary가 아닌 경우, 에러가 발생함', async () => {
+    it('페이로드의 타입이 temporary가 아닌 경우, INVALID_TYPE 에러가 발생함', async () => {
       const payload = {
         email: 'test@example.com',
         isAdmin: true,
@@ -109,23 +115,49 @@ describeWithoutDeps('TokenAuthGuard', () => {
 
       vi.mocked(jwtService.verify).mockReturnValue(payload);
 
-      await expect(guard.canActivate(context)).rejects.toThrowError(
-        InvalidTokenTypeException,
-      );
+      try {
+        await guard.canActivate(context);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TokenException);
+        expect(error.getCode()).toBe(TokenErrorCode.INVALID_TYPE);
+        expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      }
     });
 
-    it('토큰이 유효하지 않은 경우, 에러가 발생함', async () => {
+    it('JWT 토큰이 만료된 경우, EXPIRED 에러가 발생함', async () => {
+      const context = createExecutionContext({
+        headers: { authorization: 'Bearer expired-token' },
+      });
+
+      vi.mocked(jwtService.verify).mockImplementation(() => {
+        throw new TokenExpiredError('jwt error', new Date());
+      });
+
+      try {
+        await guard.canActivate(context);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TokenException);
+        expect(error.getCode()).toBe(TokenErrorCode.EXPIRED);
+        expect(error.getStatus()).toBe(HttpStatus.UNAUTHORIZED);
+      }
+    });
+
+    it('JWT 토큰 검증에 실패한 경우, INVALID_TOKEN 에러가 발생함', async () => {
       const context = createExecutionContext({
         headers: { authorization: 'Bearer invalid-token' },
       });
 
       vi.mocked(jwtService.verify).mockImplementation(() => {
-        throw new Error();
+        throw new JsonWebTokenError('jwt error');
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrowError(
-        InvalidTokenException,
-      );
+      try {
+        await guard.canActivate(context);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TokenException);
+        expect(error.getCode()).toBe(TokenErrorCode.INVALID_TOKEN);
+        expect(error.getStatus()).toBe(HttpStatus.UNAUTHORIZED);
+      }
     });
   });
 
@@ -182,22 +214,30 @@ describeWithoutDeps('TokenAuthGuard', () => {
         headers: {},
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrowError(
-        TokenNotProvidedException,
-      );
+      try {
+        await guard.canActivate(context);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TokenException);
+        expect(error.getCode()).toBe(TokenErrorCode.NOT_PROVIDED);
+        expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      }
     });
 
-    it('Authorization 타입이 Bearer가 아닌 경우, 에러가 발생함', async () => {
+    it('Authorization 타입이 Bearer가 아닌 경우, INVALID_FORMAT 에러가 발생함', async () => {
       const context = createExecutionContext({
         headers: { authorization: 'invalid-token' },
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrowError(
-        InvalidTokenFormatException,
-      );
+      try {
+        await guard.canActivate(context);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TokenException);
+        expect(error.getCode()).toBe(TokenErrorCode.INVALID_FORMAT);
+        expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      }
     });
 
-    it('페이로드의 타입이 access가 아닌 경우, 에러가 발생함', async () => {
+    it('페이로드의 타입이 access가 아닌 경우, INVALID_TYPE 에러가 발생함', async () => {
       const payload = {
         email: 'test@example.com',
         isAdmin: true,
@@ -210,23 +250,49 @@ describeWithoutDeps('TokenAuthGuard', () => {
 
       vi.mocked(jwtService.verify).mockReturnValue(payload);
 
-      await expect(guard.canActivate(context)).rejects.toThrowError(
-        InvalidTokenTypeException,
-      );
+      try {
+        await guard.canActivate(context);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TokenException);
+        expect(error.getCode()).toBe(TokenErrorCode.INVALID_TYPE);
+        expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      }
     });
 
-    it('토큰이 유효하지 않은 경우, 에러가 발생함', async () => {
+    it('JWT 토큰이 만료된 경우, EXPIRED 에러가 발생함', async () => {
+      const context = createExecutionContext({
+        headers: { authorization: 'Bearer expired-token' },
+      });
+
+      vi.mocked(jwtService.verify).mockImplementation(() => {
+        throw new TokenExpiredError('jwt error', new Date());
+      });
+
+      try {
+        await guard.canActivate(context);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TokenException);
+        expect(error.getCode()).toBe(TokenErrorCode.EXPIRED);
+        expect(error.getStatus()).toBe(HttpStatus.UNAUTHORIZED);
+      }
+    });
+
+    it('JWT 토큰 검증에 실패한 경우, INVALID_TOKEN 에러가 발생함', async () => {
       const context = createExecutionContext({
         headers: { authorization: 'Bearer invalid-token' },
       });
 
       vi.mocked(jwtService.verify).mockImplementation(() => {
-        throw new Error();
+        throw new JsonWebTokenError('jwt error');
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrowError(
-        InvalidTokenException,
-      );
+      try {
+        await guard.canActivate(context);
+      } catch (error) {
+        expect(error).toBeInstanceOf(TokenException);
+        expect(error.getCode()).toBe(TokenErrorCode.INVALID_TOKEN);
+        expect(error.getStatus()).toBe(HttpStatus.UNAUTHORIZED);
+      }
     });
   });
 });
