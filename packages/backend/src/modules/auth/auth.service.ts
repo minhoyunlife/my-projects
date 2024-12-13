@@ -35,7 +35,7 @@ export class AuthService {
 
   // 토큰 만료 시간(초 단위)
   public readonly TOKEN_EXPIRY = {
-    [TokenType.TEMPORARY]: 10 * 60, // 5분
+    [TokenType.TEMPORARY]: 10 * 60, // 10분
     [TokenType.ACCESS]: 15 * 60, // 15분
     [TokenType.REFRESH]: 7 * 24 * 60 * 60, // 7일
   } as const;
@@ -312,7 +312,7 @@ export class AuthService {
 
   /**
    * TOTP 인증 실패 횟수를 기록
-   * - 마지막 시도로부터 15분이 지나면, 실패 횟수는 1로 초기화
+   * - 마지막 시도로부터 일정 시간이 지나면, 실패 횟수는 1로 초기화
    * - 총 실패 횟수가 다섯번이 넘으면 에러를 발생
    */
   private async recordFailedAttempt(totp: Totp): Promise<void> {

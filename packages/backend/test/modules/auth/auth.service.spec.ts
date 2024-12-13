@@ -302,7 +302,7 @@ describeWithDeps('AuthService', () => {
         }
       });
 
-      it('마지막 실패 시도로부터 15분이 지난 후에 다시 실패 시도를 한 경우, 실패 횟수가 1이 됨', async () => {
+      it('마지막 실패 시도로부터 5분이 지난 후에 다시 실패 시도를 한 경우, 실패 횟수가 1이 됨', async () => {
         const invalidCode = '000000';
 
         await expect(
@@ -312,12 +312,12 @@ describeWithDeps('AuthService', () => {
         const totp = await totpRepo.findOneBy({ adminEmail: email });
         expect(totp.failedAttempts).toBe(1);
 
-        // 위의 실패로 인해 세팅되었던 실패 시간을 15분 전으로 직접 되돌림
+        // 위의 실패로 인해 세팅되었던 실패 시간을 5분 전으로 직접 되돌림
         await totpRepo.update(
           { adminEmail: email },
           {
             lastFailedAttempt: () =>
-              "CURRENT_TIMESTAMP - interval '15 minutes 1 second'",
+              "CURRENT_TIMESTAMP - interval '5 minutes 1 second'",
           },
         );
 
@@ -437,7 +437,7 @@ describeWithDeps('AuthService', () => {
         }
       });
 
-      it('마지막 실패 시도로부터 15분이 지난 후에 다시 실패 시도를 한 경우, 실패 횟수가 1이 됨', async () => {
+      it('마지막 실패 시도로부터 5분이 지난 후에 다시 실패 시도를 한 경우, 실패 횟수가 1이 됨', async () => {
         const invalidCode = '12345678';
 
         await expect(
@@ -447,12 +447,12 @@ describeWithDeps('AuthService', () => {
         const totp = await totpRepo.findOneBy({ adminEmail: email });
         expect(totp.failedAttempts).toBe(1);
 
-        // 위의 실패로 인해 세팅되었던 실패 시간을 15분 전으로 직접 되돌림
+        // 위의 실패로 인해 세팅되었던 실패 시간을 5분 전으로 직접 되돌림
         await totpRepo.update(
           { adminEmail: email },
           {
             lastFailedAttempt: () =>
-              "CURRENT_TIMESTAMP - interval '15 minutes 1 second'",
+              "CURRENT_TIMESTAMP - interval '5 minutes 1 second'",
           },
         );
 

@@ -18,12 +18,10 @@ import {
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { ArtworkResponse } from '@/src/modules/artworks/dtos/artwork-response.dto';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
-import { ArtworksExceptionFilter } from '@/src/modules/artworks/filters/artworks.filter';
 import { UploadImageExceptionFilter } from '@/src/modules/artworks/filters/upload-image.filter';
 import { StorageService } from '@/src/modules/storage/storage.service';
 
 @Controller('artworks')
-@UseFilters(ArtworksExceptionFilter)
 export class ArtworksController {
   constructor(
     private readonly artworksService: ArtworksService,
@@ -32,7 +30,7 @@ export class ArtworksController {
 
   private static UPLOAD_OPTIONS = {
     limits: {
-      fileSize: 10 * 1024 * 1024, // 10MB
+      fileSize: 100 * 1024 * 1024, // 100MB
       files: 1,
     },
     fileFilter: (_: any, file: Express.Multer.File, callback: Function) => {

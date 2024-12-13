@@ -484,7 +484,6 @@ describeWithDeps('AuthController', () => {
     it('200 상태코드와 함께, 리프레시 토큰 쿠키가 제거됨', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/logout')
-        .set('Authorization', `Bearer ${accessToken}`)
         .set('Cookie', [`refreshToken=${refreshToken};`])
         .expect(200);
 
@@ -495,30 +494,10 @@ describeWithDeps('AuthController', () => {
       expect(response.headers['set-cookie'][0]).toMatch(/HttpOnly/);
     });
 
-    it('액세스 토큰 없이 요청할 경우, 400 에러가 반환됨', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/auth/logout')
-        .set('Cookie', [`refreshToken=${refreshToken};`])
-        .expect(400);
-
-      await expect(response).toMatchOpenAPISpec();
-    });
-
     it('리프레시 토큰 없이 요청할 경우, 400 에러가 반환됨', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/logout')
-        .set('Authorization', `Bearer ${accessToken}`)
         .expect(400);
-
-      await expect(response).toMatchOpenAPISpec();
-    });
-
-    it('유효하지 않은 액세스 토큰으로 요청할 경우, 401 에러가 반환됨', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/auth/logout')
-        .set('Authorization', 'Bearer invalid-token')
-        .set('Cookie', [`refreshToken=${refreshToken};`])
-        .expect(401);
 
       await expect(response).toMatchOpenAPISpec();
     });
@@ -526,7 +505,6 @@ describeWithDeps('AuthController', () => {
     it('유효하지 않은 리프레시 토큰으로 요청할 경우, 401 에러가 반환됨', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/logout')
-        .set('Authorization', `Bearer ${accessToken}`)
         .set('Cookie', ['refreshToken=invalid-token;'])
         .expect(401);
 

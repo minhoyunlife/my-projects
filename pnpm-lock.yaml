@@ -180,8 +180,8 @@ importers:
         specifier: ^10.2.0
         version: 10.2.0(react@18.2.0)
       '@minhoyunlife/my-ts-client':
-        specifier: 1.2.9
-        version: 1.2.9
+        specifier: 1.2.10
+        version: 1.2.10
       '@radix-ui/react-slot':
         specifier: ^1.1.0
         version: 1.1.0(@types/react@18.3.12)(react@18.2.0)
@@ -957,8 +957,8 @@ packages:
     resolution: {integrity: sha512-Z7C/xXCiGWsg0KuKsHTKJxbWhpI3Vs5GwLfOean7MGyVFGqdRgBbAjOCh6u4bbjPc/8MJ2pZmK/0DLdCbivLDA==}
     engines: {node: '>=8'}
 
-  '@minhoyunlife/my-ts-client@1.2.9':
-    resolution: {integrity: sha512-ost1oH34CtLMsXNYj6SW9Ic7KDzjuM1WE4737nVDcmU0VlC3v14OhnUNVpmtvVCVk1Zg+QibH7ktyMynFWzgqQ==, tarball: https://npm.pkg.github.com/download/@minhoyunlife/my-ts-client/1.2.9/de57f0ea6c0be132bf19e3f06dd73f58a35a156f}
+  '@minhoyunlife/my-ts-client@1.2.10':
+    resolution: {integrity: sha512-TMRX8UfvWcRHN4x6IditMNppDTJzt6DlRl0he90KHJD+tB11LAlXZBTF8oJqeYG5iGgY4qweDLZ91FUIp5+yrA==, tarball: https://npm.pkg.github.com/download/@minhoyunlife/my-ts-client/1.2.10/db28db0770b349a3fa13e7574cdfce334feb23a5}
 
   '@mole-inc/bin-wrapper@8.0.1':
     resolution: {integrity: sha512-sTGoeZnjI8N4KS+sW2AN95gDBErhAguvkw/tWdCjeM8bvxpz5lqrnd0vOJABA1A+Ic3zED7PYoLP/RANLgVotA==}
@@ -6338,7 +6338,7 @@ snapshots:
 
   '@lukeed/csprng@1.1.0': {}
 
-  '@minhoyunlife/my-ts-client@1.2.9':
+  '@minhoyunlife/my-ts-client@1.2.10':
     dependencies:
       axios: 1.7.8
     transitivePeerDependencies:
