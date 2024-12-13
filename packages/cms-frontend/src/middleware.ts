@@ -48,6 +48,7 @@ export function middleware(request: NextRequest) {
 }
 
 // 미들웨어가 실행될 경로 패턴 정의
+// 빌드 시점에서 config 는 export 할 때 바로 초기화가 되어야 하므로, 명시적으로 정의해줘야 함.
 export const config = {
-  matcher: [...AUTHENTICATED_PATHS, ...UNAUTHENTICATED_PATHS],
+  matcher: ["/login", "/2fa-setup", "/2fa", "/backup/verify", "/dashboard"],
 };

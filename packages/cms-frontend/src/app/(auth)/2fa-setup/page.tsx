@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -13,7 +13,7 @@ import { ROUTES } from "@/src/constants/routes";
 import { useAuth } from "@/src/hooks/use-auth";
 import { useAuthStore } from "@/src/store/auth";
 
-export default function TwoFactorSetupPage() {
+function TwoFactorSetup() {
   const router = useRouter();
   const { setup2FA, isSettingUp2FA } = useAuth();
   const { setTempToken } = useAuthStore();
@@ -97,5 +97,13 @@ export default function TwoFactorSetupPage() {
         )
       )}
     </section>
+  );
+}
+
+export default function TwoFactorSetupPage() {
+  return (
+    <Suspense>
+      <TwoFactorSetup />
+    </Suspense>
   );
 }

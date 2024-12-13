@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 
 import { useSearchParams } from "next/navigation";
 
@@ -9,7 +9,7 @@ import { isAuthErrorCode } from "@/src/constants/errors/auth/code";
 import { getErrorMessage } from "@/src/constants/errors/auth/messages";
 import { useToast } from "@/src/hooks/use-toast";
 
-export default function LoginPage() {
+function Login() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
@@ -41,5 +41,14 @@ export default function LoginPage() {
         관리자 계정으로만 로그인이 가능합니다
       </p>
     </section>
+  );
+}
+
+// NOTE: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <Login />
+    </Suspense>
   );
 }

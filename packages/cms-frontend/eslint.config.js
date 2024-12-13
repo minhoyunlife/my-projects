@@ -35,6 +35,8 @@ export default [
       },
     },
     rules: {
+      ...nextPlugin.configs.recommended.rules,
+      ...nextPlugin.configs["core-web-vitals"].rules,
       "no-undef": "off",
       "react/react-in-jsx-scope": "off",
       "react-hooks/rules-of-hooks": "error",

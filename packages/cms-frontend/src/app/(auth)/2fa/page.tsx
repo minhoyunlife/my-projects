@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -14,7 +14,7 @@ import { useAuth } from "@/src/hooks/use-auth";
 import { useToast } from "@/src/hooks/use-toast";
 import { useAuthStore } from "@/src/store/auth";
 
-export default function TwoFactorAuthPage() {
+function TwoFactorAuth() {
   const router = useRouter();
   const { toast } = useToast();
   const { verify2FA, isVerifying2FA } = useAuth();
@@ -106,5 +106,13 @@ export default function TwoFactorAuthPage() {
         </div>
       )}
     </section>
+  );
+}
+
+export default function TwoFactorAuthPage() {
+  return (
+    <Suspense>
+      <TwoFactorAuth />
+    </Suspense>
   );
 }

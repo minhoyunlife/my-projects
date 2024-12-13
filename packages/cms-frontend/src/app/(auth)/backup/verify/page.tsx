@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -14,7 +14,7 @@ import { useAuth } from "@/src/hooks/use-auth";
 import { useToast } from "@/src/hooks/use-toast";
 import { useAuthStore } from "@/src/store/auth";
 
-export default function BackupVerifyPage() {
+function BackupVerify() {
   const router = useRouter();
   const { toast } = useToast();
 
@@ -97,5 +97,13 @@ export default function BackupVerifyPage() {
         </div>
       )}
     </section>
+  );
+}
+
+export default function BackupVerifyPage() {
+  return (
+    <Suspense>
+      <BackupVerify />
+    </Suspense>
   );
 }
