@@ -7,7 +7,9 @@ export const ROUTES = {
   TWO_FACTOR_VERIFICATION: "/2fa",
   BACKUP_VERIFICATION: "/backup/verify",
   BACKUP_SHOW: "/backup/show",
-  DASHBOARD: "/dashboard",
+  DASHBOARD: "/",
+  FANARTS: "/fanarts",
+  GENRES: "/genres",
 } as const;
 
 // 미인증시에만 접근 가능한 경로
@@ -19,4 +21,8 @@ export const UNAUTHENTICATED_PATHS = [
 ];
 
 // 인증 후에만 접근 가능한 경로
-export const AUTHENTICATED_PATHS = [ROUTES.DASHBOARD];
+export const AUTHENTICATED_PATHS = [
+  ROUTES.DASHBOARD,
+  ROUTES.FANARTS,
+  ROUTES.GENRES,
+];
