@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import type { AxiosResponse } from "axios";
 
-import QueryProvider from "@/src/components/providers/query-provider";
+import QueryProvider from "@/src/components/common/query-provider";
 import { ROUTES } from "@/src/constants/routes";
 import { useAuth } from "@/src/hooks/use-auth";
 import { authApi } from "@/src/lib/api/client";

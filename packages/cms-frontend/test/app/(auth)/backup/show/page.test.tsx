@@ -1,4 +1,4 @@
-import BackupCodesPage from "@/src/app/(auth)/backup/show/page";
+import BackupCodesPage from "@/src/app/(unauthenticated)/backup/show/page";
 import { ROUTES } from "@/src/constants/routes";
 import { useAuthStore } from "@/src/store/auth";
 

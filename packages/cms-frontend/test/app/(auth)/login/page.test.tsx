@@ -2,7 +2,7 @@ import { useSearchParams } from "next/navigation";
 
 import type { Mock } from "vitest";
 
-import LoginPage from "@/src/app/(auth)/login/page";
+import LoginPage from "@/src/app/(unauthenticated)/login/page";
 import { AuthErrorCode } from "@/src/constants/errors/auth/code";
 import { getErrorMessage } from "@/src/constants/errors/auth/messages";
 
@@ -18,7 +18,7 @@ vi.mock("@/src/hooks/use-toast", () => ({
   })),
 }));
 
-vi.mock("@/src/components/auth/github-login-button", () => ({
+vi.mock("@/src/components/(unauthenticated)/github-login-button", () => ({
   GitHubLoginButton: () => <button>GitHub Login</button>,
 }));
 

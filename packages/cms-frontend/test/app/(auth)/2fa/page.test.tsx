@@ -2,7 +2,7 @@ import { useSearchParams } from "next/navigation";
 
 import type { Mock } from "vitest";
 
-import TwoFactorAuthPage from "@/src/app/(auth)/2fa/page";
+import TwoFactorAuthPage from "@/src/app/(unauthenticated)/2fa/page";
 import { AuthErrorCode } from "@/src/constants/errors/auth/code";
 import { getErrorMessage } from "@/src/constants/errors/auth/messages";
 import { ROUTES } from "@/src/constants/routes";

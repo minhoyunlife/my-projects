@@ -2,7 +2,7 @@ import { useSearchParams } from "next/navigation";
 
 import type { Mock } from "vitest";
 
-import BackupVerifyPage from "@/src/app/(auth)/backup/verify/page";
+import BackupVerifyPage from "@/src/app/(unauthenticated)/backup/verify/page";
 import { AuthErrorCode } from "@/src/constants/errors/auth/code";
 import { getErrorMessage } from "@/src/constants/errors/auth/messages";
 import { ROUTES } from "@/src/constants/routes";
