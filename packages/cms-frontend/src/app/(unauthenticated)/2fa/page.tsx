@@ -67,8 +67,8 @@ function TwoFactorAuth() {
 
   if (!token) return null;
 
-  const handleCodeComplete = (code: string) => {
-    verify2FA(token, code, mode);
+  const handleCodeComplete = async (code: string) => {
+    await verify2FA(token, code, mode);
   };
 
   return (

@@ -57,8 +57,8 @@ function BackupVerify() {
     }
   }, [error]);
 
-  const handleCodeComplete = (code: string) => {
-    verifyBackupCode(code);
+  const handleCodeComplete = async (code: string) => {
+    await verifyBackupCode(code);
   };
 
   if (!token) return null;
