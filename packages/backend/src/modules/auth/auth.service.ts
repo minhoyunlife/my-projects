@@ -59,6 +59,7 @@ export class AuthService {
    */
   async validateAdminUser(profile: GithubProfile): Promise<AdminUser> {
     const profileEmail = profile.emails[0].value;
+    const profileAvatarUrl = profile.photos[0].value;
 
     const administrator = await this.administratorRepository.findOneBy({
       email: profileEmail,
@@ -72,6 +73,7 @@ export class AuthService {
 
     return {
       email: administrator.email,
+      avatarUrl: profileAvatarUrl,
       isAdmin: true,
       isTotpEnabled: administrator.isTotpEnabled,
     };
@@ -266,6 +268,7 @@ export class AuthService {
     return this.jwtService.sign(
       {
         email: user.email,
+        avatarUrl: user.avatarUrl,
         isAdmin: user.isAdmin,
         type: TokenType.TEMPORARY,
       },
@@ -283,6 +286,7 @@ export class AuthService {
     return this.jwtService.sign(
       {
         email: user.email,
+        avatarUrl: user.avatarUrl,
         isAdmin: user.isAdmin,
         type: TokenType.ACCESS,
       },
@@ -300,6 +304,7 @@ export class AuthService {
     return this.jwtService.sign(
       {
         email: user.email,
+        avatarUrl: user.avatarUrl,
         isAdmin: user.isAdmin,
         type: TokenType.REFRESH,
       },

@@ -26,10 +26,7 @@ import {
 } from '@/src/modules/auth/dtos/response.dto';
 import { CookieAuthGuard } from '@/src/modules/auth/guards/cookie.auth.guard';
 import { GithubAuthGuard } from '@/src/modules/auth/guards/github.auth.guard';
-import {
-  BearerAuthGuard,
-  TempAuthGuard,
-} from '@/src/modules/auth/guards/token.auth.guard';
+import { TempAuthGuard } from '@/src/modules/auth/guards/token.auth.guard';
 import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 
 @Controller('auth')
@@ -84,7 +81,9 @@ export class AuthController {
     const accessToken = await this.authService.createAccessToken(req.user);
 
     const refreshToken = await this.authService.createRefreshToken(req.user);
+
     this.setRefreshTokenCookie(res, refreshToken);
+    this.setUserCookie(res, req.user);
 
     if (isInitialSetup) {
       res.cookie('show', 'true', {
@@ -125,7 +124,9 @@ export class AuthController {
     const accessToken = await this.authService.createAccessToken(req.user);
 
     const refreshToken = await this.authService.createRefreshToken(req.user);
+
     this.setRefreshTokenCookie(res, refreshToken);
+    this.setUserCookie(res, req.user);
 
     res.json({
       accessToken,
@@ -150,6 +151,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async logout(@Res() res: Response): Promise<void> {
     this.clearRefreshTokenCookie(res);
+    this.clearUserCookie(res);
+
     res.end();
   }
 
@@ -166,6 +169,22 @@ export class AuthController {
   private clearRefreshTokenCookie(res: Response): void {
     res.clearCookie('refreshToken', {
       httpOnly: true,
+      secure: this.configService.get('app.env') === Environment.PROD,
+      sameSite:
+        this.configService.get('app.env') === Environment.PROD ? 'none' : 'lax',
+    });
+  }
+
+  private setUserCookie(res: Response, user: AdminUser): void {
+    res.cookie('user', JSON.stringify(user), {
+      secure: this.configService.get('app.env') === Environment.PROD,
+      sameSite:
+        this.configService.get('app.env') === Environment.PROD ? 'none' : 'lax',
+    });
+  }
+
+  private clearUserCookie(res: Response): void {
+    res.clearCookie('user', {
       secure: this.configService.get('app.env') === Environment.PROD,
       sameSite:
         this.configService.get('app.env') === Environment.PROD ? 'none' : 'lax',

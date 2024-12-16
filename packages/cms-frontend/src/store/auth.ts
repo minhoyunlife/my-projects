@@ -1,11 +1,14 @@
 import { create } from "zustand";
 import { persist, devtools, createJSONStorage } from "zustand/middleware";
 
+import type { AdminUser } from "@/src/lib/utils/cookie";
+
 interface AuthState {
   tempToken: string | undefined;
   accessToken: string | undefined;
   setupToken: string | undefined;
   backupCodes: string[] | undefined;
+  user: AdminUser | undefined;
   setTempToken: (token: string) => void;
   setAccessToken: (token: string) => void;
   clearTempToken: () => void;
@@ -14,6 +17,8 @@ interface AuthState {
   clearSetupToken: () => void;
   setBackupCodes: (codes: string[]) => void;
   clearBackupCodes: () => void;
+  setUser: (user: AdminUser) => void;
+  clearUser: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -24,6 +29,7 @@ export const useAuthStore = create<AuthState>()(
         setupToken: undefined,
         backupCodes: undefined,
         accessToken: undefined,
+        user: undefined,
         setTempToken: (token) =>
           set({ tempToken: token }, false, "auth/setTempToken"),
         clearTempToken: () =>
@@ -40,6 +46,8 @@ export const useAuthStore = create<AuthState>()(
           set({ accessToken: token }, false, "auth/setAccessToken"),
         clearAccessToken: () =>
           set({ accessToken: undefined }, false, "auth/clearAccessToken"),
+        setUser: (user) => set({ user }, false, "auth/setUser"),
+        clearUser: () => set({ user: undefined }, false, "auth/clearUser"),
       }),
       { name: "Auth Store" },
     ),
@@ -48,6 +56,7 @@ export const useAuthStore = create<AuthState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         setupToken: state.setupToken,
+        user: state.user,
       }),
     },
   ),

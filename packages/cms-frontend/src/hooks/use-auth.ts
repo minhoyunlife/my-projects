@@ -6,6 +6,7 @@ import { AuthErrorCode } from "@/src/constants/errors/auth/code";
 import { ROUTES } from "@/src/constants/routes";
 import { authApi } from "@/src/lib/api/client";
 import { isApiError } from "@/src/lib/api/types";
+import { getUserFromCookie } from "@/src/lib/utils/cookie";
 import { handleAuthError } from "@/src/lib/utils/route/auth/error";
 import { useAuthStore } from "@/src/store/auth";
 
@@ -19,6 +20,8 @@ export function useAuth() {
     setAccessToken,
     clearAccessToken,
     setBackupCodes,
+    setUser,
+    clearUser,
   } = useAuthStore();
 
   const loginByGithub = () => {
@@ -67,6 +70,14 @@ export function useAuth() {
       setAccessToken(response.data.accessToken);
       clearTempToken();
       clearSetupToken();
+
+      const user = getUserFromCookie();
+      if (!user) {
+        console.error("User not found after 2FA verification");
+        router.replace(ROUTES.LOGIN);
+        return;
+      }
+      setUser(user);
 
       if (response.data.backupCodes) {
         setBackupCodes(response.data.backupCodes);
@@ -151,6 +162,8 @@ export function useAuth() {
     mutationFn: () => authApi.logout(),
     onSettled: () => {
       clearAccessToken();
+      clearUser();
+
       router.replace(ROUTES.LOGIN);
     }, // 성공/실패 상관없이 무조건 로그인 페이지로
   });

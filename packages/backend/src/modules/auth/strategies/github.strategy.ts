@@ -21,7 +21,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
       clientID: configService.get('auth.clientId'),
       clientSecret: configService.get('auth.clientSecret'),
       callbackURL: configService.get('auth.callbackUrl'),
-      scope: ['user:email'],
+      scope: ['user:email', 'read:user'],
     });
   }
 

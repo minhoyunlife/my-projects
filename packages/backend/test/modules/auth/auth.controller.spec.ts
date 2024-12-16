@@ -66,7 +66,7 @@ describeWithDeps('AuthController', () => {
       expect(redirectUrl.pathname).toBe('/login/oauth/authorize');
       expect(redirectUrl.searchParams.has('client_id')).toBe(true);
       expect(redirectUrl.searchParams.has('redirect_uri')).toBe(true);
-      expect(scope).toBe('user:email');
+      expect(scope).toBe('user:email,read:user');
     });
   });
 
@@ -191,7 +191,7 @@ describeWithDeps('AuthController', () => {
       code = authenticator.generate(secret);
     });
 
-    it('200 상태코드와 함께, 인증 토큰과 리프레시 토큰이 반환됨', async () => {
+    it('200 상태코드와 함께, 인증 토큰과 쿠키(리프레시 토큰 및 유저정보)가 반환됨', async () => {
       const totp = await dataSource.getRepository(Totp).findOneBy({
         adminEmail: user.email,
       });
@@ -218,7 +218,11 @@ describeWithDeps('AuthController', () => {
       );
 
       expect(response.headers['set-cookie']).toBeDefined();
+      expect(response.headers['set-cookie']).toHaveLength(2);
       expect(response.headers['set-cookie'][0]).toMatch(/^refreshToken=.+/);
+      expect(response.headers['set-cookie'][0]).toContain('HttpOnly');
+      expect(response.headers['set-cookie'][1]).toMatch(/^user=.+/);
+      expect(response.headers['set-cookie'][1]).not.toContain('HttpOnly');
     });
 
     it('최초 인증의 경우, 백업코드도 함께 반환됨', async () => {
@@ -340,7 +344,7 @@ describeWithDeps('AuthController', () => {
       tempToken = await createTestTempToken(authService, user);
     });
 
-    it('200 상태코드와 함께, 인증 토큰과 리프레시 토큰이 반환됨', async () => {
+    it('200 상태코드와 함께, 인증 토큰과 쿠키(리프레시 토큰 및 유저 정보)가 반환됨', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/2fa/backup')
         .set('Authorization', `Bearer ${tempToken}`)
@@ -355,7 +359,11 @@ describeWithDeps('AuthController', () => {
       );
 
       expect(response.headers['set-cookie']).toBeDefined();
+      expect(response.headers['set-cookie']).toHaveLength(2);
       expect(response.headers['set-cookie'][0]).toMatch(/^refreshToken=.+/);
+      expect(response.headers['set-cookie'][0]).toContain('HttpOnly');
+      expect(response.headers['set-cookie'][1]).toMatch(/^user=.+/);
+      expect(response.headers['set-cookie'][1]).not.toContain('HttpOnly');
     });
 
     it('임시 토큰 없이 요청할 경우, 400 에러가 반환됨', async () => {
@@ -481,7 +489,7 @@ describeWithDeps('AuthController', () => {
       refreshToken = await createTestRefreshToken(authService, user);
     });
 
-    it('200 상태코드와 함께, 리프레시 토큰 쿠키가 제거됨', async () => {
+    it('200 상태코드와 함께, 리프레시 토큰 및 유저 정보 쿠키가 제거됨', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/logout')
         .set('Cookie', [`refreshToken=${refreshToken};`])
@@ -490,8 +498,9 @@ describeWithDeps('AuthController', () => {
       await expect(response).toMatchOpenAPISpec();
 
       expect(response.headers['set-cookie']).toBeDefined();
+      expect(response.headers['set-cookie']).toHaveLength(2);
       expect(response.headers['set-cookie'][0]).toMatch(/refreshToken=;/);
-      expect(response.headers['set-cookie'][0]).toMatch(/HttpOnly/);
+      expect(response.headers['set-cookie'][1]).toMatch(/user=;/);
     });
 
     it('리프레시 토큰 없이 요청할 경우, 400 에러가 반환됨', async () => {
