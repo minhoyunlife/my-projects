@@ -13,17 +13,11 @@ import {
   SidebarMenuItem,
 } from "@/src/components/base/sidebar";
 import { useAuth } from "@/src/hooks/use-auth";
+import { useAuthStore } from "@/src/store/auth";
 
-export function NavUser({
-  user,
-}: {
-  user: {
-    name: string;
-    email: string;
-    avatar: string;
-  };
-}) {
+export function NavUser() {
   const { logout } = useAuth();
+  const { user } = useAuthStore();
 
   return (
     <SidebarMenu>
@@ -31,17 +25,17 @@ export function NavUser({
         <div className="flex w-full items-center gap-3 p-2">
           <Avatar className="h-8 w-8 rounded-lg shrink-0">
             <AvatarImage
-              src={user.avatar}
-              alt={user.name}
+              src={user?.avatarUrl}
+              alt="user image"
             />
             <AvatarFallback className="rounded-lg">
-              {user.name[0]?.toUpperCase() ?? "U"}
+              {user?.email[0]?.toUpperCase()}
             </AvatarFallback>
           </Avatar>
 
           <div className="min-w-0 flex-1">
             <span className="block truncate text-sm font-semibold">
-              {user.email}
+              {user?.email}
             </span>
           </div>
 

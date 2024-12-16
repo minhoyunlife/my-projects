@@ -3,8 +3,8 @@ import { useSearchParams } from "next/navigation";
 import type { Mock } from "vitest";
 
 import LoginPage from "@/src/app/(unauthenticated)/login/page";
-import { AuthErrorCode } from "@/src/constants/errors/auth/code";
-import { getErrorMessage } from "@/src/constants/errors/auth/messages";
+import { AuthErrorCode } from "@/src/constants/auth/error-codes";
+import { getErrorMessage } from "@/src/constants/auth/error-messages";
 
 vi.mock("next/navigation", () => ({
   useSearchParams: vi.fn(() => new URLSearchParams()),

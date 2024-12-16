@@ -3,10 +3,10 @@ import { useSearchParams } from "next/navigation";
 import type { Mock } from "vitest";
 
 import BackupVerifyPage from "@/src/app/(unauthenticated)/backup/verify/page";
-import { AuthErrorCode } from "@/src/constants/errors/auth/code";
-import { getErrorMessage } from "@/src/constants/errors/auth/messages";
-import { ROUTES } from "@/src/constants/routes";
+import { AuthErrorCode } from "@/src/constants/auth/error-codes";
+import { getErrorMessage } from "@/src/constants/auth/error-messages";
 import { useAuth } from "@/src/hooks/use-auth";
+import { ROUTES } from "@/src/routes";
 import { useAuthStore } from "@/src/store/auth";
 
 const mockRouter = {

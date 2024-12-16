@@ -5,8 +5,8 @@ import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { GitHubLoginButton } from "@/src/components/(unauthenticated)/github-login-button";
-import { isAuthErrorCode } from "@/src/constants/errors/auth/code";
-import { getErrorMessage } from "@/src/constants/errors/auth/messages";
+import { isAuthErrorCode } from "@/src/constants/auth/error-codes";
+import { getErrorMessage } from "@/src/constants/auth/error-messages";
 import { useToast } from "@/src/hooks/use-toast";
 
 function Login() {

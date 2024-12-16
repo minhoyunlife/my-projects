@@ -3,8 +3,8 @@ import { useSearchParams } from "next/navigation";
 import type { Mock } from "vitest";
 
 import TwoFactorSetupPage from "@/src/app/(unauthenticated)/2fa-setup/page";
-import { ROUTES } from "@/src/constants/routes";
 import { useAuth } from "@/src/hooks/use-auth";
+import { ROUTES } from "@/src/routes";
 
 const mockRouter = {
   replace: vi.fn(),

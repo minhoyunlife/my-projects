@@ -5,7 +5,7 @@ import {
   AUTHENTICATED_PATHS,
   ROUTES,
   UNAUTHENTICATED_PATHS,
-} from "@/src/constants/routes";
+} from "@/src/routes";
 
 function hasMatchingPath(pathname: string, paths: readonly string[]) {
   return paths.some((path) => {

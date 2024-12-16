@@ -1,4 +1,4 @@
-import { AuthErrorCode } from "@/src/constants/errors/auth/code";
+import { AuthErrorCode } from "./error-codes";
 
 type ErrorMessages = {
   [key in AuthErrorCode]: string;

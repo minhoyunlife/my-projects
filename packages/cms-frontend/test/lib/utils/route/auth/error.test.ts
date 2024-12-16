@@ -1,12 +1,12 @@
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
-import { AuthErrorCode } from "@/src/constants/errors/auth/code";
-import { ROUTES } from "@/src/constants/routes";
+import { AuthErrorCode } from "@/src/constants/auth/error-codes";
 import {
   findAuthErrorRoute,
   handleAuthError,
-} from "@/src/lib/utils/route/auth/error";
-import { createUrl } from "@/src/lib/utils/route/base";
+} from "@/src/lib/utils/routes/auth/error";
+import { createUrl } from "@/src/lib/utils/routes/base";
+import { ROUTES } from "@/src/routes";
 
 describe("error", () => {
   describe("findAuthErrorRoute", () => {

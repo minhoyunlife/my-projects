@@ -1,5 +1,5 @@
 import BackupCodesPage from "@/src/app/(unauthenticated)/backup/show/page";
-import { ROUTES } from "@/src/constants/routes";
+import { ROUTES } from "@/src/routes";
 import { useAuthStore } from "@/src/store/auth";
 
 const mockRouter = {

@@ -17,30 +17,8 @@ import {
   SidebarRail,
 } from "@/src/components/base/sidebar";
 import { Logo } from "@/src/components/common/logo";
-import { ROUTES } from "@/src/constants/routes";
-
-const data = {
-  user: {
-    name: "John Doe",
-    email: "john.doe@example.com",
-    avatar: "https://github.com/shadcn.png",
-  }, // TODO: 인증 후, 유저 정보를 묘화할 수단이 필요
-  navMain: [
-    {
-      title: "🏞️ 팬아트",
-      items: [
-        {
-          title: "작품 목록",
-          url: ROUTES.FANARTS,
-        },
-        {
-          title: "장르 목록",
-          url: ROUTES.GENRES,
-        },
-      ],
-    },
-  ],
-};
+import { menu } from "@/src/constants/nav/menu";
+import { ROUTES } from "@/src/routes";
 
 export function NavSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -55,15 +33,15 @@ export function NavSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        {data.navMain.map((item) => (
-          <SidebarGroup key={item.title}>
-            <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
+        {menu.groups.map((group) => (
+          <SidebarGroup key={group.name}>
+            <SidebarGroupLabel>{group.name}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {item.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
+                {group.items.map((item) => (
+                  <SidebarMenuItem key={item.name}>
                     <SidebarMenuButton asChild>
-                      <Link href={item.url}>{item.title}</Link>
+                      <Link href={item.url}>{item.name}</Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -73,7 +51,7 @@ export function NavSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ))}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   );

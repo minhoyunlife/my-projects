@@ -9,8 +9,8 @@ import { QRCodeCanvas } from "qrcode.react";
 import { Button } from "@/src/components/base/button";
 import { Card } from "@/src/components/base/card";
 import { Spinner } from "@/src/components/common/spinner";
-import { ROUTES } from "@/src/constants/routes";
 import { useAuth } from "@/src/hooks/use-auth";
+import { ROUTES } from "@/src/routes";
 import { useAuthStore } from "@/src/store/auth";
 
 function TwoFactorSetup() {

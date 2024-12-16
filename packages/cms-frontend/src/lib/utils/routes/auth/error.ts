@@ -1,9 +1,9 @@
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
-import { AuthErrorCode } from "@/src/constants/errors/auth/code";
-import { ROUTES } from "@/src/constants/routes";
+import { AuthErrorCode } from "@/src/constants/auth/error-codes";
 import { isApiError } from "@/src/lib/api/types";
-import { createUrl } from "@/src/lib/utils/route/base";
+import { createUrl } from "@/src/lib/utils/routes/base";
+import { ROUTES } from "@/src/routes";
 
 export type AuthRouteParams = {
   error?: string;

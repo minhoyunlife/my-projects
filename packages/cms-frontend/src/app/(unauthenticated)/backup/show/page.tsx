@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/src/components/base/button";
 import { Card } from "@/src/components/base/card";
-import { ROUTES } from "@/src/constants/routes";
+import { ROUTES } from "@/src/routes";
 import { useAuthStore } from "@/src/store/auth";
 
 export default function BackupCodesPage() {
