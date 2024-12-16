@@ -68,6 +68,7 @@ abstract class TokenAuthGuard<T extends TokenPayload> implements CanActivate {
 
     request.user = {
       email: payload.email,
+      avatarUrl: payload.avatarUrl,
       isAdmin: payload.isAdmin,
     } as AdminUser;
 

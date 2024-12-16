@@ -5,6 +5,7 @@ import { TokenType } from '@/src/common/enums/token-type.enum';
  */
 export interface TokenPayload {
   email: string;
+  avatarUrl: string;
   isAdmin: boolean;
   type: TokenType;
   iat: number;

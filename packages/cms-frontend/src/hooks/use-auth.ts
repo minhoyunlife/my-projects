@@ -2,11 +2,12 @@ import { useRouter } from "next/navigation";
 
 import { useMutation } from "@tanstack/react-query";
 
-import { AuthErrorCode } from "@/src/constants/errors/auth/code";
-import { ROUTES } from "@/src/constants/routes";
+import { AuthErrorCode } from "@/src/constants/auth/error-codes";
 import { authApi } from "@/src/lib/api/client";
 import { isApiError } from "@/src/lib/api/types";
-import { handleAuthError } from "@/src/lib/utils/route/auth/error";
+import { getUserFromCookie } from "@/src/lib/utils/cookie";
+import { handleAuthError } from "@/src/lib/utils/routes/auth/error";
+import { ROUTES } from "@/src/routes";
 import { useAuthStore } from "@/src/store/auth";
 
 export function useAuth() {
@@ -19,6 +20,8 @@ export function useAuth() {
     setAccessToken,
     clearAccessToken,
     setBackupCodes,
+    setUser,
+    clearUser,
   } = useAuthStore();
 
   const loginByGithub = () => {
@@ -67,6 +70,13 @@ export function useAuth() {
       setAccessToken(response.data.accessToken);
       clearTempToken();
       clearSetupToken();
+
+      const user = getUserFromCookie();
+      if (!user) {
+        router.replace(ROUTES.LOGIN);
+        return;
+      }
+      setUser(user);
 
       if (response.data.backupCodes) {
         setBackupCodes(response.data.backupCodes);
@@ -151,6 +161,8 @@ export function useAuth() {
     mutationFn: () => authApi.logout(),
     onSettled: () => {
       clearAccessToken();
+      clearUser();
+
       router.replace(ROUTES.LOGIN);
     }, // 성공/실패 상관없이 무조건 로그인 페이지로
   });
@@ -160,10 +172,10 @@ export function useAuth() {
     setup2FA: () => setup2FAMutation.mutateAsync(),
     isSettingUp2FA: setup2FAMutation.isPending,
     verify2FA: (token: string | null, code: string, mode: string | null) =>
-      verify2FAMutation.mutate({ token, code, mode }),
+      verify2FAMutation.mutateAsync({ token, code, mode }),
     isVerifying2FA: verify2FAMutation.isPending,
     verifyBackupCode: (code: string) =>
-      verifyBackupCodeMutation.mutate({ code }),
+      verifyBackupCodeMutation.mutateAsync({ code }),
     isVerifyingBackup: verifyBackupCodeMutation.isPending,
     logout: () => logoutMutation.mutate(),
     isLoggingOut: logoutMutation.isPending,

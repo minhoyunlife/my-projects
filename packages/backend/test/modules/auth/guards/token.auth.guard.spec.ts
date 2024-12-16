@@ -54,6 +54,7 @@ describeWithoutDeps('TokenAuthGuard', () => {
     it('유효한 토큰인 경우, request 객체에 user 정보를 추가함', async () => {
       const payload = {
         email: 'test@example.com',
+        avatarUrl: 'https://example.com/avatar.jpg',
         isAdmin: true,
         type: TokenType.TEMPORARY,
       };
@@ -70,6 +71,7 @@ describeWithoutDeps('TokenAuthGuard', () => {
       expect(result).toBe(true);
       expect(request.user).toEqual({
         email: payload.email,
+        avatarUrl: payload.avatarUrl,
         isAdmin: payload.isAdmin,
       });
     });
@@ -105,6 +107,7 @@ describeWithoutDeps('TokenAuthGuard', () => {
     it('페이로드의 타입이 temporary가 아닌 경우, INVALID_TYPE 에러가 발생함', async () => {
       const payload = {
         email: 'test@example.com',
+        avatarUrl: 'https://example.com/avatar.jpg',
         isAdmin: true,
         type: TokenType.ACCESS,
       };
@@ -189,6 +192,7 @@ describeWithoutDeps('TokenAuthGuard', () => {
     it('유효한 토큰인 경우, request 객체에 user 정보를 추가함', async () => {
       const payload = {
         email: 'test@example.com',
+        avatarUrl: 'https://example.com/avatar.jpg',
         isAdmin: true,
         type: TokenType.ACCESS,
       };
@@ -205,6 +209,7 @@ describeWithoutDeps('TokenAuthGuard', () => {
       expect(result).toBe(true);
       expect(request.user).toEqual({
         email: payload.email,
+        avatarUrl: payload.avatarUrl,
         isAdmin: payload.isAdmin,
       });
     });
@@ -240,6 +245,7 @@ describeWithoutDeps('TokenAuthGuard', () => {
     it('페이로드의 타입이 access가 아닌 경우, INVALID_TYPE 에러가 발생함', async () => {
       const payload = {
         email: 'test@example.com',
+        avatarUrl: 'https://example.com/avatar.jpg',
         isAdmin: true,
         type: TokenType.TEMPORARY,
       };

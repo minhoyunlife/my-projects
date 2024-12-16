@@ -3,6 +3,7 @@
  */
 export interface AdminUser {
   email: string;
+  avatarUrl: string;
   isAdmin: boolean;
   isTotpEnabled: boolean;
 }

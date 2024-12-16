@@ -1,4 +1,4 @@
-import { createUrl } from "@/src/lib/utils/route/base";
+import { createUrl } from "@/src/lib/utils/routes/base";
 
 describe("createUrl", () => {
   it("파라미터 없이 경로만 주어진 경우, 경로를 반환함", () => {

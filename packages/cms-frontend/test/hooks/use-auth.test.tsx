@@ -2,10 +2,11 @@ import type { ReactNode } from "react";
 
 import type { AxiosResponse } from "axios";
 
-import QueryProvider from "@/src/components/providers/query-provider";
-import { ROUTES } from "@/src/constants/routes";
+import QueryProvider from "@/src/components/common/query-provider";
 import { useAuth } from "@/src/hooks/use-auth";
 import { authApi } from "@/src/lib/api/client";
+import { getUserFromCookie } from "@/src/lib/utils/cookie";
+import { ROUTES } from "@/src/routes";
 import { useAuthStore } from "@/src/store/auth";
 
 const router = {
@@ -25,6 +26,10 @@ vi.mock("@/src/lib/api/client", () => ({
   },
 }));
 
+vi.mock("@/src/lib/utils/cookie", () => ({
+  getUserFromCookie: vi.fn(),
+}));
+
 const wrapper = ({ children }: { children: ReactNode }) => (
   <QueryProvider>{children}</QueryProvider>
 );
@@ -38,6 +43,7 @@ describe("useAuth", () => {
       setupToken: undefined,
       accessToken: undefined,
       backupCodes: undefined,
+      user: undefined,
     });
   });
 
@@ -125,25 +131,33 @@ describe("useAuth", () => {
           setupToken: undefined,
           accessToken: undefined,
           backupCodes: undefined,
+          user: undefined,
         });
       });
     });
 
     it("2FA 검증이 성공하되 백업 코드 프로퍼티가 없는 경우, 대시보드로 이동함", async () => {
       const mockAccessToken = "test-access-token";
+      const mockUser = {
+        email: "test@example.com",
+        avatarUrl: "https://example.com/avatar.png",
+        isAdmin: true,
+      };
       const mockResponse = {
         data: { accessToken: mockAccessToken },
       } as AxiosResponse;
 
       vi.mocked(authApi.verify2FA).mockResolvedValueOnce(mockResponse);
+      vi.mocked(getUserFromCookie).mockReturnValue(mockUser);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
 
       await act(async () => {
-        result.current.verify2FA("temp-token", "123456", null);
+        await result.current.verify2FA("temp-token", "123456", null);
       });
 
       expect(useAuthStore.getState().accessToken).toBe(mockAccessToken);
+      expect(useAuthStore.getState().user).toEqual(mockUser);
       expect(useAuthStore.getState().tempToken).toBeUndefined();
       expect(useAuthStore.getState().setupToken).toBeUndefined();
 
@@ -152,6 +166,11 @@ describe("useAuth", () => {
 
     it("2FA 검증이 성공하되 백업 코드 프로퍼티가 있는 경우, 백업 코드 표시 페이지로 이동함", async () => {
       const mockAccessToken = "test-access-token";
+      const mockUser = {
+        email: "test@example.com",
+        avatarUrl: "https://example.com/avatar.png",
+        isAdmin: true,
+      };
       const mockBackupCodes = ["code1", "code2"];
       const mockResponse = {
         data: {
@@ -161,19 +180,45 @@ describe("useAuth", () => {
       } as AxiosResponse;
 
       vi.mocked(authApi.verify2FA).mockResolvedValueOnce(mockResponse);
+      vi.mocked(getUserFromCookie).mockReturnValue(mockUser);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
 
       await act(async () => {
-        result.current.verify2FA("temp-token", "123456", null);
+        await result.current.verify2FA("temp-token", "123456", null);
       });
 
       expect(useAuthStore.getState().accessToken).toBe(mockAccessToken);
+      expect(useAuthStore.getState().user).toEqual(mockUser);
       expect(useAuthStore.getState().backupCodes).toEqual(mockBackupCodes);
       expect(useAuthStore.getState().tempToken).toBeUndefined();
       expect(useAuthStore.getState().setupToken).toBeUndefined();
 
       expect(router.replace).toHaveBeenCalledWith(ROUTES.BACKUP_SHOW);
+    });
+
+    it("2FA 검증이 성공했지만 유저 정보를 찾을 수 없는 경우, 로그인 페이지로 리다이렉트됨", async () => {
+      const mockAccessToken = "test-access-token";
+      const mockResponse = {
+        data: { accessToken: mockAccessToken },
+      } as AxiosResponse;
+
+      vi.mocked(authApi.verify2FA).mockResolvedValueOnce(mockResponse);
+      vi.mocked(getUserFromCookie).mockReturnValue(null);
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await act(async () => {
+        try {
+          await result.current.verify2FA("temp-token", "123456", null);
+        } catch {
+          // 예상된 에러이므로 무시
+        }
+      });
+
+      await waitFor(() => {
+        expect(router.replace).toHaveBeenCalledWith(ROUTES.LOGIN);
+      });
     });
 
     it("2FA 코드 검증이 실패할 경우, 에러 파라미터와 함께 현재 페이지에 머무름", async () => {
@@ -192,7 +237,7 @@ describe("useAuth", () => {
 
       await act(async () => {
         try {
-          result.current.verify2FA(tempToken, "123456", mode);
+          await result.current.verify2FA(tempToken, "123456", mode);
         } catch {
           // 예상된 에러이므로 무시
         }
@@ -227,7 +272,7 @@ describe("useAuth", () => {
 
       await act(async () => {
         try {
-          result.current.verify2FA(tempToken, "123456", mode);
+          await result.current.verify2FA(tempToken, "123456", mode);
         } catch {
           // 예상된 에러이므로 무시
         }
@@ -268,7 +313,7 @@ describe("useAuth", () => {
       const { result } = renderHook(() => useAuth(), { wrapper });
 
       await act(async () => {
-        result.current.verifyBackupCode("1A2B3C4D");
+        await result.current.verifyBackupCode("1A2B3C4D");
       });
 
       expect(useAuthStore.getState().accessToken).toBe(mockAccessToken);
@@ -293,7 +338,7 @@ describe("useAuth", () => {
 
       await act(async () => {
         try {
-          result.current.verifyBackupCode("1A2B3C4D");
+          await result.current.verifyBackupCode("1A2B3C4D");
         } catch {
           // 예상된 에러이므로 무시
         }
@@ -325,7 +370,7 @@ describe("useAuth", () => {
 
       await act(async () => {
         try {
-          result.current.verifyBackupCode("1A2B3C4D");
+          await result.current.verifyBackupCode("1A2B3C4D");
         } catch {
           // 예상된 에러이므로 무시
         }
@@ -347,11 +392,12 @@ describe("useAuth", () => {
       act(() => {
         useAuthStore.setState({
           accessToken: undefined,
+          user: undefined,
         });
       });
     });
 
-    it("로그아웃 API 호출이 성공할 경우, 액세스 토큰이 삭제되고 로그인 페이지로 리다이렉션됨", async () => {
+    it("로그아웃 API 호출이 성공할 경우, 액세스 토큰과 유저 상태가 삭제되고 로그인 페이지로 리다이렉션됨", async () => {
       const mockResponse = {
         data: {},
       } as AxiosResponse;
@@ -359,7 +405,16 @@ describe("useAuth", () => {
       vi.mocked(authApi.logout).mockResolvedValueOnce(mockResponse);
 
       const mockAccessToken = "test-access-token";
+      const mockUser = {
+        email: "test@example.com",
+        avatarUrl: "https://example.com/avatar.png",
+        isAdmin: true,
+      };
       useAuthStore.setState({ accessToken: mockAccessToken });
+      useAuthStore.setState({
+        accessToken: mockAccessToken,
+        user: mockUser,
+      });
 
       const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -368,6 +423,7 @@ describe("useAuth", () => {
       });
 
       expect(useAuthStore.getState().accessToken).toBeUndefined();
+      expect(useAuthStore.getState().user).toBeUndefined();
       expect(router.replace).toHaveBeenCalledWith(ROUTES.LOGIN);
     });
 
@@ -381,7 +437,16 @@ describe("useAuth", () => {
       vi.mocked(authApi.logout).mockRejectedValueOnce(mockError);
 
       const mockAccessToken = "test-access-token";
+      const mockUser = {
+        email: "test@example.com",
+        avatarUrl: "https://example.com/avatar.png",
+        isAdmin: true,
+      };
       useAuthStore.setState({ accessToken: mockAccessToken });
+      useAuthStore.setState({
+        accessToken: mockAccessToken,
+        user: mockUser,
+      });
 
       const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -390,6 +455,7 @@ describe("useAuth", () => {
       });
 
       expect(useAuthStore.getState().accessToken).toBeUndefined();
+      expect(useAuthStore.getState().user).toBeUndefined();
       expect(router.replace).toHaveBeenCalledWith(ROUTES.LOGIN);
     });
   });

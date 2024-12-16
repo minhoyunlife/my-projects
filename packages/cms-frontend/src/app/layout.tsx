@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
-import QueryProvider from "@/src/components/providers/query-provider";
-import { Toaster } from "@/src/components/ui/toaster";
+import { Toaster } from "@/src/components/base/toaster";
+import QueryProvider from "@/src/components/common/query-provider";
 import "@/src/app/globals.css";
 
 export const metadata: Metadata = {

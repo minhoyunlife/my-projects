@@ -5,7 +5,7 @@ import {
 } from "@minhoyunlife/my-ts-client";
 import axios from "axios";
 
-import { ROUTES } from "@/src/constants/routes";
+import { ROUTES } from "@/src/routes";
 import { useAuthStore } from "@/src/store/auth";
 
 const apiClient = axios.create({

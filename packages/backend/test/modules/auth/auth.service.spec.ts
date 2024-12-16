@@ -90,12 +90,14 @@ describeWithDeps('AuthService', () => {
 
       const profile = {
         emails: [{ value: email }],
+        photos: [{ value: 'https://example.com/avatar.jpg' }],
       } as GithubProfile;
 
       const result = await service.validateAdminUser(profile);
 
       expect(result).toEqual({
         email: administrator.email,
+        avatarUrl: profile.photos[0].value,
         isAdmin: true,
         isTotpEnabled: administrator.isTotpEnabled,
       });
@@ -104,6 +106,7 @@ describeWithDeps('AuthService', () => {
     it('등록되지 않은 이메일인 경우, 에러가 발생함', async () => {
       const profile = {
         emails: [{ value: 'unknown@example.com' }],
+        photos: [{ value: 'https://example.com/avatar.jpg' }],
       } as GithubProfile;
 
       try {
@@ -560,6 +563,7 @@ describeWithDeps('AuthService', () => {
       const token = 'mock.jwt.token';
       const user = {
         email,
+        avatarUrl: 'https://example.com/avatar.jpg',
         isAdmin: true,
       };
 
@@ -570,6 +574,7 @@ describeWithDeps('AuthService', () => {
       expect(jwtService.sign).toHaveBeenCalledWith(
         {
           email: user.email,
+          avatarUrl: user.avatarUrl,
           isAdmin: user.isAdmin,
           type: TokenType.TEMPORARY,
         },
@@ -587,6 +592,7 @@ describeWithDeps('AuthService', () => {
       const token = 'mock.jwt.token';
       const user = {
         email,
+        avatarUrl: 'https://example.com/avatar.jpg',
         isAdmin: true,
       };
 
@@ -597,6 +603,7 @@ describeWithDeps('AuthService', () => {
       expect(jwtService.sign).toHaveBeenCalledWith(
         {
           email: user.email,
+          avatarUrl: user.avatarUrl,
           isAdmin: user.isAdmin,
           type: TokenType.ACCESS,
         },
@@ -614,6 +621,7 @@ describeWithDeps('AuthService', () => {
       const token = 'mock.jwt.token';
       const user = {
         email,
+        avatarUrl: 'https://example.com/avatar.jpg',
         isAdmin: true,
       };
 
@@ -624,6 +632,7 @@ describeWithDeps('AuthService', () => {
       expect(jwtService.sign).toHaveBeenCalledWith(
         {
           email: user.email,
+          avatarUrl: user.avatarUrl,
           isAdmin: user.isAdmin,
           type: TokenType.REFRESH,
         },

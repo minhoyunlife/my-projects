@@ -2,11 +2,11 @@ import { useSearchParams } from "next/navigation";
 
 import type { Mock } from "vitest";
 
-import TwoFactorAuthPage from "@/src/app/(auth)/2fa/page";
-import { AuthErrorCode } from "@/src/constants/errors/auth/code";
-import { getErrorMessage } from "@/src/constants/errors/auth/messages";
-import { ROUTES } from "@/src/constants/routes";
+import TwoFactorAuthPage from "@/src/app/(unauthenticated)/2fa/page";
+import { AuthErrorCode } from "@/src/constants/auth/error-codes";
+import { getErrorMessage } from "@/src/constants/auth/error-messages";
 import { useAuth } from "@/src/hooks/use-auth";
+import { ROUTES } from "@/src/routes";
 import { useAuthStore } from "@/src/store/auth";
 
 const mockRouter = {
