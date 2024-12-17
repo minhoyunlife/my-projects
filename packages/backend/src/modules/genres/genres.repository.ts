@@ -25,6 +25,19 @@ export class GenresRepository extends TransactionalRepository<Genre> {
   }
 
   /**
+   * 주어진 이름으로, 데이터베이스에 존재하는 장르의 ID들을 찾음
+   * @param {string[]} names - 찾을 장르 이름들
+   * @returns {Promise<string[]>} - 찾은 장르의 ID들
+   */
+  async findGenreIdsByNames(names: string[]): Promise<string[]> {
+    const genres = await this.find({
+      select: { id: true },
+      where: { name: In(names) },
+    });
+    return genres.map((genre) => genre.id);
+  }
+
+  /**
    * 주어진 이름으로, 데이터베이스에 존재하지 않는 장르를 일괄 생성
    * @param {string[]} names - 생성할 장르 이름들
    * @returns {Promise<Genre[]>} - 생성된 장르들
