@@ -25,3 +25,28 @@ export class ArtworkResponse {
     this.isDraft = artwork.isDraft;
   }
 }
+
+export class ArtworkListResponse {
+  items: ArtworkResponse[];
+  metadata: {
+    totalCount: number;
+    totalPages: number;
+    currentPage: number;
+    pageSize: number;
+  };
+
+  constructor(
+    artworks: Artwork[],
+    totalCount: number,
+    currentPage: number,
+    pageSize: number,
+  ) {
+    this.items = artworks.map((artwork) => new ArtworkResponse(artwork));
+    this.metadata = {
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage,
+      pageSize,
+    };
+  }
+}
