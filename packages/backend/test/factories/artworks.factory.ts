@@ -1,5 +1,5 @@
-import { Platform } from '@/src/common/enums/platform.enum';
 import { Artwork } from '@/src/modules/artworks/artworks.entity';
+import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { Genre } from '@/src/modules/genres/genres.entity';
 
 export class ArtworksFactory {

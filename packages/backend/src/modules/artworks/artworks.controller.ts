@@ -10,14 +10,14 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 
-import { ImageFileType } from '@/src/common/enums/file-type.enum';
-import {
-  UploadImageErrorCode,
-  UploadImageException,
-} from '@/src/common/exceptions/artworks/upload-image.exception';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { ArtworkResponse } from '@/src/modules/artworks/dtos/artwork-response.dto';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
+import { ImageFileType } from '@/src/modules/artworks/enums/file-type.enum';
+import {
+  UploadImageErrorCode,
+  UploadImageException,
+} from '@/src/modules/artworks/exceptions/upload-image.exception';
 import { UploadImageExceptionFilter } from '@/src/modules/artworks/filters/upload-image.filter';
 import { StorageService } from '@/src/modules/storage/storage.service';
 

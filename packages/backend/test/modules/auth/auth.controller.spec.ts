@@ -6,12 +6,12 @@ import { authenticator } from 'otplib';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 
-import { TokenType } from '@/src/common/enums/token-type.enum';
 import { decrypt } from '@/src/common/utils/encryption.util';
 import { AuthController } from '@/src/modules/auth/auth.controller';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
 import { Totp } from '@/src/modules/auth/entities/totp.entity';
+import { TokenType } from '@/src/modules/auth/enums/token-type.enum';
 import { AdministratorsFactory } from '@/test/factories/administrator.factory';
 import {
   createTestAccessToken,

@@ -1,12 +1,12 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JsonWebTokenError, JwtService, TokenExpiredError } from '@nestjs/jwt';
+import { JwtService, TokenExpiredError } from '@nestjs/jwt';
 
-import { TokenType } from '@/src/common/enums/token-type.enum';
+import { TokenType } from '@/src/modules/auth/enums/token-type.enum';
 import {
   TokenErrorCode,
   TokenException,
-} from '@/src/common/exceptions/auth/token.exception';
+} from '@/src/modules/auth/exceptions/token.exception';
 import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 import {
   AccessTokenPayload,

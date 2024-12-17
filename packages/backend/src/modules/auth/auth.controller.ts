@@ -14,7 +14,6 @@ import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 
 import { Environment } from '@/src/common/enums/environment.enum';
-import { TokenType } from '@/src/common/enums/token-type.enum';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import {
   VerifyBackupCodeRequestDto,
@@ -24,6 +23,7 @@ import {
   SetupTotpResponseDto,
   Verify2faResponseDto,
 } from '@/src/modules/auth/dtos/response.dto';
+import { TokenType } from '@/src/modules/auth/enums/token-type.enum';
 import { CookieAuthGuard } from '@/src/modules/auth/guards/cookie.auth.guard';
 import { GithubAuthGuard } from '@/src/modules/auth/guards/github.auth.guard';
 import { TempAuthGuard } from '@/src/modules/auth/guards/token.auth.guard';

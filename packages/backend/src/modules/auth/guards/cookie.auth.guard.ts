@@ -1,10 +1,10 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 
+import { AuthService } from '@/src/modules/auth/auth.service';
 import {
   TokenErrorCode,
   TokenException,
-} from '@/src/common/exceptions/auth/token.exception';
-import { AuthService } from '@/src/modules/auth/auth.service';
+} from '@/src/modules/auth/exceptions/token.exception';
 import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 
 @Injectable()

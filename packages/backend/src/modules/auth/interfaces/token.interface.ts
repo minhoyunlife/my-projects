@@ -1,4 +1,4 @@
-import { TokenType } from '@/src/common/enums/token-type.enum';
+import { TokenType } from '@/src/modules/auth/enums/token-type.enum';
 
 /**
  * 토큰 베이스 인터페이스

@@ -4,13 +4,13 @@ import Sharp from 'sharp';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 
-import { ImageFileType } from '@/src/common/enums/file-type.enum';
-import { Platform } from '@/src/common/enums/platform.enum';
 import { ArtworksController } from '@/src/modules/artworks/artworks.controller';
 import { Artwork } from '@/src/modules/artworks/artworks.entity';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
+import { ImageFileType } from '@/src/modules/artworks/enums/file-type.enum';
+import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { Genre } from '@/src/modules/genres/genres.entity';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { StorageService } from '@/src/modules/storage/storage.service';

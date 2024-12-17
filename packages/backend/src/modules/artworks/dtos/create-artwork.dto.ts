@@ -12,7 +12,7 @@ import {
 } from 'class-validator';
 
 import { NormalizeWhitespace } from '@/src/common/decorators/normalize-whitespace.decorator';
-import { Platform } from '@/src/common/enums/platform.enum';
+import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 
 export class CreateArtworkDto {
   @NormalizeWhitespace()

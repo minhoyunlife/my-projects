@@ -1,11 +1,11 @@
 import { ExecutionContext, HttpStatus } from '@nestjs/common';
 import { JsonWebTokenError, JwtService, TokenExpiredError } from '@nestjs/jwt';
 
-import { TokenType } from '@/src/common/enums/token-type.enum';
+import { TokenType } from '@/src/modules/auth/enums/token-type.enum';
 import {
   TokenErrorCode,
   TokenException,
-} from '@/src/common/exceptions/auth/token.exception';
+} from '@/src/modules/auth/exceptions/token.exception';
 import {
   BearerAuthGuard,
   TempAuthGuard,

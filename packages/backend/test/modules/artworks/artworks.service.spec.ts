@@ -1,11 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { TestingModule } from '@nestjs/testing';
 
 import { EntityManager } from 'typeorm';
 
-import { Platform } from '@/src/common/enums/platform.enum';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
+import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
 

@@ -10,7 +10,7 @@ import { Response } from 'express';
 import {
   UploadImageErrorCode,
   UploadImageException,
-} from '@/src/common/exceptions/artworks/upload-image.exception';
+} from '@/src/modules/artworks/exceptions/upload-image.exception';
 
 // NOTE: multer 의 limit 초과 에러를 처리하기 위한 메소드 단위의 필터
 @Catch(PayloadTooLargeException)

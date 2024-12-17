@@ -1,10 +1,10 @@
 import { HttpStatus } from '@nestjs/common';
 
+import { AuthService } from '@/src/modules/auth/auth.service';
 import {
   GithubAuthErrorCode,
   GithubAuthException,
-} from '@/src/common/exceptions/auth/github-auth.exception';
-import { AuthService } from '@/src/modules/auth/auth.service';
+} from '@/src/modules/auth/exceptions/github-auth.exception';
 import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 import { GithubProfile } from '@/src/modules/auth/interfaces/github-profile.interface';
 import { GithubStrategy } from '@/src/modules/auth/strategies/github.strategy';

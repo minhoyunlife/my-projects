@@ -5,7 +5,7 @@ import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { nanoid } from 'nanoid';
 import Sharp from 'sharp';
 
-import { ImageFileType } from '@/src/common/enums/file-type.enum';
+import { ImageFileType } from '@/src/modules/artworks/enums/file-type.enum';
 
 type UploadResult = {
   imageKey: string;

@@ -5,7 +5,7 @@ import { AuthGuard } from '@nestjs/passport';
 import {
   GithubAuthErrorCode,
   GithubAuthException,
-} from '@/src/common/exceptions/auth/github-auth.exception';
+} from '@/src/modules/auth/exceptions/github-auth.exception';
 
 @Injectable()
 export class GithubAuthGuard extends AuthGuard('github') {

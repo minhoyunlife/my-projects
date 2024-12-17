@@ -5,7 +5,7 @@ import { TestingModule } from '@nestjs/testing';
 import {
   GithubAuthErrorCode,
   GithubAuthException,
-} from '@/src/common/exceptions/auth/github-auth.exception';
+} from '@/src/modules/auth/exceptions/github-auth.exception';
 import { GithubAuthGuard } from '@/src/modules/auth/guards/github.auth.guard';
 import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
 

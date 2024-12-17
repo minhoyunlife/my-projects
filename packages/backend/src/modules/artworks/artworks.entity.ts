@@ -1,7 +1,7 @@
 import { Entity, Column, Index, Check, JoinTable, ManyToMany } from 'typeorm';
 
 import { NanoId } from '@/src/common/decorators/id.decorator';
-import { Platform } from '@/src/common/enums/platform.enum';
+import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { Genre } from '@/src/modules/genres/genres.entity';
 
 /**
