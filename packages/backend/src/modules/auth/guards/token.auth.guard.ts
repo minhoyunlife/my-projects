@@ -1,12 +1,12 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JsonWebTokenError, JwtService, TokenExpiredError } from '@nestjs/jwt';
+import { JwtService, TokenExpiredError } from '@nestjs/jwt';
 
-import { TokenType } from '@/src/common/enums/token-type.enum';
+import { TokenType } from '@/src/modules/auth/enums/token-type.enum';
 import {
   TokenErrorCode,
   TokenException,
-} from '@/src/common/exceptions/auth/token.exception';
+} from '@/src/modules/auth/exceptions/token.exception';
 import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 import {
   AccessTokenPayload,
@@ -93,5 +93,36 @@ export class TempAuthGuard extends TokenAuthGuard<TempTokenPayload> {
 export class BearerAuthGuard extends TokenAuthGuard<AccessTokenPayload> {
   constructor(configService: ConfigService, jwtService: JwtService) {
     super(configService, jwtService, TokenType.ACCESS);
+  }
+}
+
+/**
+ * 본 액세스 토큰 확인용 가드(옵셔널)
+ */
+@Injectable()
+export class OptionalBearerAuthGuard extends BearerAuthGuard {
+  constructor(configService: ConfigService, jwtService: JwtService) {
+    super(configService, jwtService);
+  }
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
+
+    try {
+      await super.canActivate(context);
+    } catch (error) {
+      // 토큰이 없는 경우는 인증이 필요하지 않은 액세스를 의미하므로, 옵셔널하게 처리
+      if (
+        error instanceof TokenException &&
+        error.getCode() === TokenErrorCode.NOT_PROVIDED
+      ) {
+        request.user = undefined;
+        return true;
+      }
+
+      throw error;
+    }
+
+    return true;
   }
 }

@@ -1,8 +1,8 @@
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 
-import { Platform } from '@/src/common/enums/platform.enum';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
+import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 
 describeWithoutDeps('CreateArtworkDto', () => {
   const validDtoData: Partial<CreateArtworkDto> = {

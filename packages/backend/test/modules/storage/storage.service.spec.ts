@@ -1,7 +1,7 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import Sharp from 'sharp';
 
-import { ImageFileType } from '@/src/common/enums/file-type.enum';
+import { ImageFileType } from '@/src/modules/artworks/enums/file-type.enum';
 import { StorageService } from '@/src/modules/storage/storage.service';
 import { TEST_S3_CONFIG } from '@/test/test.config';
 import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';

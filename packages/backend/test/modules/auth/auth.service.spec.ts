@@ -8,23 +8,23 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { authenticator } from 'otplib';
 import { DataSource, Repository } from 'typeorm';
 
-import { TokenType } from '@/src/common/enums/token-type.enum';
-import {
-  GithubAuthErrorCode,
-  GithubAuthException,
-} from '@/src/common/exceptions/auth/github-auth.exception';
-import {
-  TokenErrorCode,
-  TokenException,
-} from '@/src/common/exceptions/auth/token.exception';
-import {
-  TotpErrorCode,
-  TotpException,
-} from '@/src/common/exceptions/auth/totp.exception';
 import { decrypt } from '@/src/common/utils/encryption.util';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
 import { Totp } from '@/src/modules/auth/entities/totp.entity';
+import { TokenType } from '@/src/modules/auth/enums/token-type.enum';
+import {
+  GithubAuthErrorCode,
+  GithubAuthException,
+} from '@/src/modules/auth/exceptions/github-auth.exception';
+import {
+  TokenErrorCode,
+  TokenException,
+} from '@/src/modules/auth/exceptions/token.exception';
+import {
+  TotpErrorCode,
+  TotpException,
+} from '@/src/modules/auth/exceptions/totp.exception';
 import { GithubProfile } from '@/src/modules/auth/interfaces/github-profile.interface';
 import { clearTables } from '@/test/utils/database.util';
 import { createTestingModuleWithDB } from '@/test/utils/module-builder.util';

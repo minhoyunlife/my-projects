@@ -4,11 +4,11 @@ import { PassportStrategy } from '@nestjs/passport';
 
 import { Strategy } from 'passport-github2';
 
+import { AuthService } from '@/src/modules/auth/auth.service';
 import {
   GithubAuthErrorCode,
   GithubAuthException,
-} from '@/src/common/exceptions/auth/github-auth.exception';
-import { AuthService } from '@/src/modules/auth/auth.service';
+} from '@/src/modules/auth/exceptions/github-auth.exception';
 import { GithubProfile } from '@/src/modules/auth/interfaces/github-profile.interface';
 
 @Injectable()

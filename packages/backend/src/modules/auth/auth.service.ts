@@ -7,22 +7,22 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { authenticator } from 'otplib';
 import { Repository } from 'typeorm';
 
-import { TokenType } from '@/src/common/enums/token-type.enum';
-import {
-  GithubAuthErrorCode,
-  GithubAuthException,
-} from '@/src/common/exceptions/auth/github-auth.exception';
-import {
-  TokenErrorCode,
-  TokenException,
-} from '@/src/common/exceptions/auth/token.exception';
-import {
-  TotpErrorCode,
-  TotpException,
-} from '@/src/common/exceptions/auth/totp.exception';
 import { decrypt, encrypt } from '@/src/common/utils/encryption.util';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
 import { Totp } from '@/src/modules/auth/entities/totp.entity';
+import { TokenType } from '@/src/modules/auth/enums/token-type.enum';
+import {
+  GithubAuthErrorCode,
+  GithubAuthException,
+} from '@/src/modules/auth/exceptions/github-auth.exception';
+import {
+  TokenErrorCode,
+  TokenException,
+} from '@/src/modules/auth/exceptions/token.exception';
+import {
+  TotpErrorCode,
+  TotpException,
+} from '@/src/modules/auth/exceptions/totp.exception';
 import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 import { GithubProfile } from '@/src/modules/auth/interfaces/github-profile.interface';
 import { RefreshTokenPayload } from '@/src/modules/auth/interfaces/token.interface';
