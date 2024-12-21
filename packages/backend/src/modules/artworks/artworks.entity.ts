@@ -32,7 +32,7 @@ export class Artwork {
   /**
    * 작품 완성 일자
    */
-  @Column({ type: 'date', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   createdAt: Date;
 
   /**

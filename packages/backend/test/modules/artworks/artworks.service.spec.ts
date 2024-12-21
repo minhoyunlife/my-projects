@@ -4,6 +4,7 @@ import { EntityManager } from 'typeorm';
 
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
+import { PAGE_SIZE } from '@/src/modules/artworks/constants/page-size.constant';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
@@ -81,19 +82,19 @@ describeWithoutDeps('ArtworksService', () => {
     });
 
     describe('페이지 당 표시 작품 수 검증', () => {
-      it('인증된 사용자인 경우, 10 으로 고정됨', async () => {
+      it('인증된 사용자인 경우, CMS 페이지 수로 고정됨', async () => {
         await service.getArtworks({}, true);
 
         expect(getAllWithFiltersMock).toHaveBeenCalledWith(
-          expect.objectContaining({ pageSize: 10 }),
+          expect.objectContaining({ pageSize: PAGE_SIZE.CMS }),
         );
       });
 
-      it('인증되지 않은 사용자인 경우, 20 으로 고정됨', async () => {
+      it('인증되지 않은 사용자인 경우, PUBLIC 페이지 수로 고정됨', async () => {
         await service.getArtworks({}, false);
 
         expect(getAllWithFiltersMock).toHaveBeenCalledWith(
-          expect.objectContaining({ pageSize: 20 }),
+          expect.objectContaining({ pageSize: PAGE_SIZE.PUBLIC }),
         );
       });
     });

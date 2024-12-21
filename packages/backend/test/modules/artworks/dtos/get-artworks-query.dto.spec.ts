@@ -38,7 +38,16 @@ describeWithoutDeps('GetArtworksQueryDto', () => {
       expect(errors).toHaveLength(0);
     });
 
-    it('값이 정수가 아닌 경우, 에러가 발생함', async () => {
+    it('값이 정수가 아닌 문자열인 경우, 에러가 발생함', async () => {
+      const dto = createDto({ page: 'a' as unknown as number });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].property).toBe('page');
+      expect(errors[0].constraints).toHaveProperty('isInt');
+    });
+
+    it('값이 소수인 경우, 에러가 발생함', async () => {
       const dto = createDto({ page: 1.23 });
       const errors = await validate(dto);
 

@@ -4,6 +4,7 @@ import { EntityManager } from 'typeorm';
 
 import { Artwork } from '@/src/modules/artworks/artworks.entity';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
+import { PAGE_SIZE } from '@/src/modules/artworks/constants/page-size.constant';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { GetArtworksQueryDto } from '@/src/modules/artworks/dtos/get-artworks-query.dto';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
@@ -45,7 +46,7 @@ export class ArtworksService {
     totalCount: number;
   }> {
     const page = query.page ?? 1; // 페이지 번호(디폴트: 1)
-    const pageSize = isAuthenticated ? 10 : 20; // 페이지 당 표시 작품 수(CMS: 10, 팬아트: 20)
+    const pageSize = isAuthenticated ? PAGE_SIZE.CMS : PAGE_SIZE.PUBLIC; // 페이지 당 표시 작품 수(CMS: 10, 팬아트: 20)
     const sort = query.sort ?? SortType.CREATED_DESC; // 정렬 방식(디폴트: 작성일자 기준 최신순)
     const platforms = query.platforms?.length ? query.platforms : undefined; // 플랫폼 필터(디폴트: 모든 플랫폼)
 
