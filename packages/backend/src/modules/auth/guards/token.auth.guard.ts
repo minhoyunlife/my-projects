@@ -95,3 +95,34 @@ export class BearerAuthGuard extends TokenAuthGuard<AccessTokenPayload> {
     super(configService, jwtService, TokenType.ACCESS);
   }
 }
+
+/**
+ * 본 액세스 토큰 확인용 가드(옵셔널)
+ */
+@Injectable()
+export class OptionalBearerAuthGuard extends BearerAuthGuard {
+  constructor(configService: ConfigService, jwtService: JwtService) {
+    super(configService, jwtService);
+  }
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
+
+    try {
+      await super.canActivate(context);
+    } catch (error) {
+      // 토큰이 없는 경우는 인증이 필요하지 않은 액세스를 의미하므로, 옵셔널하게 처리
+      if (
+        error instanceof TokenException &&
+        error.getCode() === TokenErrorCode.NOT_PROVIDED
+      ) {
+        request.user = undefined;
+        return true;
+      }
+
+      throw error;
+    }
+
+    return true;
+  }
+}

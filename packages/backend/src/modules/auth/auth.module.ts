@@ -13,6 +13,7 @@ import { AuthExceptionFilter } from '@/src/modules/auth/auth.filter';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
 import { Totp } from '@/src/modules/auth/entities/totp.entity';
+import { OptionalBearerAuthGuard } from '@/src/modules/auth/guards/token.auth.guard';
 import { GithubStrategy } from '@/src/modules/auth/strategies/github.strategy';
 
 @Module({
@@ -36,12 +37,13 @@ import { GithubStrategy } from '@/src/modules/auth/strategies/github.strategy';
     AuthService,
     ConfigService,
     GithubStrategy,
+    OptionalBearerAuthGuard,
     {
       provide: APP_FILTER,
       useClass: AuthExceptionFilter,
     },
   ],
-  exports: [AuthService],
+  exports: [JwtModule, AuthService, OptionalBearerAuthGuard],
 })
 export class AuthModule implements OnModuleInit {
   constructor(
