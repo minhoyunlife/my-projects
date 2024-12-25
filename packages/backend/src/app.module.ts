@@ -1,5 +1,6 @@
-import { Module } from '@nestjs/common';
+import { Module, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { APP_PIPE } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Environment } from '@/src/common/enums/environment.enum';
@@ -22,6 +23,17 @@ import { SeedService } from '@/src/modules/seed/seed.service';
     AuthModule,
     ArtworksModule,
     GenresModule,
+  ],
+  providers: [
+    // 글로벌 밸리데이션 파이프는 모듈 외부에서 등록되면 의존성 주입이 불가능(예를 들어 main.ts)
+    // main.ts 에서 주입 시, 일부 컨트롤러의 메소드에서 트랜스폼이 이뤄지지 않았으므로, 여기에 설정하여 앱 모듈이 임포트하는 전체 모듈에 적용되도록 함
+    // https://docs.nestjs.com/pipes#global-scoped-pipes
+    {
+      provide: APP_PIPE,
+      useFactory: (configService: ConfigService) =>
+        new ValidationPipe(configService.get('validation')),
+      inject: [ConfigService],
+    },
   ],
 })
 export class AppModule {
