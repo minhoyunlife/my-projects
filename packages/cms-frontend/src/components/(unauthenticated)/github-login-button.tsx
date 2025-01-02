@@ -6,7 +6,7 @@ import { SiGithub } from "@icons-pack/react-simple-icons";
 
 import { Button } from "@/src/components/base/button";
 import { Spinner } from "@/src/components/common/spinner";
-import { useAuth } from "@/src/hooks/use-auth";
+import { useAuth } from "@/src/hooks/auth/use-auth";
 
 export function GitHubLoginButton() {
   const { loginByGithub } = useAuth();

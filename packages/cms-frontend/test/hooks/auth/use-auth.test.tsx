@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import type { AxiosResponse } from "axios";
 
 import QueryProvider from "@/src/components/common/query-provider";
-import { useAuth } from "@/src/hooks/use-auth";
+import { useAuth } from "@/src/hooks/auth/use-auth";
 import { authApi } from "@/src/lib/api/client";
 import { getUserFromCookie } from "@/src/lib/utils/cookie";
 import { ROUTES } from "@/src/routes";

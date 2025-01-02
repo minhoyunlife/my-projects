@@ -9,7 +9,7 @@ import { CodeInput } from "@/src/components/(unauthenticated)/code-input";
 import { Spinner } from "@/src/components/common/spinner";
 import { isAuthErrorCode } from "@/src/constants/auth/error-codes";
 import { getErrorMessage } from "@/src/constants/auth/error-messages";
-import { useAuth } from "@/src/hooks/use-auth";
+import { useAuth } from "@/src/hooks/auth/use-auth";
 import { useToast } from "@/src/hooks/use-toast";
 import { ROUTES } from "@/src/routes";
 import { useAuthStore } from "@/src/store/auth";
