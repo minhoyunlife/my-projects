@@ -1,5 +1,5 @@
 import { GitHubLoginButton } from "@/src/components/(unauthenticated)/github-login-button";
-import { useAuth } from "@/src/hooks/use-auth";
+import { useAuth } from "@/src/hooks/auth/use-auth";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
@@ -7,7 +7,7 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-vi.mock("@/src/hooks/use-auth", () => ({
+vi.mock("@/src/hooks/auth/use-auth", () => ({
   useAuth: vi.fn(),
 }));
 

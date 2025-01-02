@@ -5,7 +5,7 @@ import type { Mock } from "vitest";
 import BackupVerifyPage from "@/src/app/(unauthenticated)/backup/verify/page";
 import { AuthErrorCode } from "@/src/constants/auth/error-codes";
 import { getErrorMessage } from "@/src/constants/auth/error-messages";
-import { useAuth } from "@/src/hooks/use-auth";
+import { useAuth } from "@/src/hooks/auth/use-auth";
 import { ROUTES } from "@/src/routes";
 import { useAuthStore } from "@/src/store/auth";
 
@@ -20,7 +20,7 @@ vi.mock("next/navigation", () => ({
 
 const mockVerifyBackupCode = vi.fn();
 
-vi.mock("@/src/hooks/use-auth", () => ({
+vi.mock("@/src/hooks/auth/use-auth", () => ({
   useAuth: vi.fn(() => ({
     verifyBackupCode: mockVerifyBackupCode,
     isVerifyingBackup: false,

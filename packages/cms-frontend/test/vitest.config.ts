@@ -30,6 +30,7 @@ export default defineConfig({
       "@testing-library/react",
       "@testing-library/jest-dom/vitest",
       "@testing-library/user-event",
+      "./test/utils/setup.ts",
     ],
     exclude: ["../node_modules", "../.next"],
   },

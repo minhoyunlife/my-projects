@@ -2,7 +2,7 @@ import * as React from "react";
 
 import Link from "next/link";
 
-import { NavUser } from "@/src/components/(authenticated)/nav-user";
+import { NavUser } from "@/src/components/(authenticated)/nav-sidebar/nav-user";
 import {
   Sidebar,
   SidebarContent,

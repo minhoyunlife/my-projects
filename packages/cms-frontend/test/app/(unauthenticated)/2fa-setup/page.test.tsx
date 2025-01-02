@@ -3,7 +3,7 @@ import { useSearchParams } from "next/navigation";
 import type { Mock } from "vitest";
 
 import TwoFactorSetupPage from "@/src/app/(unauthenticated)/2fa-setup/page";
-import { useAuth } from "@/src/hooks/use-auth";
+import { useAuth } from "@/src/hooks/auth/use-auth";
 import { ROUTES } from "@/src/routes";
 
 const mockRouter = {
@@ -28,7 +28,7 @@ vi.mock("qrcode.react", () => ({
 
 const mockSetup2FA = vi.fn();
 
-vi.mock("@/src/hooks/use-auth", () => ({
+vi.mock("@/src/hooks/auth/use-auth", () => ({
   useAuth: vi.fn(() => ({
     setup2FA: mockSetup2FA,
     isSettingUp2FA: false,

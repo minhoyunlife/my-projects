@@ -16,13 +16,38 @@ const apiClient = axios.create({
 /**
  * 리퀘스트에 임시 또는 엑세스 토큰을 헤더에 주입하는 인터셉터
  */
-apiClient.interceptors.request.use((config) => {
+apiClient.interceptors.request.use(async (config) => {
+  // 리프레시 요청 자체에는 아래의 처리가 실행되지 않도록
+  if (config.url?.includes("/auth/refresh")) {
+    return config;
+  }
+
   const { accessToken, tempToken } = useAuthStore.getState();
 
+  if (config.url?.includes("/auth")) {
+    if (tempToken) {
+      config.headers.Authorization = `Bearer ${tempToken}`;
+    }
+    return config;
+  }
+
+  if (!accessToken && !tempToken) {
+    try {
+      const { data } = await authApi.refreshToken();
+      useAuthStore.getState().setAccessToken(data.accessToken);
+      config.headers.Authorization = `Bearer ${data.accessToken}`;
+      return config;
+    } catch {
+      return config;
+    }
+  }
+
+  // 토큰이 있는 경우 헤더 설정
   const token = accessToken || tempToken;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
 

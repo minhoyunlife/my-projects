@@ -1,4 +1,4 @@
-import { NavSidebar } from "@/src/components/(authenticated)/nav-sidebar";
+import { NavSidebar } from "@/src/components/(authenticated)/nav-sidebar/nav-sidebar";
 import { SidebarInset, SidebarProvider } from "@/src/components/base/sidebar";
 
 export default function ProtectedLayout({
