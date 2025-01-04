@@ -6,7 +6,9 @@ import { Repository } from 'typeorm';
 
 import { Artwork } from '@/src/modules/artworks/artworks.entity';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
-import { Genre } from '@/src/modules/genres/genres.entity';
+import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
+import { Genre } from '@/src/modules/genres/entities/genres.entity';
+import { Language } from '@/src/modules/genres/enums/language.enum';
 import { ARTWORKS } from '@/src/modules/seed/data/artworks';
 import { GENRES } from '@/src/modules/seed/data/genres';
 
@@ -19,6 +21,8 @@ export class SeedService {
     private readonly artworkRepository: Repository<Artwork>,
     @InjectRepository(Genre)
     private readonly genreRepository: Repository<Genre>,
+    @InjectRepository(GenreTranslation)
+    private readonly genreTranslationRepository: Repository<GenreTranslation>,
     private readonly configService: ConfigService,
   ) {}
 
@@ -64,9 +68,27 @@ export class SeedService {
 
     await this.genreRepository.delete({});
 
-    return await this.genreRepository.save(
-      GENRES.map((genre) => this.genreRepository.create(genre)),
-    );
+    const genres: Genre[] = [];
+
+    for (const genreData of GENRES) {
+      const genre = this.genreRepository.create();
+      await this.genreRepository.save(genre);
+
+      const translations = genreData.translations.map((translation) =>
+        this.genreTranslationRepository.create({
+          genreId: genre.id,
+          language: translation.language as Language,
+          name: translation.name,
+          genre,
+        }),
+      );
+      await this.genreTranslationRepository.save(translations);
+
+      genre.translations = translations;
+      genres.push(genre);
+    }
+
+    return genres;
   }
 
   private async createArtworks(genres: Genre[]): Promise<void> {
@@ -78,7 +100,12 @@ export class SeedService {
 
     await this.artworkRepository.delete({});
 
-    const genreMap = new Map(genres.map((g) => [g.name, g]));
+    const genreMap = new Map(
+      genres.map((g) => [
+        g.translations.find((t) => t.language === 'en')!.name,
+        g,
+      ]),
+    );
 
     const artworksData = ARTWORKS.map((seed) => ({
       title: seed.title,
