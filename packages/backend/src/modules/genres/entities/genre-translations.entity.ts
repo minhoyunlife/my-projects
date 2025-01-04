@@ -7,7 +7,7 @@ import {
   PrimaryColumn,
 } from 'typeorm';
 
-import { Genre } from '@/src/modules/genres/entities/genres.entity';
+import type { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 
 /**
@@ -25,9 +25,8 @@ export class GenreTranslation {
   /**
    * 장르의 언어 코드
    */
-  @PrimaryColumn()
-  @Column({ type: 'enum', enum: Language })
-  language: string; // ISO 639-1 언어 코드(ko, en, ja 등)
+  @PrimaryColumn({ type: 'enum', enum: Language })
+  language: Language; // ISO 639-1 언어 코드(ko, en, ja 등)
 
   /**
    * 장르의 언어별 이름
@@ -38,7 +37,9 @@ export class GenreTranslation {
   /**
    * 관계
    */
-  @ManyToOne(() => Genre, { onDelete: 'CASCADE' })
+  @ManyToOne('Genre', (genre: Genre) => genre.translations, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'genreId' })
   genre: Genre;
 }
