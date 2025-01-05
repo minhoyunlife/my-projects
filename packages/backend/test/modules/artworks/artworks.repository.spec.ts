@@ -4,7 +4,7 @@ import { Artwork } from '@/src/modules/artworks/artworks.entity';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
-import { Genre } from '@/src/modules/genres/genres.entity';
+import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';

@@ -10,7 +10,7 @@ describeWithoutDeps('CreateArtworkDto', () => {
     imageKey: 'artworks/2024/03/abc123def456',
     createdAt: '2022-01-01',
     playedOn: Platform.STEAM,
-    genres: ['액션', '어드벤처'],
+    genreIds: ['id1', 'id2'],
     rating: 19,
     shortReview: '이 작품은 정말 재미있었습니다.',
   };
@@ -110,7 +110,7 @@ describeWithoutDeps('CreateArtworkDto', () => {
     });
   });
 
-  describe('genres', () => {
+  describe('genreIds', () => {
     it('값이 유효한 경우, 에러가 발생하지 않음', async () => {
       const dto = createDto();
       const errors = await validate(dto);
@@ -118,29 +118,18 @@ describeWithoutDeps('CreateArtworkDto', () => {
       expect(errors).toHaveLength(0);
     });
 
-    it('값이 빈 배열인 경우, 에러가 발생하지 않음', async () => {
-      const dto = createDto({ genres: [] });
+    it('값이 빈 배열인 경우, 에러가 발생함', async () => {
+      const dto = createDto({ genreIds: [] });
       const errors = await validate(dto);
 
-      expect(errors).toHaveLength(0);
+      expect(errors).toHaveLength(1);
     });
 
-    it('값이 생략된 경우, 에러가 발생하지 않음', async () => {
-      const testData = { ...validDtoData };
-      delete testData.genres;
-
-      const dto = createDto(testData);
+    it('값이 생략된 경우, 에러가 발생함', async () => {
+      const dto = createDto({ genreIds: undefined });
       const errors = await validate(dto);
 
-      expect(errors).toHaveLength(0);
-    });
-
-    it('값에 화이트 스페이스로만 이뤄진 문자열이 섞여 있을 경우, 에러가 발생하지 않고 그것을 제외한 값들이 반환됨', async () => {
-      const dto = createDto({ genres: ['a', '　', 'c'] });
-      const errors = await validate(dto);
-
-      expect(errors).toHaveLength(0);
-      expect(dto.genres).toEqual(['a', 'c']);
+      expect(errors).toHaveLength(1);
     });
   });
 

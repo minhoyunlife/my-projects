@@ -1,6 +1,6 @@
 import { TestingModule } from '@nestjs/testing';
 
-import { EntityManager } from 'typeorm';
+import { EntityManager, In } from 'typeorm';
 
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
@@ -9,6 +9,7 @@ import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
 import { Status } from '@/src/modules/artworks/enums/status.enum';
+import { ArtworkException } from '@/src/modules/artworks/exceptions/artworks.exception';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
 
@@ -229,29 +230,35 @@ describeWithoutDeps('ArtworksService', () => {
 
   describe('createArtwork', () => {
     const createOneMock = vi.fn();
-    const bulkCreateIfNotExistMock = vi.fn();
+    const findByMock = vi.fn();
 
     const dto: CreateArtworkDto = {
       title: '테스트 작품',
       imageKey: 'artworks/2024/03/abc123def456',
       playedOn: Platform.STEAM,
-      genres: ['RPG'],
+      genreIds: ['genre-1'],
     };
 
     beforeEach(() => {
       createOneMock.mockClear();
-      bulkCreateIfNotExistMock.mockClear();
+      findByMock.mockClear();
 
-      artworksRepository.forTransaction = vi.fn().mockReturnValue({
-        createOne: createOneMock,
-      });
-      genresRepository.forTransaction = vi.fn().mockReturnValue({
-        bulkCreateIfNotExist: bulkCreateIfNotExistMock,
-      });
+      artworksRepository.createOne = createOneMock;
+      genresRepository.findBy = findByMock;
     });
 
     it('작품 데이터를 기반으로 새로운 작품을 생성함', async () => {
-      const mockGenres = [{ id: 'genre-1', name: 'RPG' }];
+      const mockGenres = [
+        {
+          id: 'genre-1',
+          translations: [
+            { language: 'ko', name: '롤플레잉' },
+            { language: 'en', name: 'RPG' },
+            { language: 'ja', name: 'ロールプレイング' },
+          ],
+        },
+      ];
+
       const expectedArtwork = {
         id: 'artwork-1',
         title: dto.title,
@@ -260,26 +267,26 @@ describeWithoutDeps('ArtworksService', () => {
         genres: mockGenres,
       };
 
-      bulkCreateIfNotExistMock.mockResolvedValue(mockGenres);
+      findByMock.mockResolvedValue(mockGenres);
       createOneMock.mockResolvedValue(expectedArtwork);
 
       const result = await service.createArtwork(dto);
 
-      expect(genresRepository.forTransaction).toHaveBeenCalledWith(
-        entityManager,
-      );
-      expect(bulkCreateIfNotExistMock).toHaveBeenCalled();
+      expect(findByMock).toHaveBeenCalledWith({ id: In(['genre-1']) });
       expect(createOneMock).toHaveBeenCalled();
       expect(result).toEqual(expectedArtwork);
     });
 
-    it('장르 생성에 실패할 경우, 에러가 발생', async () => {
-      bulkCreateIfNotExistMock.mockRejectedValue(new Error());
+    it('존재하지 않는 장르 ID가 포함된 경우, 에러가 발생', async () => {
+      findByMock.mockResolvedValue([]);
 
-      await expect(service.createArtwork(dto)).rejects.toThrowError();
+      await expect(service.createArtwork(dto)).rejects.toThrowError(
+        ArtworkException,
+      );
     });
 
     it('작품 생성에 실패할 경우, 에러가 발생', async () => {
+      findByMock.mockResolvedValue([{ id: 'genre-1' }]);
       createOneMock.mockRejectedValue(new Error());
 
       await expect(service.createArtwork(dto)).rejects.toThrowError();

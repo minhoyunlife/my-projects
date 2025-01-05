@@ -15,7 +15,8 @@ import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
-import { Genre } from '@/src/modules/genres/genres.entity';
+import { Genre } from '@/src/modules/genres/entities/genres.entity';
+import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { StorageService } from '@/src/modules/storage/storage.service';
 import { AdministratorsFactory } from '@/test/factories/administrator.factory';
@@ -236,12 +237,22 @@ describeWithDeps('ArtworksController', () => {
   });
 
   describe('POST /artworks', () => {
+    let genreRepository: Repository<Genre>;
+
+    beforeEach(async () => {
+      genreRepository = dataSource.getRepository(Genre);
+
+      await saveEntities(genreRepository, [
+        GenresFactory.createTestData({ id: 'genre-1' }),
+      ]);
+    });
+
     const createDto: CreateArtworkDto = {
       title: '테스트 작품명',
       imageKey: 'artworks/2024/03/abc123def456',
       createdAt: '2024-11-01',
       playedOn: Platform.STEAM,
-      genres: ['Action', 'RPG'],
+      genreIds: ['genre-1', 'genre-2'],
       rating: 18,
       shortReview: '정말 재미있는 게임!',
     };
@@ -256,12 +267,17 @@ describeWithDeps('ArtworksController', () => {
 
       const savedArtwork = await dataSource.getRepository(Artwork).findOne({
         where: { id: response.body.id },
-        relations: ['genres'],
+        relations: {
+          genres: {
+            translations: true,
+          },
+        },
       });
 
       expect(savedArtwork).toBeDefined();
       expect(savedArtwork.title).toBe(createDto.title);
-      expect(savedArtwork.genres).toHaveLength(createDto.genres.length);
+      expect(savedArtwork.genres).toHaveLength(createDto.genreIds.length);
+      expect(savedArtwork.genres[0].translations).toHaveLength(3);
     });
 
     it('필수 필드 누락 시 400 에러가 반환되어야 함', async () => {
@@ -270,6 +286,20 @@ describeWithDeps('ArtworksController', () => {
       const response = await request(app.getHttpServer())
         .post('/artworks')
         .send(invalidDto)
+        .expect(400);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+
+    it('존재하지 않는 장르 ID로 생성 시도 시 400 에러가 반환되어야 함', async () => {
+      const dtoWithInvalidGenreId = {
+        ...createDto,
+        genreIds: ['non-existing-genre-id'],
+      };
+
+      const response = await request(app.getHttpServer())
+        .post('/artworks')
+        .send(dtoWithInvalidGenreId)
         .expect(400);
 
       await expect(response).toMatchOpenAPISpec();

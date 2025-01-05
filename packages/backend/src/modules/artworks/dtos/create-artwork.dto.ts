@@ -1,4 +1,5 @@
 import {
+  ArrayNotEmpty,
   IsArray,
   IsDateString,
   IsEnum,
@@ -30,10 +31,10 @@ export class CreateArtworkDto {
   @IsDateString()
   createdAt?: string;
 
-  @NormalizeWhitespace({ each: true })
   @IsArray()
   @IsString({ each: true })
-  genres: string[] = [];
+  @ArrayNotEmpty()
+  genreIds: string[];
 
   @IsOptional()
   @IsEnum(Platform)
