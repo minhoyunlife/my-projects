@@ -56,6 +56,10 @@ export const columns: ColumnDef<GetArtworks200ResponseItemsInner>[] = [
     cell: ({ row }) => {
       const genres = row.original.genres;
       const maxDisplay = 2;
+      const getGenreKoName = (genre: (typeof genres)[0]) => {
+        return genre.translations.find((t) => t.language === "ko")?.name;
+      };
+
       return (
         <div className="flex gap-1 flex-wrap">
           {genres.slice(0, maxDisplay).map((genre) => (
@@ -63,7 +67,7 @@ export const columns: ColumnDef<GetArtworks200ResponseItemsInner>[] = [
               key={genre.id}
               variant="outline"
             >
-              {genre.name}
+              {getGenreKoName(genre)}
             </Badge>
           ))}
           {genres.length > maxDisplay && (
@@ -78,7 +82,7 @@ export const columns: ColumnDef<GetArtworks200ResponseItemsInner>[] = [
                   <p>
                     {genres
                       .slice(maxDisplay)
-                      .map((g) => g.name)
+                      .map((g) => getGenreKoName(g))
                       .join(", ")}
                   </p>
                 </TooltipContent>
