@@ -17,15 +17,6 @@ describeWithoutDeps('ArtworkResponse', () => {
   }) as Artwork;
 
   describe('ArtworkResponse', () => {
-    const genres = [
-      GenresFactory.createTestData({ id: 'some-nanoid' }) as Genre,
-    ];
-    const artwork = ArtworksFactory.createTestData({
-      id: 'some-nanoid',
-      isDraft: true,
-      genres,
-    }) as Artwork;
-
     const response = new ArtworkResponse(artwork);
 
     it('엔티티의 속성 값대로 id 가 반환됨', () => {
@@ -155,7 +146,9 @@ describeWithoutDeps('ArtworkResponse', () => {
     const response = new ArtworkListResponse(artworks, 1, 1, 10);
 
     it('엔티티의 속성 값대로 items 가 반환됨', () => {
-      expect(response.items).toEqual([new ArtworkResponse(artwork)]);
+      for (const a of artworks) {
+        expect(response.items).toEqual([new ArtworkResponse(a)]);
+      }
     });
 
     it('엔티티의 속성 값대로 metadata 가 반환됨', () => {
