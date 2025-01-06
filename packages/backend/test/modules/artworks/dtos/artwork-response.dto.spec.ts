@@ -4,7 +4,7 @@ import {
   ArtworkResponse,
 } from '@/src/modules/artworks/dtos/artwork-response.dto';
 import { GenreResponse } from '@/src/modules/genres/dtos/genre-response.dto';
-import { Genre } from '@/src/modules/genres/genres.entity';
+import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
 

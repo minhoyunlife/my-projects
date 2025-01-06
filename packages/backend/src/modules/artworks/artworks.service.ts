@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { EntityManager } from 'typeorm';
+import { In } from 'typeorm';
 
 import { Artwork } from '@/src/modules/artworks/artworks.entity';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
@@ -9,6 +9,10 @@ import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto
 import { GetArtworksQueryDto } from '@/src/modules/artworks/dtos/get-artworks-query.dto';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
 import { Status } from '@/src/modules/artworks/enums/status.enum';
+import {
+  ArtworkErrorCode,
+  ArtworkException,
+} from '@/src/modules/artworks/exceptions/artworks.exception';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 
 @Injectable()
@@ -16,7 +20,6 @@ export class ArtworksService {
   constructor(
     private readonly artworksRepository: ArtworksRepository,
     private readonly genresRepository: GenresRepository,
-    private entityManager: EntityManager,
   ) {}
 
   /**
@@ -49,12 +52,7 @@ export class ArtworksService {
     const pageSize = isAuthenticated ? PAGE_SIZE.CMS : PAGE_SIZE.PUBLIC; // 페이지 당 표시 작품 수(CMS: 10, 팬아트: 20)
     const sort = query.sort ?? SortType.CREATED_DESC; // 정렬 방식(디폴트: 작성일자 기준 최신순)
     const platforms = query.platforms?.length ? query.platforms : undefined; // 플랫폼 필터(디폴트: 모든 플랫폼)
-
-    let genreIds: string[] | undefined;
-    if (query.genres?.length) {
-      genreIds = await this.genresRepository.findGenreIdsByNames(query.genres);
-    }
-
+    const genreIds = query.genreIds?.length ? query.genreIds : undefined;
     const search = query.search ?? undefined; // 제목 검색어(디폴트: 없음)
 
     // 작품 상태 필터
@@ -92,23 +90,25 @@ export class ArtworksService {
    * @returns 생성된 작품
    */
   async createArtwork(dto: CreateArtworkDto): Promise<Artwork> {
-    return this.entityManager.transaction(async (manager) => {
-      const artworksTxRepo = this.artworksRepository.forTransaction(manager);
-      const genresTxRepo = this.genresRepository.forTransaction(manager);
+    const genres = await this.genresRepository.findBy({ id: In(dto.genreIds) });
+    if (genres.length !== dto.genreIds.length) {
+      throw new ArtworkException(
+        ArtworkErrorCode.NOT_EXISTING_GENRES_INCLUDED,
+        "Some of the provided genres don't exist in DB",
+      );
+    }
 
-      const genres = await genresTxRepo.bulkCreateIfNotExist(dto.genres);
-      const artwork = await artworksTxRepo.createOne({
-        title: dto.title,
-        imageKey: dto.imageKey,
-        createdAt: new Date(dto.createdAt),
-        playedOn: dto.playedOn,
-        genres: genres,
-        rating: dto.rating,
-        shortReview: dto.shortReview,
-        isDraft: true, // 작품 생성 시에는 무조건 초안 상태
-      });
-
-      return artwork;
+    const artwork = await this.artworksRepository.createOne({
+      title: dto.title,
+      imageKey: dto.imageKey,
+      createdAt: new Date(dto.createdAt),
+      playedOn: dto.playedOn,
+      genres: genres,
+      rating: dto.rating,
+      shortReview: dto.shortReview,
+      isDraft: true, // 작품 생성 시에는 무조건 초안 상태
     });
+
+    return artwork;
   }
 }

@@ -40,10 +40,9 @@ export class ArtworksRepository extends TransactionalRepository<Artwork> {
     search?: string;
     isDraftIn: boolean[];
   }): Promise<[Artwork[], number]> {
-    const query = this.createQueryBuilder('artwork').leftJoinAndSelect(
-      'artwork.genres',
-      'genre',
-    );
+    const query = this.createQueryBuilder('artwork')
+      .leftJoinAndSelect('artwork.genres', 'genre')
+      .leftJoinAndSelect('genre.translations', 'translation');
 
     // 상태를 기반으로 필터
     query.where('artwork.isDraft IN (:...isDraftIn)', {

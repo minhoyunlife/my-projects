@@ -15,7 +15,9 @@ import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
-import { Genre } from '@/src/modules/genres/genres.entity';
+import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
+import { Genre } from '@/src/modules/genres/entities/genres.entity';
+import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { StorageService } from '@/src/modules/storage/storage.service';
 import { AdministratorsFactory } from '@/test/factories/administrator.factory';
@@ -31,7 +33,7 @@ describeWithDeps('ArtworksController', () => {
 
   beforeAll(async () => {
     app = await createTestingApp({
-      entities: [Artwork, Genre, Administrator],
+      entities: [Artwork, Genre, GenreTranslation, Administrator],
       controllers: [ArtworksController],
       providers: [
         ArtworksService,
@@ -61,6 +63,7 @@ describeWithDeps('ArtworksController', () => {
     let genreRepository: Repository<Genre>;
 
     let administrator: Administrator;
+    let genres: Genre[];
 
     beforeEach(async () => {
       authService = app.get(AuthService);
@@ -75,9 +78,21 @@ describeWithDeps('ArtworksController', () => {
         ])
       )[0];
 
-      const genres = await saveEntities(genreRepository, [
-        GenresFactory.createTestData({ name: 'Action' }),
-        GenresFactory.createTestData({ name: 'RPG' }),
+      genres = await saveEntities(genreRepository, [
+        GenresFactory.createTestData({
+          translations: [
+            { language: Language.KO, name: '액션' },
+            { language: Language.EN, name: 'Action' },
+            { language: Language.JA, name: 'アクション' },
+          ] as GenreTranslation[],
+        }),
+        GenresFactory.createTestData({
+          translations: [
+            { language: Language.KO, name: '롤플레잉' },
+            { language: Language.EN, name: 'RPG' },
+            { language: Language.JA, name: 'ロールプレイング' },
+          ] as GenreTranslation[],
+        }),
       ]);
 
       await saveEntities(artworkRepository, [
@@ -153,10 +168,10 @@ describeWithDeps('ArtworksController', () => {
       );
     });
 
-    it('장르 필터가 정상적으로 동작함', async () => {
+    it('장르ID 필터가 정상적으로 동작함', async () => {
       const response = await request(app.getHttpServer())
         .get('/artworks')
-        .query({ genres: ['Action'] })
+        .query({ genreIds: [genres[0].id] })
         .expect(200);
 
       await expect(response).toMatchOpenAPISpec();
@@ -165,7 +180,7 @@ describeWithDeps('ArtworksController', () => {
 
       expect(
         items.every((item) =>
-          item.genres.some((genre) => genre.name === 'Action'),
+          item.genres.some((genre) => genre.id === genres[0].id),
         ),
       ).toBe(true);
     });
@@ -236,12 +251,29 @@ describeWithDeps('ArtworksController', () => {
   });
 
   describe('POST /artworks', () => {
+    let genreRepository: Repository<Genre>;
+
+    beforeEach(async () => {
+      genreRepository = dataSource.getRepository(Genre);
+
+      await saveEntities(genreRepository, [
+        GenresFactory.createTestData({
+          id: 'genre-1',
+          translations: [
+            { language: Language.KO, name: '액션' },
+            { language: Language.EN, name: 'Action' },
+            { language: Language.JA, name: 'アクション' },
+          ] as GenreTranslation[],
+        }),
+      ]);
+    });
+
     const createDto: CreateArtworkDto = {
       title: '테스트 작품명',
       imageKey: 'artworks/2024/03/abc123def456',
       createdAt: '2024-11-01',
       playedOn: Platform.STEAM,
-      genres: ['Action', 'RPG'],
+      genreIds: ['genre-1'],
       rating: 18,
       shortReview: '정말 재미있는 게임!',
     };
@@ -256,12 +288,17 @@ describeWithDeps('ArtworksController', () => {
 
       const savedArtwork = await dataSource.getRepository(Artwork).findOne({
         where: { id: response.body.id },
-        relations: ['genres'],
+        relations: {
+          genres: {
+            translations: true,
+          },
+        },
       });
 
       expect(savedArtwork).toBeDefined();
       expect(savedArtwork.title).toBe(createDto.title);
-      expect(savedArtwork.genres).toHaveLength(createDto.genres.length);
+      expect(savedArtwork.genres).toHaveLength(createDto.genreIds.length);
+      expect(savedArtwork.genres[0].translations).toHaveLength(3);
     });
 
     it('필수 필드 누락 시 400 에러가 반환되어야 함', async () => {
@@ -270,6 +307,20 @@ describeWithDeps('ArtworksController', () => {
       const response = await request(app.getHttpServer())
         .post('/artworks')
         .send(invalidDto)
+        .expect(400);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+
+    it('존재하지 않는 장르 ID로 생성 시도 시 400 에러가 반환되어야 함', async () => {
+      const dtoWithInvalidGenreId = {
+        ...createDto,
+        genreIds: ['non-existing-genre-id'],
+      };
+
+      const response = await request(app.getHttpServer())
+        .post('/artworks')
+        .send(dtoWithInvalidGenreId)
         .expect(400);
 
       await expect(response).toMatchOpenAPISpec();

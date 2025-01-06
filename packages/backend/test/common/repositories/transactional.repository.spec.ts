@@ -2,7 +2,8 @@ import { EntityManager } from 'typeorm';
 
 import { TransactionalRepository } from '@/src/common/repositories/transactional.repository';
 import { Artwork } from '@/src/modules/artworks/artworks.entity';
-import { Genre } from '@/src/modules/genres/genres.entity';
+import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
+import { Genre } from '@/src/modules/genres/entities/genres.entity';
 
 describeWithoutDeps('TransactionalRepository', () => {
   describe('forTransaction()', () => {
@@ -59,7 +60,13 @@ describeWithoutDeps('TransactionalRepository', () => {
           const txGenreRepo = mockGenreRepository.forTransaction(entityManager);
 
           await txArtworkRepo.save({ title: 'Test Artwork' });
-          await txGenreRepo.save({ name: 'Test Genre' });
+          await txGenreRepo.save({
+            translations: [
+              { language: 'ko', name: '테스트 장르' },
+              { language: 'en', name: 'Test Genre' },
+              { language: 'ja', name: 'テストジャンル' },
+            ] as GenreTranslation[],
+          });
         }),
       ).rejects.toThrow('Save failed');
 

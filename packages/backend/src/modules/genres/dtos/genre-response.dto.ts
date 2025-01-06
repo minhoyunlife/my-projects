@@ -1,11 +1,12 @@
-import { Genre } from '@/src/modules/genres/genres.entity';
+import { Genre } from '@/src/modules/genres/entities/genres.entity';
+import { GenreTranslation } from '@/src/modules/genres/interfaces/genre-translations.interface';
 
 export class GenreResponse {
   id: string;
-  name: string;
+  translations: GenreTranslation[];
 
   constructor(genre: Genre) {
     this.id = genre.id;
-    this.name = genre.name;
+    this.translations = genre.translations ?? [];
   }
 }

@@ -11,7 +11,7 @@ describeWithoutDeps('GetArtworksQueryDto', () => {
     page: 1,
     sort: SortType.CREATED_DESC,
     platforms: [Platform.STEAM],
-    genres: ['액션', '어드벤처'],
+    genreIds: ['genre-1', 'genre-2'],
     search: 'test',
     status: [Status.DRAFT],
   };
@@ -137,14 +137,14 @@ describeWithoutDeps('GetArtworksQueryDto', () => {
     });
 
     it('빈 배열이 주어진 경우, 에러가 발생하지 않음', async () => {
-      const dto = createDto({ genres: [] });
+      const dto = createDto({ genreIds: [] });
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(0);
     });
 
     it('빈 값으로 주어진 경우, 에러가 발생하지 않음', async () => {
-      const dto = createDto({ genres: ['', ''] });
+      const dto = createDto({ genreIds: ['', ''] });
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(0);
@@ -152,23 +152,12 @@ describeWithoutDeps('GetArtworksQueryDto', () => {
 
     it('값이 생략된 경우, 에러가 발생하지 않음', async () => {
       const testData = { ...validDtoData };
-      delete testData.genres;
+      delete testData.genreIds;
 
       const dto = createDto(testData);
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(0);
-    });
-
-    it('일부 값이 문자열이 아닌 경우, 에러가 발생함', async () => {
-      const dto = createDto({
-        genres: ['a', 1 as any, 'c'],
-      });
-      const errors = await validate(dto);
-
-      expect(errors).toHaveLength(1);
-      expect(errors[0].property).toBe('genres');
-      expect(errors[0].constraints).toHaveProperty('isString');
     });
   });
 
