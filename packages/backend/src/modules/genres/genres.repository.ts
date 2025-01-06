@@ -23,4 +23,32 @@ export class GenresRepository extends TransactionalRepository<Genre> {
   forTransaction(entityManager: EntityManager): GenresRepository {
     return new GenresRepository(entityManager.getRepository(Genre));
   }
+
+  /**
+   * 장르 데이터를 필터링하여 조회
+   * @param {Object} filters - 필터링 조건
+   * @returns {Promise<[Genre[], number]>} - 장르 데이터와 총 개수
+   */
+  async getAllWithFilters(filters: {
+    page: number;
+    pageSize: number;
+    search?: string;
+  }): Promise<[Genre[], number]> {
+    const query = this.createQueryBuilder('genre').leftJoinAndSelect(
+      'genre.translations',
+      'translation',
+    );
+
+    if (filters.search) {
+      query.andWhere('translation.name ILIKE :search', {
+        search: `%${filters.search}%`,
+      });
+    }
+
+    query.orderBy('genre.id', 'ASC');
+
+    query.skip((filters.page - 1) * filters.pageSize).take(filters.pageSize);
+
+    return await query.getManyAndCount();
+  }
 }
