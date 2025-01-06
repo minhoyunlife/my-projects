@@ -4,9 +4,12 @@ import { Artwork } from '@/src/modules/artworks/artworks.entity';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
+import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
+import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
+import { GenreTranslationsFactory } from '@/test/factories/genre-translations.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
 import { clearTables, saveEntities } from '@/test/utils/database.util';
 import { createTestingModuleWithDB } from '@/test/utils/module-builder.util';
@@ -18,7 +21,7 @@ describeWithDeps('ArtworksRepository', () => {
 
   beforeAll(async () => {
     const module = await createTestingModuleWithDB({
-      entities: [Artwork, Genre],
+      entities: [Artwork, Genre, GenreTranslation],
       providers: [ArtworksRepository, GenresRepository],
     });
 
@@ -37,7 +40,20 @@ describeWithDeps('ArtworksRepository', () => {
     beforeEach(async () => {
       await clearTables(dataSource, [Artwork, Genre]);
 
-      const genreEntity = GenresFactory.createTestData();
+      const genreEntity = GenresFactory.createTestData({}, [
+        GenreTranslationsFactory.createTestData({
+          language: Language.KO,
+          name: '액션',
+        }),
+        GenreTranslationsFactory.createTestData({
+          language: Language.EN,
+          name: 'Action',
+        }),
+        GenreTranslationsFactory.createTestData({
+          language: Language.JA,
+          name: 'アクション',
+        }),
+      ]);
       savedGenres = await saveEntities(genreRepo, [genreEntity]);
     });
 
@@ -47,7 +63,11 @@ describeWithDeps('ArtworksRepository', () => {
 
       const saved = await artworkRepo.findOne({
         where: { id: result.id },
-        relations: ['genres'],
+        relations: {
+          genres: {
+            translations: true,
+          },
+        },
       });
 
       expect(saved.title).toBe(artworkData.title);
@@ -86,9 +106,21 @@ describeWithDeps('ArtworksRepository', () => {
       await clearTables(dataSource, [Artwork, Genre]);
 
       genres = await saveEntities(genreRepo, [
-        GenresFactory.createTestData({ name: 'RPG' }),
-        GenresFactory.createTestData({ name: 'Action' }),
-        GenresFactory.createTestData({ name: 'Adventure' }),
+        GenresFactory.createTestData({}, [
+          { language: Language.KO, name: '롤플레잉' },
+          { language: Language.EN, name: 'RPG' },
+          { language: Language.JA, name: 'ロールプレイング' },
+        ]),
+        GenresFactory.createTestData({}, [
+          { language: Language.KO, name: '액션' },
+          { language: Language.EN, name: 'Action' },
+          { language: Language.JA, name: 'アクション' },
+        ]),
+        GenresFactory.createTestData({}, [
+          { language: Language.KO, name: '어드벤처' },
+          { language: Language.EN, name: 'Adventure' },
+          { language: Language.JA, name: 'アドベンチャー' },
+        ]),
       ]);
 
       artworks = await saveEntities(artworkRepo, [

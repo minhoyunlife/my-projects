@@ -18,6 +18,8 @@ export class Genre {
   /**
    * 장르명을 다언어로 관리하기 위한 번역 정보
    */
-  @OneToMany(() => GenreTranslation, (translation) => translation.genre)
+  @OneToMany(() => GenreTranslation, (translation) => translation.genre, {
+    cascade: true,
+  })
   translations: GenreTranslation[];
 }

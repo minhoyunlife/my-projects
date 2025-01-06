@@ -44,7 +44,7 @@ export class GetArtworksQueryDto {
   @Transform(({ value }) => {
     return Array.isArray(value) ? value : [value];
   })
-  genres?: string[];
+  genreIds?: string[];
 
   @IsOptional()
   @MinLength(1)

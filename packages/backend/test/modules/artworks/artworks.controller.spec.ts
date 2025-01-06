@@ -15,6 +15,7 @@ import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
+import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
@@ -32,7 +33,7 @@ describeWithDeps('ArtworksController', () => {
 
   beforeAll(async () => {
     app = await createTestingApp({
-      entities: [Artwork, Genre, Administrator],
+      entities: [Artwork, Genre, GenreTranslation, Administrator],
       controllers: [ArtworksController],
       providers: [
         ArtworksService,
@@ -62,6 +63,7 @@ describeWithDeps('ArtworksController', () => {
     let genreRepository: Repository<Genre>;
 
     let administrator: Administrator;
+    let genres: Genre[];
 
     beforeEach(async () => {
       authService = app.get(AuthService);
@@ -76,9 +78,21 @@ describeWithDeps('ArtworksController', () => {
         ])
       )[0];
 
-      const genres = await saveEntities(genreRepository, [
-        GenresFactory.createTestData({ name: 'Action' }),
-        GenresFactory.createTestData({ name: 'RPG' }),
+      genres = await saveEntities(genreRepository, [
+        GenresFactory.createTestData({
+          translations: [
+            { language: Language.KO, name: '액션' },
+            { language: Language.EN, name: 'Action' },
+            { language: Language.JA, name: 'アクション' },
+          ] as GenreTranslation[],
+        }),
+        GenresFactory.createTestData({
+          translations: [
+            { language: Language.KO, name: '롤플레잉' },
+            { language: Language.EN, name: 'RPG' },
+            { language: Language.JA, name: 'ロールプレイング' },
+          ] as GenreTranslation[],
+        }),
       ]);
 
       await saveEntities(artworkRepository, [
@@ -154,10 +168,10 @@ describeWithDeps('ArtworksController', () => {
       );
     });
 
-    it('장르 필터가 정상적으로 동작함', async () => {
+    it('장르ID 필터가 정상적으로 동작함', async () => {
       const response = await request(app.getHttpServer())
         .get('/artworks')
-        .query({ genres: ['Action'] })
+        .query({ genreIds: [genres[0].id] })
         .expect(200);
 
       await expect(response).toMatchOpenAPISpec();
@@ -166,7 +180,7 @@ describeWithDeps('ArtworksController', () => {
 
       expect(
         items.every((item) =>
-          item.genres.some((genre) => genre.name === 'Action'),
+          item.genres.some((genre) => genre.id === genres[0].id),
         ),
       ).toBe(true);
     });
@@ -243,7 +257,14 @@ describeWithDeps('ArtworksController', () => {
       genreRepository = dataSource.getRepository(Genre);
 
       await saveEntities(genreRepository, [
-        GenresFactory.createTestData({ id: 'genre-1' }),
+        GenresFactory.createTestData({
+          id: 'genre-1',
+          translations: [
+            { language: Language.KO, name: '액션' },
+            { language: Language.EN, name: 'Action' },
+            { language: Language.JA, name: 'アクション' },
+          ] as GenreTranslation[],
+        }),
       ]);
     });
 
@@ -252,7 +273,7 @@ describeWithDeps('ArtworksController', () => {
       imageKey: 'artworks/2024/03/abc123def456',
       createdAt: '2024-11-01',
       playedOn: Platform.STEAM,
-      genreIds: ['genre-1', 'genre-2'],
+      genreIds: ['genre-1'],
       rating: 18,
       shortReview: '정말 재미있는 게임!',
     };

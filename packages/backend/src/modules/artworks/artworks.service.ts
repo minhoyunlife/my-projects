@@ -52,12 +52,7 @@ export class ArtworksService {
     const pageSize = isAuthenticated ? PAGE_SIZE.CMS : PAGE_SIZE.PUBLIC; // 페이지 당 표시 작품 수(CMS: 10, 팬아트: 20)
     const sort = query.sort ?? SortType.CREATED_DESC; // 정렬 방식(디폴트: 작성일자 기준 최신순)
     const platforms = query.platforms?.length ? query.platforms : undefined; // 플랫폼 필터(디폴트: 모든 플랫폼)
-
-    let genreIds: string[] | undefined;
-    if (query.genres?.length) {
-      genreIds = await this.genresRepository.findGenreIdsByNames(query.genres);
-    }
-
+    const genreIds = query.genreIds?.length ? query.genreIds : undefined;
     const search = query.search ?? undefined; // 제목 검색어(디폴트: 없음)
 
     // 작품 상태 필터

@@ -48,15 +48,11 @@ describeWithoutDeps('ArtworksService', () => {
 
   describe('getArtworks', () => {
     const getAllWithFiltersMock = vi.fn();
-    const findGenreIdsByNamesMock = vi.fn();
 
     beforeEach(() => {
       getAllWithFiltersMock.mockClear();
-      findGenreIdsByNamesMock.mockClear();
 
       artworksRepository.getAllWithFilters = getAllWithFiltersMock;
-      genresRepository.findGenreIdsByNames = findGenreIdsByNamesMock;
-
       getAllWithFiltersMock.mockResolvedValue([[], 0]);
     });
 
@@ -150,33 +146,27 @@ describeWithoutDeps('ArtworksService', () => {
     });
 
     describe('장르 필터 검증', () => {
-      it('쿼리 파라미터에 genres 가 지정된 경우, 해당 값으로 지정됨', async () => {
-        const genreNames = ['RPG', 'Action'];
+      it('쿼리 파라미터에 genreIds가 지정된 경우, 해당 값으로 지정됨', async () => {
         const genreIds = ['genre-1', 'genre-2'];
 
-        findGenreIdsByNamesMock.mockResolvedValue(genreIds);
+        await service.getArtworks({ genreIds }, false);
 
-        await service.getArtworks({ genres: genreNames }, false);
-
-        expect(findGenreIdsByNamesMock).toHaveBeenCalledWith(genreNames);
         expect(getAllWithFiltersMock).toHaveBeenCalledWith(
           expect.objectContaining({ genreIds }),
         );
       });
 
-      it('쿼리 파라미터에 genres 가 미지정인 경우, undefined 로 지정됨', async () => {
+      it('쿼리 파라미터에 genreIds 가 미지정인 경우, undefined 로 지정됨', async () => {
         await service.getArtworks({}, false);
 
-        expect(findGenreIdsByNamesMock).not.toHaveBeenCalled();
         expect(getAllWithFiltersMock).toHaveBeenCalledWith(
           expect.objectContaining({ genreIds: undefined }),
         );
       });
 
-      it('쿼리 파라미터에 genres 가 빈 배열인 경우, undefined 로 지정됨', async () => {
-        await service.getArtworks({ genres: [] }, false);
+      it('쿼리 파라미터에 genreIds가 빈 배열인 경우, undefined로 지정됨', async () => {
+        await service.getArtworks({ genreIds: [] }, false);
 
-        expect(findGenreIdsByNamesMock).not.toHaveBeenCalled();
         expect(getAllWithFiltersMock).toHaveBeenCalledWith(
           expect.objectContaining({ genreIds: undefined }),
         );

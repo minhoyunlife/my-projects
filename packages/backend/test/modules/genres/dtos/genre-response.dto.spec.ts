@@ -1,9 +1,24 @@
 import { GenreResponse } from '@/src/modules/genres/dtos/genre-response.dto';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
+import { Language } from '@/src/modules/genres/enums/language.enum';
+import { GenreTranslationsFactory } from '@/test/factories/genre-translations.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
 
 describeWithoutDeps('GenreResponse', () => {
-  const genre = GenresFactory.createTestData({ id: 'some-nanoid' }) as Genre;
+  const genre = GenresFactory.createTestData({ id: 'some-nanoid' }, [
+    GenreTranslationsFactory.createTestData({
+      language: Language.KO,
+      name: '액션',
+    }),
+    GenreTranslationsFactory.createTestData({
+      language: Language.EN,
+      name: 'Action',
+    }),
+    GenreTranslationsFactory.createTestData({
+      language: Language.JA,
+      name: 'アクション',
+    }),
+  ]) as Genre;
 
   const response = new GenreResponse(genre);
 
