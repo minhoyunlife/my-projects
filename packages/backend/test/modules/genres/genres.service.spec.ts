@@ -2,6 +2,12 @@ import { TestingModule } from '@nestjs/testing';
 
 import { EntityManager } from 'typeorm';
 
+import { CreateGenreDto } from '@/src/modules/genres/dtos/create-genre.dto';
+import { Language } from '@/src/modules/genres/enums/language.enum';
+import {
+  GenreErrorCode,
+  GenreException,
+} from '@/src/modules/genres/exceptions/genres.exception';
 import { GenresController } from '@/src/modules/genres/genres.controller';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { GenresService } from '@/src/modules/genres/genres.service';
@@ -92,6 +98,59 @@ describeWithoutDeps('GenresService', () => {
           expect.objectContaining({ search: undefined }),
         );
       });
+    });
+  });
+
+  describe('createGenre', () => {
+    const createOneMock = vi.fn();
+
+    const createGenreDto: CreateGenreDto = {
+      koName: '액션',
+      enName: 'Action',
+      jaName: 'アクション',
+    };
+
+    beforeEach(() => {
+      createOneMock.mockClear();
+
+      genresRepository.forTransaction = vi.fn().mockReturnThis();
+      genresRepository.createOne = createOneMock;
+    });
+
+    it('장르가 성공적으로 생성됨', async () => {
+      const expectedGenre = {
+        id: 'genre-1',
+        translations: [
+          { language: Language.KO, name: '액션' },
+          { language: Language.EN, name: 'Action' },
+          { language: Language.JA, name: 'アクション' },
+        ],
+      };
+
+      createOneMock.mockResolvedValue(expectedGenre);
+
+      const result = await service.createGenre(createGenreDto);
+
+      expect(createOneMock).toHaveBeenCalledWith({
+        translations: [
+          { language: Language.KO, name: '액션' },
+          { language: Language.EN, name: 'Action' },
+          { language: Language.JA, name: 'アクション' },
+        ],
+      });
+      expect(result).toEqual(expectedGenre);
+    });
+
+    it('리포지토리에서 에러가 발생하면 그대로 전파됨', async () => {
+      const error = new GenreException(
+        GenreErrorCode.DUPLICATE_NAME,
+        'Duplicate name error',
+      );
+      createOneMock.mockRejectedValue(error);
+
+      await expect(service.createGenre(createGenreDto)).rejects.toThrowError(
+        error,
+      );
     });
   });
 });

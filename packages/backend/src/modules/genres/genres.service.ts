@@ -1,14 +1,22 @@
 import { Injectable } from '@nestjs/common';
 
+import { EntityManager } from 'typeorm';
+
 import { EntityList } from '@/src/common/interfaces/entity-list.interface';
+import { CreateGenreDto } from '@/src/modules/genres/dtos/create-genre.dto';
 import { GetGenresQueryDto } from '@/src/modules/genres/dtos/get-genres-query.dto';
+import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
+import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresController } from '@/src/modules/genres/genres.controller';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 
 @Injectable()
 export class GenresService {
-  constructor(private readonly genresRepository: GenresRepository) {}
+  constructor(
+    private readonly genresRepository: GenresRepository,
+    private readonly entityManager: EntityManager,
+  ) {}
 
   /**
    * 장르 목록을 쿼리의 조건에 맞춰서 조회
@@ -32,5 +40,26 @@ export class GenresService {
       items,
       totalCount,
     };
+  }
+
+  /**
+   * 새로운 장르를 생성
+   * @param dto - 장르 생성 정보를 담은 DTO
+   * @returns 생성된 장르
+   */
+  async createGenre(dto: CreateGenreDto): Promise<Genre> {
+    return this.entityManager.transaction(async (manager) => {
+      const genresTxRepo = this.genresRepository.forTransaction(manager);
+
+      const genreData: Partial<Genre> = {
+        translations: [
+          { language: Language.KO, name: dto.koName },
+          { language: Language.EN, name: dto.enName },
+          { language: Language.JA, name: dto.jaName },
+        ] as GenreTranslation[],
+      };
+
+      return await genresTxRepo.createOne(genreData);
+    });
   }
 }
