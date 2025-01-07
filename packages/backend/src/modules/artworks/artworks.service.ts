@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { In } from 'typeorm';
 
+import { EntityList } from '@/src/common/interfaces/entity-list.interface';
 import { Artwork } from '@/src/modules/artworks/artworks.entity';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { PAGE_SIZE } from '@/src/modules/artworks/constants/page-size.constant';
@@ -44,10 +45,7 @@ export class ArtworksService {
   async getArtworks(
     query: GetArtworksQueryDto,
     isAuthenticated: boolean,
-  ): Promise<{
-    items: Artwork[];
-    totalCount: number;
-  }> {
+  ): Promise<EntityList<Artwork>> {
     const page = query.page ?? 1; // 페이지 번호(디폴트: 1)
     const pageSize = isAuthenticated ? PAGE_SIZE.CMS : PAGE_SIZE.PUBLIC; // 페이지 당 표시 작품 수(CMS: 10, 팬아트: 20)
     const sort = query.sort ?? SortType.CREATED_DESC; // 정렬 방식(디폴트: 작성일자 기준 최신순)
