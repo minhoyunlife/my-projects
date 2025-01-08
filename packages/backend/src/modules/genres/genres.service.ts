@@ -2,13 +2,13 @@ import { Injectable } from '@nestjs/common';
 
 import { EntityManager } from 'typeorm';
 
+import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { EntityList } from '@/src/common/interfaces/entity-list.interface';
 import { CreateGenreDto } from '@/src/modules/genres/dtos/create-genre.dto';
 import { GetGenresQueryDto } from '@/src/modules/genres/dtos/get-genres-query.dto';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
-import { GenresController } from '@/src/modules/genres/genres.controller';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 
 @Injectable()
@@ -32,7 +32,7 @@ export class GenresService {
 
     const [items, totalCount] = await this.genresRepository.getAllWithFilters({
       page,
-      pageSize: GenresController.PAGE_SIZE,
+      pageSize: PAGE_SIZE.CMS,
       search,
     });
 

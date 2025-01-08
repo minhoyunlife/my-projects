@@ -2,13 +2,13 @@ import { TestingModule } from '@nestjs/testing';
 
 import { EntityManager } from 'typeorm';
 
+import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { CreateGenreDto } from '@/src/modules/genres/dtos/create-genre.dto';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import {
   GenreErrorCode,
   GenreException,
 } from '@/src/modules/genres/exceptions/genres.exception';
-import { GenresController } from '@/src/modules/genres/genres.controller';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { GenresService } from '@/src/modules/genres/genres.service';
 import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
@@ -77,7 +77,7 @@ describeWithoutDeps('GenresService', () => {
         await service.getGenres({});
 
         expect(getAllWithFiltersMock).toHaveBeenCalledWith(
-          expect.objectContaining({ pageSize: GenresController.PAGE_SIZE }),
+          expect.objectContaining({ pageSize: PAGE_SIZE.CMS }),
         );
       });
     });

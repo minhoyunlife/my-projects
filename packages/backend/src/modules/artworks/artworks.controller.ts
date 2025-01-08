@@ -14,8 +14,8 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 
+import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
-import { PAGE_SIZE } from '@/src/modules/artworks/constants/page-size.constant';
 import {
   ArtworkListResponse,
   ArtworkResponse,
