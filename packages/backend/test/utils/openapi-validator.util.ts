@@ -71,11 +71,49 @@ export class OpenAPIValidator {
       throw new Error('Invalid response object: missing required properties');
     }
 
+    const path = new URL(url).pathname;
+
+    const matchingPath = this.findMatchingPath(path);
+    if (!matchingPath) {
+      throw new Error(`No matching path found for ${path}`);
+    }
+
     return {
-      path: new URL(url).pathname,
+      path: matchingPath,
       method: method.toLowerCase(),
       status,
     };
+  }
+
+  /**
+   * 요청 경로와 스펙 경로를 비교하여 매칭되는 경로를 반환
+   * @param {string} requestPath 요청 경로
+   * @returns {string | null} 매칭된 스펙 경로
+   */
+  private findMatchingPath(requestPath: string): string | null {
+    const paths = Object.keys(this.spec.paths);
+
+    const staticPaths = paths.filter((path) => !/{[^}]+}/.test(path));
+    const dynamicPaths = paths.filter((path) => /{[^}]+}/.test(path));
+
+    // 정적 경로 우선 확인
+    for (const specPath of staticPaths) {
+      if (specPath === requestPath) {
+        return specPath;
+      }
+    }
+
+    // 동적 경로 확인
+    for (const specPath of dynamicPaths) {
+      const pathRegex = new RegExp(
+        `^${specPath.replace(/{([^}]+)}/g, '[^/]+')}$`,
+      );
+      if (pathRegex.test(requestPath)) {
+        return specPath;
+      }
+    }
+
+    return null;
   }
 
   /**
