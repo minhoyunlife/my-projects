@@ -9,6 +9,7 @@ import { Administrator } from '@/src/modules/auth/entities/administrator.entity'
 import { TokenErrorCode } from '@/src/modules/auth/exceptions/token.exception';
 import { INVALID_INPUT_DATA } from '@/src/modules/config/settings/validation-pipe.config';
 import { CreateGenreDto } from '@/src/modules/genres/dtos/create-genre.dto';
+import { UpdateGenreDto } from '@/src/modules/genres/dtos/update-genre.dto';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
@@ -230,6 +231,96 @@ describeWithDeps('GenresController', () => {
         .post('/genres')
         .set('Authorization', `Bearer ${token}`)
         .send({ ...createDto, enName: 'RPG' })
+        .expect(409);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      expect(response.body.code).toBe(GenreErrorCode.DUPLICATE_NAME);
+    });
+  });
+
+  describe('PATCH /genres/id', () => {
+    let genre: Genre;
+
+    beforeEach(async () => {
+      const genres = await saveEntities(genreRepository, [
+        GenresFactory.createTestData({
+          translations: [
+            { language: Language.KO, name: '액션' },
+            { language: Language.EN, name: 'Action' },
+            { language: Language.JA, name: 'アクション' },
+          ] as GenreTranslation[],
+        }),
+        GenresFactory.createTestData({
+          translations: [
+            { language: Language.KO, name: '롤플레잉' },
+            { language: Language.EN, name: 'RPG' },
+            { language: Language.JA, name: 'ロールプレイング' },
+          ] as GenreTranslation[],
+        }),
+      ]);
+
+      genre = genres[0];
+    });
+
+    const updateDto: UpdateGenreDto = {
+      koName: '퍼즐',
+    };
+
+    it('유효한 DTO로 장르 수정 시 DB에 정상적으로 저장됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .patch(`/genres/${genre.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateDto)
+        .expect(200);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      const saved = await genreRepository.findOne({
+        where: { id: genre.id },
+        relations: { translations: true },
+      });
+
+      expect(
+        saved.translations.find((t) => t.language === Language.KO).name,
+      ).toBe(updateDto.koName);
+    });
+
+    it('리퀘스트 바디가 부적절할 경우, 400 에러가 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .patch(`/genres/${genre.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({})
+        .expect(400);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      expect(response.body.code).toBe(GenreErrorCode.NO_TRANSLATIONS_PROVIDED);
+    });
+
+    it('인증에 실패한 경우, 401 에러가 반환됨', async () => {
+      const response = await request(app.getHttpServer())
+        .patch(`/genres/${genre.id}`)
+        .set('Authorization', 'Bearer invalid-token')
+        .send(updateDto)
+        .expect(401);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      expect(response.body.code).toBe(TokenErrorCode.INVALID_TOKEN);
+    });
+
+    it('이미 존재하는 장르 이름으로 수정할 경우, 409 에러가 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .patch(`/genres/${genre.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ...updateDto, koName: '롤플레잉' })
         .expect(409);
 
       await expect(response).toMatchOpenAPISpec();
