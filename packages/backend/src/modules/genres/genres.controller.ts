@@ -4,6 +4,8 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -17,6 +19,7 @@ import {
   GenreResponse,
 } from '@/src/modules/genres/dtos/genre-response.dto';
 import { GetGenresQueryDto } from '@/src/modules/genres/dtos/get-genres-query.dto';
+import { UpdateGenreDto } from '@/src/modules/genres/dtos/update-genre.dto';
 import { GenresService } from '@/src/modules/genres/genres.service';
 
 @Controller('genres')
@@ -44,6 +47,17 @@ export class GenresController {
   @HttpCode(HttpStatus.CREATED)
   async createGenre(@Body() dto: CreateGenreDto): Promise<GenreResponse> {
     const genre = await this.genresService.createGenre(dto);
+    return new GenreResponse(genre);
+  }
+
+  @Patch('/:id')
+  @UseGuards(BearerAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async updateGenre(
+    @Param('id') id: string,
+    @Body() dto: UpdateGenreDto,
+  ): Promise<GenreResponse> {
+    const genre = await this.genresService.updateGenre(id, dto);
     return new GenreResponse(genre);
   }
 }
