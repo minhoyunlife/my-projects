@@ -6,9 +6,14 @@ import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { EntityList } from '@/src/common/interfaces/entity-list.interface';
 import { CreateGenreDto } from '@/src/modules/genres/dtos/create-genre.dto';
 import { GetGenresQueryDto } from '@/src/modules/genres/dtos/get-genres-query.dto';
+import { UpdateGenreDto } from '@/src/modules/genres/dtos/update-genre.dto';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
+import {
+  GenreErrorCode,
+  GenreException,
+} from '@/src/modules/genres/exceptions/genres.exception';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 
 @Injectable()
@@ -60,6 +65,48 @@ export class GenresService {
       };
 
       return await genresTxRepo.createOne(genreData);
+    });
+  }
+
+  /**
+   * 기존 장르를 수정
+   * @param id - 수정할 장르의 ID
+   * @param dto - 장르명의 수정 정보를 담은 DTO
+   * @returns 수정된 장르
+   */
+  async updateGenre(id: string, dto: UpdateGenreDto): Promise<Genre> {
+    if (!dto.koName && !dto.enName && !dto.jaName) {
+      throw new GenreException(
+        GenreErrorCode.NO_TRANSLATIONS_PROVIDED,
+        'At least one translation must be provided',
+        {
+          translations: [
+            'At least one translation is required to update genre',
+          ],
+        },
+      );
+    }
+
+    return this.entityManager.transaction(async (manager) => {
+      const genresTxRepo = this.genresRepository.forTransaction(manager);
+
+      const translations = [];
+      if (dto.koName) {
+        translations.push({ language: Language.KO, name: dto.koName });
+      }
+      if (dto.enName) {
+        translations.push({ language: Language.EN, name: dto.enName });
+      }
+      if (dto.jaName) {
+        translations.push({ language: Language.JA, name: dto.jaName });
+      }
+
+      const genreData: Partial<Genre> = {
+        id,
+        translations,
+      };
+
+      return await genresTxRepo.updateOne(genreData);
     });
   }
 }

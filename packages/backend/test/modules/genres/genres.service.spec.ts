@@ -4,6 +4,7 @@ import { EntityManager } from 'typeorm';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { CreateGenreDto } from '@/src/modules/genres/dtos/create-genre.dto';
+import { UpdateGenreDto } from '@/src/modules/genres/dtos/update-genre.dto';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import {
   GenreErrorCode,
@@ -151,6 +152,90 @@ describeWithoutDeps('GenresService', () => {
       await expect(service.createGenre(createGenreDto)).rejects.toThrowError(
         error,
       );
+    });
+  });
+
+  describe('updateGenre', () => {
+    const updateOneMock = vi.fn();
+
+    beforeEach(() => {
+      updateOneMock.mockClear();
+
+      genresRepository.forTransaction = vi.fn().mockReturnThis();
+      genresRepository.updateOne = updateOneMock;
+    });
+
+    it('장르의 ID 와 수정할 번역 정보를 바탕으로 해당 장르를 수정함', async () => {
+      const updateGenreDto: UpdateGenreDto = {
+        koName: '액션',
+      };
+
+      const expectedGenre = {
+        id: 'genre-1',
+        translations: [
+          { language: Language.KO, name: '액션' },
+          { language: Language.EN, name: 'Action' },
+          { language: Language.JA, name: 'アクション' },
+        ],
+      };
+
+      updateOneMock.mockResolvedValue(expectedGenre);
+
+      const result = await service.updateGenre('genre-1', updateGenreDto);
+
+      expect(updateOneMock).toHaveBeenCalledWith({
+        id: 'genre-1',
+        translations: [{ language: Language.KO, name: '액션' }],
+      });
+      expect(result).toEqual(expectedGenre);
+    });
+
+    it('여러 언어의 번역을 동시에 수정할 수 있음', async () => {
+      const updateGenreDto: UpdateGenreDto = {
+        koName: '롤플레잉',
+        enName: 'RPG',
+      };
+
+      const expectedGenre = {
+        id: 'genre-1',
+        translations: [
+          { language: Language.KO, name: '롤플레잉' },
+          { language: Language.EN, name: 'RPG' },
+        ],
+      };
+
+      updateOneMock.mockResolvedValue(expectedGenre);
+
+      const result = await service.updateGenre('genre-1', updateGenreDto);
+
+      expect(updateOneMock).toHaveBeenCalledWith({
+        id: 'genre-1',
+        translations: [
+          { language: Language.KO, name: '롤플레잉' },
+          { language: Language.EN, name: 'RPG' },
+        ],
+      });
+      expect(result).toEqual(expectedGenre);
+    });
+
+    it('수정할 번역 정보가 하나도 주어지지 않은 경우, 에러가 발생함', async () => {
+      const updateGenreDto: UpdateGenreDto = {};
+
+      await expect(
+        service.updateGenre('genre-1', updateGenreDto),
+      ).rejects.toThrowError(GenreException);
+    });
+
+    it('리포지토리에서 에러가 발생하면 그대로 전파됨', async () => {
+      const error = new GenreException(
+        GenreErrorCode.DUPLICATE_NAME,
+        'Duplicate name error',
+      );
+      updateOneMock.mockRejectedValue(error);
+
+      await expect(
+        service.updateGenre('genre-1', { koName: '액션' }),
+      ).rejects.toThrow(error);
     });
   });
 });
