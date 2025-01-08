@@ -227,4 +227,86 @@ describeWithDeps('GenresRepository', () => {
       );
     });
   });
+
+  describe('updateOne', () => {
+    let genre: Genre;
+
+    beforeEach(async () => {
+      await clearTables(dataSource, [Genre]);
+
+      const genres = await saveEntities(genreRepo, [
+        GenresFactory.createTestData({}, [
+          { language: Language.KO, name: '액' },
+          { language: Language.EN, name: 'Action' },
+          { language: Language.JA, name: 'アクション' },
+        ]),
+        GenresFactory.createTestData({}, [
+          { language: Language.KO, name: '롤플레잉' },
+          { language: Language.EN, name: 'RPG' },
+          { language: Language.JA, name: 'ロールプレイング' },
+        ]),
+      ]);
+
+      genre = genres[0];
+    });
+
+    it('장르 데이터를 성공적으로 수정함', async () => {
+      const genreData = GenresFactory.createTestData({
+        id: genre.id,
+        translations: [
+          { language: Language.KO, name: '액션' },
+        ] as GenreTranslation[],
+      });
+
+      const result = await genreRepo.updateOne(genreData);
+
+      const saved = await genreRepo.findOne({
+        where: { id: result.id },
+        relations: {
+          translations: true,
+        },
+      });
+
+      expect(
+        saved.translations.find((t) => t.language === Language.KO)?.name,
+      ).toBe('액션');
+    });
+
+    it('갱신하려는 장르명이 데이터베이스에 이미 등록되어 있으나 수정 대상의 소유인 경우, 에러가 발생하지 않음', async () => {
+      const genreData = GenresFactory.createTestData({
+        id: genre.id,
+        translations: [
+          { language: Language.EN, name: 'Action' },
+        ] as GenreTranslation[],
+      });
+
+      await expect(genreRepo.updateOne(genreData)).resolves.not.toThrowError();
+    });
+
+    it('대상 장르를 찾을 수 없는 경우, 에러가 발생함', async () => {
+      const genreData = GenresFactory.createTestData({
+        id: 'not-existing',
+        translations: [
+          { language: Language.KO, name: '액션' },
+        ] as GenreTranslation[],
+      });
+
+      await expect(genreRepo.updateOne(genreData)).rejects.toThrowError(
+        GenreException,
+      );
+    });
+
+    it('갱신하려는 장르명이 데이터베이스에 이미 등록되어 있는 경우, 에러가 발생함', async () => {
+      const genreData = GenresFactory.createTestData({
+        id: genre.id,
+        translations: [
+          { language: Language.KO, name: '롤플레잉' },
+        ] as GenreTranslation[],
+      });
+
+      await expect(genreRepo.updateOne(genreData)).rejects.toThrowError(
+        GenreException,
+      );
+    });
+  });
 });

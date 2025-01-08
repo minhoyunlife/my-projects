@@ -82,11 +82,68 @@ export class GenresRepository extends TransactionalRepository<Genre> {
     }
 
     const names = genreData.translations.map((t) => t.name);
+    await this.checkDuplicateNames(names);
 
-    const duplicates = await this.createQueryBuilder('genre')
+    const genre = this.create(genreData);
+    return this.save(genre);
+  }
+
+  /**
+   * 장르 데이터를 수정
+   * @param {Partial<Genre>} genreData - 수정할 장르 데이터
+   * @returns {Promise<Genre>} 수정된 장르
+   */
+  async updateOne(genreData: Partial<Genre>): Promise<Genre> {
+    const genre = await this.findGenreOrFail(genreData.id);
+
+    const translationsToUpdate = genreData.translations;
+    const names = translationsToUpdate.map((t) => t.name);
+
+    await this.checkDuplicateNames(names, genre.id);
+
+    translationsToUpdate.forEach((newTranslation) => {
+      const existingTranslation = genre.translations.find(
+        (t) => t.language === newTranslation.language,
+      );
+
+      if (existingTranslation) {
+        existingTranslation.name = newTranslation.name;
+      }
+    });
+
+    return this.save(genre);
+  }
+
+  private async findGenreOrFail(id: string): Promise<Genre> {
+    const genre = await this.findOne({
+      where: { id },
+      relations: ['translations'],
+    });
+
+    if (!genre) {
+      throw new GenreException(
+        GenreErrorCode.NOT_FOUND,
+        'The genre with the provided ID does not exist',
+      );
+    }
+
+    return genre;
+  }
+
+  private async checkDuplicateNames(
+    names: string[],
+    genreIdToExclude?: string,
+  ) {
+    const query = this.createQueryBuilder('genre')
       .innerJoinAndSelect('genre.translations', 'translation')
-      .where('translation.name IN (:...names)', { names })
-      .getMany();
+      .where('translation.name IN (:...names)', { names });
+
+    // 지정한 장르 ID 에서 이미 등록되어 있는 이름을 제외한 나머지만을 조회하도록
+    if (genreIdToExclude) {
+      query.andWhere('genre.id != :id', { id: genreIdToExclude });
+    }
+
+    const duplicates = await query.getMany();
 
     if (duplicates.length > 0) {
       const duplicateNames = duplicates.flatMap((genre) =>
@@ -101,8 +158,5 @@ export class GenresRepository extends TransactionalRepository<Genre> {
         },
       );
     }
-
-    const genre = this.create(genreData);
-    return this.save(genre);
   }
 }
