@@ -1,6 +1,8 @@
 import { BadRequestException, ValidationError } from '@nestjs/common';
 import { registerAs } from '@nestjs/config';
 
+export const INVALID_INPUT_DATA = 'INVALID_INPUT_DATA';
+
 /**
  * ValidationPipe 설정 파일
  */
@@ -21,7 +23,7 @@ export default registerAs('validation', () => ({
 
     return new BadRequestException({
       message: 'Input data is invalid',
-      code: 'INVALID_INPUT_DATA',
+      code: INVALID_INPUT_DATA,
       errors,
     });
   },

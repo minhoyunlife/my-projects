@@ -4,11 +4,11 @@ import Sharp from 'sharp';
 import request from 'supertest';
 import { DataSource, Repository } from 'typeorm';
 
+import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { ArtworksController } from '@/src/modules/artworks/artworks.controller';
 import { Artwork } from '@/src/modules/artworks/artworks.entity';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
-import { PAGE_SIZE } from '@/src/modules/artworks/constants/page-size.constant';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { ImageFileType } from '@/src/modules/artworks/enums/file-type.enum';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';

@@ -12,7 +12,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "eslint \"./**/*.ts\" --fix",
+    "lint": "eslint \"./**/*.ts\"",
     "test:no-deps": "vitest run -c \"test/vitest.config.no-deps.ts\"",
     "test:deps": "vitest run -c \"test/vitest.config.deps.ts\"",
     "test:watch:no-deps": "vitest watch -c \"test/vitest.config.no-deps.ts\"",

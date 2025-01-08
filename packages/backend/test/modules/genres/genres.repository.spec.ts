@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
+import { GenreException } from '@/src/modules/genres/exceptions/genres.exception';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { GenresFactory } from '@/test/factories/genres.factory';
 import { clearTables, saveEntities } from '@/test/utils/database.util';
@@ -151,6 +152,79 @@ describeWithDeps('GenresRepository', () => {
         expect(totalCount).toBe(3);
         expect(result).toHaveLength(1);
       });
+    });
+  });
+
+  describe('createOne', () => {
+    beforeEach(async () => {
+      await clearTables(dataSource, [Genre]);
+    });
+
+    it('장르 데이터를 성공적으로 생성함', async () => {
+      const genreData = GenresFactory.createTestData({
+        translations: [
+          { language: Language.KO, name: '액션' },
+          { language: Language.EN, name: 'Action' },
+          { language: Language.JA, name: 'アクション' },
+        ] as GenreTranslation[],
+      });
+
+      const result = await genreRepo.createOne(genreData);
+
+      const saved = await genreRepo.findOne({
+        where: { id: result.id },
+        relations: {
+          translations: true,
+        },
+      });
+
+      expect(saved.translations).toHaveLength(3);
+      expect(saved.translations).toContainEqual(
+        expect.objectContaining({ language: Language.KO, name: '액션' }),
+      );
+      expect(saved.translations).toContainEqual(
+        expect.objectContaining({ language: Language.EN, name: 'Action' }),
+      );
+      expect(saved.translations).toContainEqual(
+        expect.objectContaining({ language: Language.JA, name: 'アクション' }),
+      );
+    });
+
+    it('번역이 누락된 경우 에러가 발생함', async () => {
+      const genreData = GenresFactory.createTestData({
+        translations: [
+          { language: Language.KO, name: '액션' },
+          { language: Language.EN, name: 'Action' },
+        ] as GenreTranslation[],
+      });
+
+      await expect(genreRepo.createOne(genreData)).rejects.toThrowError(
+        GenreException,
+      );
+    });
+
+    it('중복된 장르명이 있는 경우 에러가 발생함', async () => {
+      await saveEntities(genreRepo, [
+        GenresFactory.createTestData({
+          translations: [
+            { language: Language.KO, name: '액션' },
+            { language: Language.EN, name: 'Action' },
+            { language: Language.JA, name: 'アクション' },
+          ] as GenreTranslation[],
+        }),
+      ]);
+
+      const duplicateGenre = GenresFactory.createTestData({
+        translations: [
+          { language: Language.KO, name: '액션' }, // 중복된 장르명
+          { language: Language.EN, name: 'RPG' },
+          { language: Language.JA, name: 'ロールプレイング' },
+        ] as GenreTranslation[],
+      });
+
+      await expect(genreRepo.createOne(duplicateGenre)).rejects.toThrowError(
+        GenreException,
+      );
     });
   });
 });

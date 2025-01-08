@@ -5,7 +5,7 @@ import {
   PayloadTooLargeException,
 } from '@nestjs/common';
 
-import { Response } from 'express';
+import type { Response } from 'express';
 
 import {
   UploadImageErrorCode,

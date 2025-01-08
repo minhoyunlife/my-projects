@@ -5,6 +5,11 @@ import { EntityManager, Repository } from 'typeorm';
 
 import { TransactionalRepository } from '@/src/common/repositories/transactional.repository';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
+import { Language } from '@/src/modules/genres/enums/language.enum';
+import {
+  GenreErrorCode,
+  GenreException,
+} from '@/src/modules/genres/exceptions/genres.exception';
 
 @Injectable()
 export class GenresRepository extends TransactionalRepository<Genre> {
@@ -50,5 +55,54 @@ export class GenresRepository extends TransactionalRepository<Genre> {
     query.skip((filters.page - 1) * filters.pageSize).take(filters.pageSize);
 
     return await query.getManyAndCount();
+  }
+
+  /**
+   * 장르 데이터를 생성
+   * @param {Partial<Genre>} genreData - 생성할 장르 데이터
+   * @returns {Promise<Genre>} 생성된 장르
+   */
+  async createOne(genreData: Partial<Genre>): Promise<Genre> {
+    if (
+      !genreData.translations ||
+      genreData.translations.length !== Object.values(Language).length
+    ) {
+      const providedLanguages = genreData.translations?.map((t) => t.language);
+      const missingLanguages = Object.values(Language).filter(
+        (lang) => !providedLanguages.includes(lang),
+      );
+
+      throw new GenreException(
+        GenreErrorCode.NOT_ENOUGH_TRANSLATIONS,
+        'All language translations are required',
+        {
+          languages: missingLanguages,
+        },
+      );
+    }
+
+    const names = genreData.translations.map((t) => t.name);
+
+    const duplicates = await this.createQueryBuilder('genre')
+      .innerJoinAndSelect('genre.translations', 'translation')
+      .where('translation.name IN (:...names)', { names })
+      .getMany();
+
+    if (duplicates.length > 0) {
+      const duplicateNames = duplicates.flatMap((genre) =>
+        genre.translations.map((t) => t.name),
+      );
+
+      throw new GenreException(
+        GenreErrorCode.DUPLICATE_NAME,
+        "Some of the provided genre's names are duplicated",
+        {
+          names: [...new Set(duplicateNames)],
+        },
+      );
+    }
+
+    const genre = this.create(genreData);
+    return this.save(genre);
   }
 }

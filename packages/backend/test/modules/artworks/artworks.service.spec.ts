@@ -2,9 +2,9 @@ import { TestingModule } from '@nestjs/testing';
 
 import { EntityManager, In } from 'typeorm';
 
+import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
-import { PAGE_SIZE } from '@/src/modules/artworks/constants/page-size.constant';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
