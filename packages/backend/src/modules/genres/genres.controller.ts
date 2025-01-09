@@ -19,7 +19,9 @@ import { DeleteGenresQueryDto } from '@/src/modules/genres/dtos/delete-genres-qu
 import {
   GenreListResponse,
   GenreResponse,
+  GenreSearchResponse,
 } from '@/src/modules/genres/dtos/genre-response.dto';
+import { GetGenresByNameQueryDto } from '@/src/modules/genres/dtos/get-genres-by-name-query.dto';
 import { GetGenresQueryDto } from '@/src/modules/genres/dtos/get-genres-query.dto';
 import { UpdateGenreDto } from '@/src/modules/genres/dtos/update-genre.dto';
 import { GenresService } from '@/src/modules/genres/genres.service';
@@ -42,6 +44,15 @@ export class GenresController {
       query.page ?? 1,
       PAGE_SIZE.CMS,
     );
+  }
+
+  @Get('/names')
+  @UseGuards(BearerAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async getGenresByName(@Query() query: GetGenresByNameQueryDto) {
+    const result = await this.genresService.getGenresByName(query);
+
+    return new GenreSearchResponse(result);
   }
 
   @Post()
