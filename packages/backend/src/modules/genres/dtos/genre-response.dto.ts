@@ -1,6 +1,11 @@
+import exp from 'constants';
+
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { GenreTranslation } from '@/src/modules/genres/interfaces/genre-translations.interface';
 
+/**
+ * 단일 장르 응답용 DTO
+ */
 export class GenreResponse {
   id: string;
   translations: GenreTranslation[];
@@ -11,6 +16,9 @@ export class GenreResponse {
   }
 }
 
+/**
+ * 페이지네이션을 포함한 장르 리스트 응답용 DTO
+ */
 export class GenreListResponse {
   items: GenreResponse[];
   metadata: {
@@ -33,5 +41,16 @@ export class GenreListResponse {
       currentPage,
       pageSize,
     };
+  }
+}
+
+/**
+ * 페이지네이션을 포함하지 않는, 장르 검색 결과 리스트 응답용 DTO
+ */
+export class GenreSearchResponse {
+  items: GenreResponse[];
+
+  constructor(genres: Genre[]) {
+    this.items = genres.map((genre) => new GenreResponse(genre));
   }
 }
