@@ -163,6 +163,89 @@ describeWithDeps('GenresRepository', () => {
     });
   });
 
+  describe('findByName', () => {
+    beforeEach(async () => {
+      await clearTables(dataSource, [Genre]);
+
+      await saveEntities(genreRepo, [
+        GenresFactory.createTestData(
+          {
+            id: 'genre-1', // 검증 편의를 위해 ID 에 순서를 지정
+          },
+          [
+            { language: Language.KO, name: '액션' },
+            { language: Language.EN, name: 'Action' },
+            { language: Language.JA, name: 'アクション' },
+          ],
+        ),
+        GenresFactory.createTestData(
+          {
+            id: 'genre-2',
+          },
+          [
+            { language: Language.KO, name: '액션 RPG' },
+            { language: Language.EN, name: 'Action RPG' },
+            { language: Language.JA, name: 'アクションRPG' },
+          ],
+        ),
+        GenresFactory.createTestData(
+          {
+            id: 'genre-3',
+          },
+          [
+            { language: Language.KO, name: '전략' },
+            { language: Language.EN, name: 'Strategy' },
+            { language: Language.JA, name: 'ストラテジー' },
+          ],
+        ),
+      ]);
+    });
+
+    it('검색어에 매칭되는 장르와, 그 장르의 모든 번역 정보들이 조회됨', async () => {
+      const result = await genreRepo.findByName('act');
+
+      expect(result).toHaveLength(2);
+
+      expect(result[0].translations).toContainEqual(
+        expect.objectContaining({ language: Language.KO, name: '액션' }),
+      );
+      expect(result[0].translations).toContainEqual(
+        expect.objectContaining({ language: Language.EN, name: 'Action' }),
+      );
+      expect(result[0].translations).toContainEqual(
+        expect.objectContaining({ language: Language.JA, name: 'アクション' }),
+      );
+
+      expect(result[1].translations).toContainEqual(
+        expect.objectContaining({ language: Language.KO, name: '액션 RPG' }),
+      );
+      expect(result[1].translations).toContainEqual(
+        expect.objectContaining({ language: Language.EN, name: 'Action RPG' }),
+      );
+      expect(result[1].translations).toContainEqual(
+        expect.objectContaining({
+          language: Language.JA,
+          name: 'アクションRPG',
+        }),
+      );
+    });
+
+    it('한국어로 검색해도 장르가 정상적으로 조회됨', async () => {
+      const result = await genreRepo.findByName('액션');
+      expect(result).toHaveLength(2);
+    });
+
+    it('일본어로 검색해도 장르가 정상적으로 조회됨', async () => {
+      const result = await genreRepo.findByName('アクション');
+      expect(result).toHaveLength(2);
+    });
+
+    it('매칭되는 장르가 없으면 빈 배열이 반환됨', async () => {
+      const result = await genreRepo.findByName('not-existing');
+      expect(result).toEqual([]);
+    });
+  });
+
   describe('createOne', () => {
     beforeEach(async () => {
       await clearTables(dataSource, [Genre]);

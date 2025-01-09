@@ -58,6 +58,32 @@ export class GenresRepository extends TransactionalRepository<Genre> {
   }
 
   /**
+   * 장르 데이터를 필터링하여 조회
+   * @param {string} search - 검색어
+   * @param {number} limit - 조회 제한 개수
+   * @returns {Promise<Genre[]>} - 장르 데이터
+   */
+  async findByName(search: string, limit: number = 10): Promise<Genre[]> {
+    // 장르 이름이 검색어를 포함하는 장르 ID 목록을 서브쿼리로 조회
+    const subQuery = this.createQueryBuilder()
+      .subQuery()
+      .select('DISTINCT genre.id')
+      .from(Genre, 'genre')
+      .innerJoin('genre.translations', 'translation')
+      .where('translation.name ILIKE :search', { search: `%${search}%` })
+      .limit(limit)
+      .getQuery();
+
+    // 서브쿼리의 ID 목록을 바탕으로 장르 데이터 및 번역 정보의 쌍을 조회
+    return this.createQueryBuilder('genre')
+      .innerJoinAndSelect('genre.translations', 'translation')
+      .where(`genre.id IN ${subQuery}`)
+      .setParameter('search', `%${search}%`)
+      .orderBy('genre.id', 'ASC')
+      .getMany();
+  }
+
+  /**
    * 장르 데이터를 생성
    * @param {Partial<Genre>} genreData - 생성할 장르 데이터
    * @returns {Promise<Genre>} 생성된 장르
