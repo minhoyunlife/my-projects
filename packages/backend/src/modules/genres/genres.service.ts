@@ -25,7 +25,6 @@ export class GenresService {
 
   /**
    * 장르 목록을 쿼리의 조건에 맞춰서 조회
-   *
    * @param query 장르 목록을 조회하기 위한 쿼리 정보
    * @param query.page 페이지 번호 (기본값: 1)
    * @param query.search 장르명 검색어
@@ -45,6 +44,16 @@ export class GenresService {
       items,
       totalCount,
     };
+  }
+
+  /**
+   * 장르를 쿼리의 검색어에 맞춰서 검색
+   * @param query 장르 목록을 조회하기 위한 쿼리 정보
+   * @param query.search 장르명 검색어
+   * @returns 장르 목록
+   */
+  async getGenresByName(query: GetGenresQueryDto): Promise<Genre[]> {
+    return this.genresRepository.findByName(query.search);
   }
 
   /**
