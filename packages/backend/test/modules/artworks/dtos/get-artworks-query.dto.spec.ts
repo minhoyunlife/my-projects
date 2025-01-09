@@ -128,7 +128,7 @@ describeWithoutDeps('GetArtworksQueryDto', () => {
     });
   });
 
-  describe('genres', () => {
+  describe('genreIds', () => {
     it('값이 유효한 경우, 에러가 발생하지 않음', async () => {
       const dto = createDto();
       const errors = await validate(dto);

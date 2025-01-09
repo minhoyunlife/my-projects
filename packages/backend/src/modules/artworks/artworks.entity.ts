@@ -38,7 +38,7 @@ export class Artwork {
   /**
    * 작품 대상 게임의 장르
    */
-  @ManyToMany(() => Genre)
+  @ManyToMany(() => Genre, (genre) => genre.artworks)
   @JoinTable()
   genres: Genre[];
 

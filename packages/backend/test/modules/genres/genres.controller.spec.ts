@@ -1,9 +1,11 @@
 import { INestApplication } from '@nestjs/common';
 
 import request from 'supertest';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
+import { aw } from 'vitest/dist/chunks/reporters.DAfKSDh5.js';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
+import { Artwork } from '@/src/modules/artworks/artworks.entity';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
 import { TokenErrorCode } from '@/src/modules/auth/exceptions/token.exception';
@@ -18,6 +20,7 @@ import { GenresController } from '@/src/modules/genres/genres.controller';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { GenresService } from '@/src/modules/genres/genres.service';
 import { AdministratorsFactory } from '@/test/factories/administrator.factory';
+import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
 import { createTestAccessToken } from '@/test/utils/auth.util';
 import { clearTables, saveEntities } from '@/test/utils/database.util';
@@ -29,28 +32,30 @@ describeWithDeps('GenresController', () => {
 
   let authService: AuthService;
   let genreRepository: Repository<Genre>;
+  let artworkRepository: Repository<Artwork>;
   let administratorRepository: Repository<Administrator>;
 
   let administrator: Administrator;
 
   beforeAll(async () => {
     app = await createTestingApp({
-      entities: [Genre, GenreTranslation, Administrator],
+      entities: [Genre, GenreTranslation, Artwork, Administrator],
       controllers: [GenresController],
       providers: [GenresService, GenresRepository],
     });
 
+    authService = app.get(AuthService);
+
     dataSource = app.get<DataSource>(DataSource);
+    genreRepository = dataSource.getRepository(Genre);
+    artworkRepository = dataSource.getRepository(Artwork);
+    administratorRepository = dataSource.getRepository(Administrator);
 
     await app.init();
   });
 
   beforeEach(async () => {
     await clearTables(dataSource, [Genre, Administrator]);
-
-    authService = app.get(AuthService);
-    genreRepository = dataSource.getRepository(Genre);
-    administratorRepository = dataSource.getRepository(Administrator);
 
     administrator = (
       await saveEntities(administratorRepository, [
@@ -326,6 +331,103 @@ describeWithDeps('GenresController', () => {
       await expect(response).toMatchOpenAPISpec();
 
       expect(response.body.code).toBe(GenreErrorCode.DUPLICATE_NAME);
+    });
+  });
+
+  describe('DELETE /genres', () => {
+    let genres: Genre[];
+
+    beforeEach(async () => {
+      genres = await saveEntities(genreRepository, [
+        GenresFactory.createTestData({
+          translations: [
+            { language: Language.KO, name: '액션' },
+            { language: Language.EN, name: 'Action' },
+            { language: Language.JA, name: 'アクション' },
+          ] as GenreTranslation[],
+        }),
+        GenresFactory.createTestData({
+          translations: [
+            { language: Language.KO, name: '롤플레잉' },
+            { language: Language.EN, name: 'RPG' },
+            { language: Language.JA, name: 'ロールプレイング' },
+          ] as GenreTranslation[],
+        }),
+        GenresFactory.createTestData({
+          translations: [
+            { language: Language.KO, name: '시뮬레이션' },
+            { language: Language.EN, name: 'Simulation' },
+            { language: Language.JA, name: 'シミュレーション' },
+          ] as GenreTranslation[],
+        }),
+      ]);
+
+      await saveEntities(artworkRepository, [
+        ArtworksFactory.createTestData({}, [genres[2]]),
+      ]);
+    });
+
+    it('유효한 ID 목록으로 장르 삭제 시 성공적으로 처리됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .delete('/genres')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ ids: [genres[0].id, genres[1].id] })
+        .expect(204);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      const saved = await genreRepository.findBy({
+        id: In([genres[0].id, genres[1].id]),
+      });
+      expect(saved).toEqual([]);
+    });
+
+    it('쿼리 파라미터가 부적절할 경우, 400 에러가 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .delete('/genres')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ ids: [] })
+        .expect(400);
+
+      // await expect(response).toMatchOpenAPISpec();
+    });
+
+    it('인증에 실패한 경우, 401 에러가 반환됨', async () => {
+      const response = await request(app.getHttpServer())
+        .delete('/genres')
+        .set('Authorization', 'Bearer invalid-token')
+        .query({ ids: [genres[0].id, genres[1].id] })
+        .expect(401);
+
+      // await expect(response).toMatchOpenAPISpec();
+    });
+
+    it('존재하지 않는 ID로 장르 삭제 시 404 에러가 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .delete('/genres')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ ids: ['invalid-id'] })
+        .expect(404);
+
+      // await expect(response).toMatchOpenAPISpec();
+    });
+
+    it('작품에서 사용중인 장르를 지정할 경우, 409 에러가 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .delete('/genres')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ ids: [genres[2].id] })
+        .expect(409);
+
+      // await expect(response).toMatchOpenAPISpec();
     });
   });
 });

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -14,6 +15,7 @@ import {
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { BearerAuthGuard } from '@/src/modules/auth/guards/token.auth.guard';
 import { CreateGenreDto } from '@/src/modules/genres/dtos/create-genre.dto';
+import { DeleteGenresQueryDto } from '@/src/modules/genres/dtos/delete-genres-query.dto';
 import {
   GenreListResponse,
   GenreResponse,
@@ -59,5 +61,12 @@ export class GenresController {
   ): Promise<GenreResponse> {
     const genre = await this.genresService.updateGenre(id, dto);
     return new GenreResponse(genre);
+  }
+
+  @Delete()
+  @UseGuards(BearerAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteGenre(@Query() query: DeleteGenresQueryDto): Promise<void> {
+    await this.genresService.deleteGenres(query.ids);
   }
 }

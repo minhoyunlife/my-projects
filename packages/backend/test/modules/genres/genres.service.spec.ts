@@ -238,4 +238,32 @@ describeWithoutDeps('GenresService', () => {
       ).rejects.toThrow(error);
     });
   });
+
+  describe('deleteGenres', () => {
+    const deleteManyMock = vi.fn();
+
+    beforeEach(() => {
+      deleteManyMock.mockClear();
+
+      genresRepository.forTransaction = vi.fn().mockReturnThis();
+      genresRepository.deleteMany = deleteManyMock;
+    });
+
+    it('전달받은 ID 목록의 장르들을 삭제함', async () => {
+      const ids = ['genre-1', 'genre-2'];
+      await service.deleteGenres(ids);
+
+      expect(deleteManyMock).toHaveBeenCalledWith(ids);
+    });
+
+    it('리포지토리에서 에러가 발생하면 그대로 전파됨', async () => {
+      const error = new GenreException(
+        GenreErrorCode.IN_USE,
+        'Some genres are in use',
+      );
+      deleteManyMock.mockRejectedValue(error);
+
+      await expect(service.deleteGenres(['genre-1'])).rejects.toThrow(error);
+    });
+  });
 });
