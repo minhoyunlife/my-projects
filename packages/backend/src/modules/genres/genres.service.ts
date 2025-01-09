@@ -109,4 +109,15 @@ export class GenresService {
       return await genresTxRepo.updateOne(genreData);
     });
   }
+
+  /**
+   * 복수의 기존 장르를 삭제
+   * @param id - 삭제할 장르의 ID
+   */
+  async deleteGenres(ids: string[]): Promise<void> {
+    return this.entityManager.transaction(async (manager) => {
+      const genresTxRepo = this.genresRepository.forTransaction(manager);
+      await genresTxRepo.deleteMany(ids);
+    });
+  }
 }
