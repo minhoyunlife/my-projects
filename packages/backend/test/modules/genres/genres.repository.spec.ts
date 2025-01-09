@@ -1,26 +1,34 @@
-import { DataSource } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 
+import { Artwork } from '@/src/modules/artworks/artworks.entity';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenreException } from '@/src/modules/genres/exceptions/genres.exception';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
+import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
 import { clearTables, saveEntities } from '@/test/utils/database.util';
 import { createTestingModuleWithDB } from '@/test/utils/module-builder.util';
 
 describeWithDeps('GenresRepository', () => {
-  let genreRepo: GenresRepository;
   let dataSource: DataSource;
+
+  let genreRepo: GenresRepository;
+  let genreTranslationRepo: Repository<GenreTranslation>;
+  let artworkRepo: Repository<Artwork>;
 
   beforeAll(async () => {
     const module = await createTestingModuleWithDB({
-      entities: [Genre, GenreTranslation],
+      entities: [Genre, GenreTranslation, Artwork],
       providers: [GenresRepository],
     });
 
-    genreRepo = module.get<GenresRepository>(GenresRepository);
     dataSource = module.get<DataSource>(DataSource);
+
+    genreRepo = module.get<GenresRepository>(GenresRepository);
+    genreTranslationRepo = dataSource.getRepository(GenreTranslation);
+    artworkRepo = dataSource.getRepository(Artwork);
   });
 
   afterAll(async () => {
@@ -307,6 +315,78 @@ describeWithDeps('GenresRepository', () => {
       await expect(genreRepo.updateOne(genreData)).rejects.toThrowError(
         GenreException,
       );
+    });
+  });
+
+  describe('deleteMany', () => {
+    let genres: Genre[];
+
+    beforeEach(async () => {
+      await clearTables(dataSource, [Genre]);
+
+      genres = await saveEntities(genreRepo, [
+        GenresFactory.createTestData({}, [
+          { language: Language.KO, name: '액션' },
+          { language: Language.EN, name: 'Action' },
+          { language: Language.JA, name: 'アクション' },
+        ]),
+        GenresFactory.createTestData({}, [
+          { language: Language.KO, name: '롤플레잉' },
+          { language: Language.EN, name: 'RPG' },
+          { language: Language.JA, name: 'ロールプレイング' },
+        ]),
+        GenresFactory.createTestData({}, [
+          { language: Language.KO, name: '시뮬레이션' },
+          { language: Language.EN, name: 'Simulation' },
+          { language: Language.JA, name: 'シミュレーション' },
+        ]),
+      ]);
+
+      await saveEntities(artworkRepo, [
+        ArtworksFactory.createTestData({}, [genres[2]]),
+      ]);
+    });
+
+    describe('삭제할 장르가 존재하는 경우', async () => {
+      it('해당되는 삭제들을 모두 삭제함', async () => {
+        const ids = [genres[0].id, genres[1].id];
+        await genreRepo.deleteMany(ids);
+
+        const saved = await genreRepo.findBy({ id: In(ids) });
+        expect(saved).toHaveLength(0);
+      });
+
+      it('삭제할 장르와 연관된 번역 데이터도 함께 삭제됨', async () => {
+        const ids = [genres[0].id, genres[1].id];
+        await genreRepo.deleteMany(ids);
+
+        const savedTranslations = await genreTranslationRepo.findBy({
+          genreId: In(ids),
+        });
+        expect(savedTranslations).toHaveLength(0);
+      });
+    });
+
+    it('삭제 대상 장르 중 일부가 존재하지 않는 경우, 에러가 발생함', async () => {
+      const ids = [genres[0].id, 'not-existing'];
+
+      await expect(genreRepo.deleteMany(ids)).rejects.toThrowError(
+        GenreException,
+      );
+
+      const saved = await genreRepo.findBy({ id: genres[0].id });
+      expect(saved).toHaveLength(1);
+    });
+
+    it('삭제 대상 장르 중 작품에 의해 참조되고 있는 경우, 에러가 발생함', async () => {
+      const ids = [genres[0].id, genres[2].id];
+
+      await expect(genreRepo.deleteMany(ids)).rejects.toThrowError(
+        GenreException,
+      );
+
+      const saved = await genreRepo.findBy({ id: genres[0].id });
+      expect(saved).toHaveLength(1);
     });
   });
 });

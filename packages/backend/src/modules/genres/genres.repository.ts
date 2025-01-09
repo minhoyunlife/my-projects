@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, In, Repository } from 'typeorm';
 
 import { TransactionalRepository } from '@/src/common/repositories/transactional.repository';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
@@ -94,7 +94,17 @@ export class GenresRepository extends TransactionalRepository<Genre> {
    * @returns {Promise<Genre>} 수정된 장르
    */
   async updateOne(genreData: Partial<Genre>): Promise<Genre> {
-    const genre = await this.findGenreOrFail(genreData.id);
+    const genre = await this.findOne({
+      where: { id: genreData.id },
+      relations: ['translations'],
+    });
+
+    if (!genre) {
+      throw new GenreException(
+        GenreErrorCode.NOT_FOUND,
+        'The genre with the provided ID does not exist',
+      );
+    }
 
     const translationsToUpdate = genreData.translations;
     const names = translationsToUpdate.map((t) => t.name);
@@ -114,20 +124,41 @@ export class GenresRepository extends TransactionalRepository<Genre> {
     return this.save(genre);
   }
 
-  private async findGenreOrFail(id: string): Promise<Genre> {
-    const genre = await this.findOne({
-      where: { id },
-      relations: ['translations'],
-    });
+  /**
+   * 복수의 장르 데이터를 삭제
+   * @param {string[]} ids - 삭제할 장르 ID 배열
+   */
+  async deleteMany(ids: string[]): Promise<void> {
+    const genres = await this.findBy({ id: In(ids) });
+    if (genres.length !== ids.length) {
+      const foundIds = new Set(genres.map((g) => g.id));
+      const notFoundIds = ids.filter((id) => !foundIds.has(id));
 
-    if (!genre) {
       throw new GenreException(
         GenreErrorCode.NOT_FOUND,
-        'The genre with the provided ID does not exist',
+        'Some of the provided genres do not exist',
+        {
+          ids: notFoundIds,
+        },
       );
     }
 
-    return genre;
+    const genresInUse = await this.createQueryBuilder('genre')
+      .innerJoin('genre.artworks', 'artwork')
+      .where('genre.id IN (:...ids)', { ids })
+      .getMany();
+
+    if (genresInUse.length > 0) {
+      throw new GenreException(
+        GenreErrorCode.IN_USE,
+        'Some of the genres are in use by artworks',
+        {
+          ids: genresInUse.map((g) => g.id),
+        },
+      );
+    }
+
+    await this.remove(genres);
   }
 
   private async checkDuplicateNames(
