@@ -5,6 +5,7 @@ import { EntityManager } from 'typeorm';
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { EntityList } from '@/src/common/interfaces/entity-list.interface';
 import { CreateGenreDto } from '@/src/modules/genres/dtos/create-genre.dto';
+import { GetGenresByNameQueryDto } from '@/src/modules/genres/dtos/get-genres-by-name-query.dto';
 import { GetGenresQueryDto } from '@/src/modules/genres/dtos/get-genres-query.dto';
 import { UpdateGenreDto } from '@/src/modules/genres/dtos/update-genre.dto';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
@@ -52,7 +53,7 @@ export class GenresService {
    * @param query.search 장르명 검색어
    * @returns 장르 목록
    */
-  async getGenresByName(query: GetGenresQueryDto): Promise<Genre[]> {
+  async getGenresByName(query: GetGenresByNameQueryDto): Promise<Genre[]> {
     return this.genresRepository.findByName(query.search);
   }
 

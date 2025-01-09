@@ -58,12 +58,12 @@ export class GenresRepository extends TransactionalRepository<Genre> {
   }
 
   /**
-   * 장르 데이터를 필터링하여 조회
+   * 장르 데이터를 검색어를 통해 필터링하여 최대 10건까지 조회
    * @param {string} search - 검색어
    * @param {number} limit - 조회 제한 개수
    * @returns {Promise<Genre[]>} - 장르 데이터
    */
-  async findByName(search: string, limit: number = 10): Promise<Genre[]> {
+  async findByName(search: string): Promise<Genre[]> {
     // 장르 이름이 검색어를 포함하는 장르 ID 목록을 서브쿼리로 조회
     const subQuery = this.createQueryBuilder()
       .subQuery()
@@ -71,7 +71,7 @@ export class GenresRepository extends TransactionalRepository<Genre> {
       .from(Genre, 'genre')
       .innerJoin('genre.translations', 'translation')
       .where('translation.name ILIKE :search', { search: `%${search}%` })
-      .limit(limit)
+      .limit(10)
       .getQuery();
 
     // 서브쿼리의 ID 목록을 바탕으로 장르 데이터 및 번역 정보의 쌍을 조회
