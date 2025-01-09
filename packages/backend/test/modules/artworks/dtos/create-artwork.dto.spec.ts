@@ -1,4 +1,3 @@
-import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
