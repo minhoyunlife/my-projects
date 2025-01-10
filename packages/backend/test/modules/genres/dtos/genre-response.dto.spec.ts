@@ -1,6 +1,7 @@
 import {
   GenreListResponse,
   GenreResponse,
+  GenreSearchResponse,
 } from '@/src/modules/genres/dtos/genre-response.dto';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
@@ -68,6 +69,18 @@ describeWithoutDeps('GenreResponse', () => {
         currentPage: 1,
         pageSize: 20,
       });
+    });
+  });
+
+  describe('GenreSearchResponse', () => {
+    const genres = [genre];
+
+    const response = new GenreSearchResponse(genres);
+
+    it('엔티티의 속성 값대로 items 가 반환됨', () => {
+      for (const g of genres) {
+        expect(response.items).toEqual([new GenreResponse(g)]);
+      }
     });
   });
 });

@@ -2,7 +2,6 @@ import { INestApplication } from '@nestjs/common';
 
 import request from 'supertest';
 import { DataSource, In, Repository } from 'typeorm';
-import { aw } from 'vitest/dist/chunks/reporters.DAfKSDh5.js';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { Artwork } from '@/src/modules/artworks/artworks.entity';
@@ -163,6 +162,84 @@ describeWithDeps('GenresController', () => {
       const response = await request(app.getHttpServer())
         .get('/genres')
         .set('Authorization', 'Bearer invalid-token')
+        .expect(401);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+  });
+
+  describe('GET /genres/names', () => {
+    let genres: Genre[];
+
+    beforeEach(async () => {
+      genres = await saveEntities(genreRepository, [
+        GenresFactory.createTestData({
+          translations: [
+            { language: Language.KO, name: '액션' },
+            { language: Language.EN, name: 'Action' },
+            { language: Language.JA, name: 'アクション' },
+          ] as GenreTranslation[],
+        }),
+        GenresFactory.createTestData({
+          translations: [
+            { language: Language.KO, name: '롤플레잉' },
+            { language: Language.EN, name: 'RPG' },
+            { language: Language.JA, name: 'ロールプレイング' },
+          ] as GenreTranslation[],
+        }),
+      ]);
+    });
+
+    it('검색어에 해당하는 장르가 검색됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .get('/genres/names')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ search: 'アクション' })
+        .expect(200);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      const { items } = response.body;
+
+      expect(items).toHaveLength(1);
+      expect(items[0].translations).toHaveLength(3);
+    });
+
+    it('검색어에 해당하는 장르가 없는 경우, 빈 배열이 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .get('/genres/names')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ search: '미존재' })
+        .expect(200);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      const { items } = response.body;
+
+      expect(items).toEqual([]);
+    });
+
+    it('쿼리가 부적절한 경우, 400 에러가 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .get('/genres/names')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ search: 'a'.repeat(31) })
+        .expect(400);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+
+    it('인증에 실패한 경우, 401 에러가 반환됨', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/genres/names')
+        .set('Authorization', 'Bearer invalid-token')
+        .query({ search: 'アクション' })
         .expect(401);
 
       await expect(response).toMatchOpenAPISpec();

@@ -1,7 +1,7 @@
-import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 
 import { CreateGenreDto } from '@/src/modules/genres/dtos/create-genre.dto';
+import { createDto } from '@/test/utils/dto.util';
 
 describeWithoutDeps('CreateGenreDto', () => {
   const validDtoData: Partial<CreateGenreDto> = {
@@ -10,23 +10,18 @@ describeWithoutDeps('CreateGenreDto', () => {
     jaName: 'アクション',
   };
 
-  function createDto(data?: Partial<CreateGenreDto>): CreateGenreDto {
-    return plainToInstance(CreateGenreDto, {
-      ...validDtoData,
-      ...data,
-    });
-  }
-
   describe('koName', () => {
     it('값이 유효한 경우, 에러가 발생하지 않음', async () => {
-      const dto = createDto();
+      const dto = createDto(CreateGenreDto, validDtoData);
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(0);
     });
 
     it('값이 부적절한 화이트 스페이스의 구성으로 이뤄진 경우, 적절하게 조정함', async () => {
-      const dto = createDto({ koName: '액션　 롤플레잉' });
+      const dto = createDto(CreateGenreDto, validDtoData, {
+        koName: '액션　 롤플레잉',
+      });
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(0);
@@ -34,7 +29,7 @@ describeWithoutDeps('CreateGenreDto', () => {
     });
 
     it('값이 화이트 스페이스로만 이뤄진 경우, 에러가 발생함', async () => {
-      const dto = createDto({ koName: '　' });
+      const dto = createDto(CreateGenreDto, validDtoData, { koName: '　' });
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(1);
@@ -43,7 +38,9 @@ describeWithoutDeps('CreateGenreDto', () => {
     });
 
     it('값이 undefined인 경우, 에러가 발생함', async () => {
-      const dto = createDto({ koName: undefined });
+      const dto = createDto(CreateGenreDto, validDtoData, {
+        koName: undefined,
+      });
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(1);
@@ -52,7 +49,7 @@ describeWithoutDeps('CreateGenreDto', () => {
     });
 
     it('값이 null인 경우, 에러가 발생함', async () => {
-      const dto = createDto({ koName: null });
+      const dto = createDto(CreateGenreDto, validDtoData, { koName: null });
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(1);
@@ -63,14 +60,16 @@ describeWithoutDeps('CreateGenreDto', () => {
 
   describe('enName', () => {
     it('값이 유효한 경우, 에러가 발생하지 않음', async () => {
-      const dto = createDto();
+      const dto = createDto(CreateGenreDto, validDtoData);
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(0);
     });
 
     it('값이 부적절한 화이트 스페이스의 구성으로 이뤄진 경우, 적절하게 조정함', async () => {
-      const dto = createDto({ enName: 'Action　 RPG' });
+      const dto = createDto(CreateGenreDto, validDtoData, {
+        enName: 'Action　 RPG',
+      });
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(0);
@@ -78,7 +77,7 @@ describeWithoutDeps('CreateGenreDto', () => {
     });
 
     it('값이 화이트 스페이스로만 이뤄진 경우, 에러가 발생함', async () => {
-      const dto = createDto({ enName: '　' });
+      const dto = createDto(CreateGenreDto, validDtoData, { enName: '　' });
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(1);
@@ -87,7 +86,9 @@ describeWithoutDeps('CreateGenreDto', () => {
     });
 
     it('값이 undefined인 경우, 에러가 발생함', async () => {
-      const dto = createDto({ enName: undefined });
+      const dto = createDto(CreateGenreDto, validDtoData, {
+        enName: undefined,
+      });
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(1);
@@ -96,7 +97,7 @@ describeWithoutDeps('CreateGenreDto', () => {
     });
 
     it('값이 null인 경우, 에러가 발생함', async () => {
-      const dto = createDto({ enName: null });
+      const dto = createDto(CreateGenreDto, validDtoData, { enName: null });
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(1);
@@ -107,14 +108,16 @@ describeWithoutDeps('CreateGenreDto', () => {
 
   describe('jaName', () => {
     it('값이 유효한 경우, 에러가 발생하지 않음', async () => {
-      const dto = createDto();
+      const dto = createDto(CreateGenreDto, validDtoData);
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(0);
     });
 
     it('값이 부적절한 화이트 스페이스의 구성으로 이뤄진 경우, 적절하게 조정함', async () => {
-      const dto = createDto({ jaName: 'アクション　 RPG' });
+      const dto = createDto(CreateGenreDto, validDtoData, {
+        jaName: 'アクション　 RPG',
+      });
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(0);
@@ -122,7 +125,7 @@ describeWithoutDeps('CreateGenreDto', () => {
     });
 
     it('값이 화이트 스페이스로만 이뤄진 경우, 에러가 발생함', async () => {
-      const dto = createDto({ jaName: '　' });
+      const dto = createDto(CreateGenreDto, validDtoData, { jaName: '　' });
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(1);
@@ -131,7 +134,9 @@ describeWithoutDeps('CreateGenreDto', () => {
     });
 
     it('값이 undefined인 경우, 에러가 발생함', async () => {
-      const dto = createDto({ jaName: undefined });
+      const dto = createDto(CreateGenreDto, validDtoData, {
+        jaName: undefined,
+      });
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(1);
@@ -140,7 +145,7 @@ describeWithoutDeps('CreateGenreDto', () => {
     });
 
     it('값이 null인 경우, 에러가 발생함', async () => {
-      const dto = createDto({ jaName: null });
+      const dto = createDto(CreateGenreDto, validDtoData, { jaName: null });
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(1);

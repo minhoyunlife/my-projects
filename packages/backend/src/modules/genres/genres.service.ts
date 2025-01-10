@@ -5,6 +5,7 @@ import { EntityManager } from 'typeorm';
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { EntityList } from '@/src/common/interfaces/entity-list.interface';
 import { CreateGenreDto } from '@/src/modules/genres/dtos/create-genre.dto';
+import { GetGenresByNameQueryDto } from '@/src/modules/genres/dtos/get-genres-by-name-query.dto';
 import { GetGenresQueryDto } from '@/src/modules/genres/dtos/get-genres-query.dto';
 import { UpdateGenreDto } from '@/src/modules/genres/dtos/update-genre.dto';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
@@ -25,7 +26,6 @@ export class GenresService {
 
   /**
    * 장르 목록을 쿼리의 조건에 맞춰서 조회
-   *
    * @param query 장르 목록을 조회하기 위한 쿼리 정보
    * @param query.page 페이지 번호 (기본값: 1)
    * @param query.search 장르명 검색어
@@ -45,6 +45,16 @@ export class GenresService {
       items,
       totalCount,
     };
+  }
+
+  /**
+   * 장르를 쿼리의 검색어에 맞춰서 검색
+   * @param query 장르 목록을 조회하기 위한 쿼리 정보
+   * @param query.search 장르명 검색어
+   * @returns 장르 목록
+   */
+  async getGenresByName(query: GetGenresByNameQueryDto): Promise<Genre[]> {
+    return this.genresRepository.findByName(query.search);
   }
 
   /**

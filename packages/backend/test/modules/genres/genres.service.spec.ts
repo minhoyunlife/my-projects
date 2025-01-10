@@ -102,6 +102,23 @@ describeWithoutDeps('GenresService', () => {
     });
   });
 
+  describe('getGenresByName', () => {
+    const findByNameMock = vi.fn();
+
+    beforeEach(() => {
+      findByNameMock.mockClear();
+
+      genresRepository.findByName = findByNameMock;
+      findByNameMock.mockResolvedValue([]);
+    });
+
+    it('검색어를 바탕으로 장르를 조회함', async () => {
+      await service.getGenresByName({ search: '테스트' });
+
+      expect(findByNameMock).toHaveBeenCalledWith('테스트');
+    });
+  });
+
   describe('createGenre', () => {
     const createOneMock = vi.fn();
 
