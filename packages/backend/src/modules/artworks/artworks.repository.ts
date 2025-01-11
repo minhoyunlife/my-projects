@@ -40,37 +40,40 @@ export class ArtworksRepository extends TransactionalRepository<Artwork> {
     search?: string;
     isDraftIn: boolean[];
   }): Promise<[Artwork[], number]> {
-    const query = this.createQueryBuilder('artwork')
+    let query = this.createQueryBuilder('artwork')
       .leftJoinAndSelect('artwork.genres', 'genre')
       .leftJoinAndSelect('genre.translations', 'translation');
 
-    // 상태를 기반으로 필터
-    query.where('artwork.isDraft IN (:...isDraftIn)', {
+    if (filters.genreIds?.length) {
+      // 일단 특정 장르를 가진 작품의 ID만 조회 후,
+      const subQuery = this.createQueryBuilder()
+        .select('DISTINCT artwork.id')
+        .from(Artwork, 'artwork')
+        .leftJoin('artwork.genres', 'genre')
+        .where('genre.id IN (:...genreIds)', { genreIds: filters.genreIds });
+
+      // 해당 작품의 ID 목록을 기반으로 모든 정보가 포함된 작품 데이터를 조회
+      query = query
+        .where(`artwork.id IN (${subQuery.getQuery()})`)
+        .setParameters(subQuery.getParameters());
+    }
+
+    query.andWhere('artwork.isDraft IN (:...isDraftIn)', {
       isDraftIn: filters.isDraftIn,
     });
 
-    // 검색어를 기반으로 필터
     if (filters.search) {
       query.andWhere('artwork.title ILIKE :search', {
         search: `%${filters.search}%`,
       });
     }
 
-    // 플랫폼 필터
     if (filters.platforms?.length) {
       query.andWhere('artwork.playedOn IN (:...platforms)', {
         platforms: filters.platforms,
       });
     }
 
-    // 장르 필터
-    if (filters.genreIds?.length) {
-      query.andWhere('genre.id IN (:...genreIds)', {
-        genreIds: filters.genreIds,
-      });
-    }
-
-    // 정렬
     switch (filters.sort) {
       case SortType.CREATED_DESC:
         query.orderBy('artwork.createdAt', 'DESC');
@@ -86,7 +89,6 @@ export class ArtworksRepository extends TransactionalRepository<Artwork> {
         break;
     }
 
-    // 페이지네이션
     query.skip((filters.page - 1) * filters.pageSize).take(filters.pageSize);
 
     return await query.getManyAndCount();

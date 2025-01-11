@@ -6,6 +6,7 @@ import type {
   GetArtworksStatusEnum,
 } from "@minhoyunlife/my-ts-client";
 
+import { useDebounce } from "@/src/hooks/use-debounce";
 import { artworksApi } from "@/src/lib/api/client";
 
 interface UseArtworkQueryParams {
@@ -18,15 +19,17 @@ interface UseArtworkQueryParams {
 }
 
 export function useArtworkQuery(params: UseArtworkQueryParams) {
+  const debouncedSearch = useDebounce(params.search || "", 300);
+
   return useQuery({
-    queryKey: ["artworks", params],
+    queryKey: ["artworks", { ...params, search: debouncedSearch }],
     queryFn: () =>
       artworksApi.getArtworks(
         params.page || 1,
         params.sort,
         params.platforms ? new Set(params.platforms) : undefined,
         params.genres ? new Set(params.genres) : undefined,
-        params.search || undefined,
+        debouncedSearch || undefined,
         params.status,
       ),
     staleTime: 0, // 데이터를 항상 fresh 상태로 유지
