@@ -1,5 +1,3 @@
-import type { ReactNode } from "react";
-
 import {
   GetArtworksPlatformsEnum,
   GetArtworksSortEnum,
@@ -7,19 +5,15 @@ import {
 } from "@minhoyunlife/my-ts-client";
 import type { AxiosResponse } from "axios";
 
-import QueryProvider from "@/src/components/common/query-provider";
 import { useArtworkQuery } from "@/src/hooks/artworks/use-artwork-query";
 import { artworksApi } from "@/src/lib/api/client";
+import { wrapper } from "@/test/utils/test-query-client";
 
 vi.mock("@/src/lib/api/client", () => ({
   artworksApi: {
     getArtworks: vi.fn(),
   },
 }));
-
-const wrapper = ({ children }: { children: ReactNode }) => (
-  <QueryProvider>{children}</QueryProvider>
-);
 
 describe("useArtworkQuery", () => {
   const mockResponse = {
@@ -42,7 +36,9 @@ describe("useArtworkQuery", () => {
     it("파라미터 없이 호출할 경우, 기본값으로 API를 호출함", async () => {
       vi.mocked(artworksApi.getArtworks).mockResolvedValueOnce(mockResponse);
 
-      const { result } = renderHook(() => useArtworkQuery({}), { wrapper });
+      const { result } = renderHook(() => useArtworkQuery({}), {
+        wrapper,
+      });
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);

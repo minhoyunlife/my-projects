@@ -2,6 +2,7 @@ import {
   Configuration,
   ArtworksApi,
   AuthApi,
+  GenresApi,
 } from "@minhoyunlife/my-ts-client";
 import axios from "axios";
 
@@ -76,5 +77,5 @@ const configuration = new Configuration({
 });
 
 export const authApi = new AuthApi(configuration, "", apiClient);
-
 export const artworksApi = new ArtworksApi(configuration, "", apiClient);
+export const genresApi = new GenresApi(configuration, "", apiClient);
