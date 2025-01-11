@@ -10,6 +10,8 @@ describe("FilterSwitcher", () => {
     { value: "3", label: "Option 3" },
   ];
 
+  const filteredOptions = [{ value: "1", label: "Option 1" }];
+
   const dropdownProps: FilterProps = {
     id: "test-filter",
     type: "dropdown-checkbox",
@@ -168,6 +170,67 @@ describe("FilterSwitcher", () => {
         expect(checkboxes[1]).toBeChecked();
         expect(checkboxes[2]).not.toBeChecked();
       });
+
+      it("선택된 값들이 칩으로 표시됨", async () => {
+        const selectedValues = ["1", "2"];
+        render(
+          <FilterSwitcher
+            {...comboboxProps}
+            value={selectedValues}
+          />,
+        );
+
+        const trigger = reactScreen.getByRole("button");
+        await userEvent.click(trigger);
+
+        const chipsContainer = reactScreen.getByTestId("selected-chips");
+        expect(
+          within(chipsContainer).getByText("Option 1"),
+        ).toBeInTheDocument();
+        expect(
+          within(chipsContainer).getByText("Option 2"),
+        ).toBeInTheDocument();
+
+        const deleteEls = reactScreen.getAllByTestId("chip-delete-button");
+        expect(deleteEls).toHaveLength(selectedValues.length);
+      });
+
+      it("칩의 삭제 버튼 클릭 시 해당 값이 선택 해제됨", async () => {
+        const onChange = vi.fn();
+        const selectedValues = ["1", "2"];
+        render(
+          <FilterSwitcher
+            {...comboboxProps}
+            value={selectedValues}
+            onChange={onChange}
+          />,
+        );
+
+        const trigger = reactScreen.getByRole("button");
+        await userEvent.click(trigger);
+
+        const deleteButton =
+          reactScreen.getAllByTestId("chip-delete-button")[0]!;
+        await userEvent.click(deleteButton);
+
+        expect(onChange).toHaveBeenCalledWith(["2"]);
+      });
+
+      it("값이 선택되지 않은 경우 칩이 표시되지 않음", async () => {
+        render(
+          <FilterSwitcher
+            {...comboboxProps}
+            value={[]}
+          />,
+        );
+
+        const trigger = reactScreen.getByRole("button");
+        await userEvent.click(trigger);
+
+        expect(
+          document.querySelector('[class*="badge"]'),
+        ).not.toBeInTheDocument();
+      });
     });
 
     describe("검색 기능", () => {
@@ -196,15 +259,20 @@ describe("FilterSwitcher", () => {
           <FilterSwitcher
             {...comboboxProps}
             searchValue="Option 1"
+            options={filteredOptions}
           />,
         );
 
         const trigger = reactScreen.getByRole("button");
         await userEvent.click(trigger);
 
-        const visibleOptions = reactScreen.getAllByRole("checkbox");
+        const optionsContainer = reactScreen.getByTestId("options-container");
+        const visibleOptions =
+          within(optionsContainer).getAllByRole("checkbox");
         expect(visibleOptions).toHaveLength(1);
-        expect(reactScreen.getByText("Option 1")).toBeInTheDocument();
+
+        const optionText = within(optionsContainer).getByText("Option 1");
+        expect(optionText).toBeInTheDocument();
       });
     });
 
@@ -258,8 +326,9 @@ describe("FilterSwitcher", () => {
         const trigger = reactScreen.getByRole("button");
         await userEvent.click(trigger);
 
-        const firstOption = reactScreen.getByText("Option 1");
-        await userEvent.click(firstOption);
+        const optionsContainer = reactScreen.getByTestId("options-container");
+        const option = within(optionsContainer).getByText("Option 1");
+        await userEvent.click(option);
 
         expect(onChange).toHaveBeenCalledWith([]);
       });
