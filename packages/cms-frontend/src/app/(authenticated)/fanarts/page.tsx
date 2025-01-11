@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   GetArtworksPlatformsEnum,
@@ -13,6 +13,7 @@ import { DataTable } from "@/src/components/(authenticated)/data-table/table";
 import { FilterContainer } from "@/src/components/(authenticated)/filter/filter-container";
 import { PageWrapper } from "@/src/components/(authenticated)/page-wrapper";
 import { useArtworkQuery } from "@/src/hooks/artworks/use-artwork-query";
+import { useGenreSearchQuery } from "@/src/hooks/genres/use-genre-search-query";
 import { useToast } from "@/src/hooks/use-toast";
 
 export default function FanartsListPage() {
@@ -23,10 +24,20 @@ export default function FanartsListPage() {
   const [platforms, setPlatforms] = useState<GetArtworksPlatformsEnum[]>([]);
   const [genres, setGenres] = useState<string[]>([]);
   const [genreSearch, setGenreSearch] = useState<string>("");
+  const [selectedGenreInfos, setSelectedGenreInfos] = useState<
+    Array<{
+      value: string;
+      label: string;
+    }>
+  >([]);
   const [status, setStatus] = useState<GetArtworksStatusEnum[]>([]);
   const [sort, setSort] = useState<GetArtworksSortEnum>();
 
-  const { data, isLoading, error } = useArtworkQuery({
+  const {
+    data: artworksResult,
+    isLoading: isArtworksLoading,
+    error,
+  } = useArtworkQuery({
     search,
     genres,
     platforms,
@@ -34,6 +45,18 @@ export default function FanartsListPage() {
     page,
     status,
   });
+
+  const { data: genreSearchResult, isLoading: isGenreSearchLoading } =
+    useGenreSearchQuery(genreSearch);
+
+  const genreOptions = useMemo(
+    () =>
+      genreSearchResult?.data.items.map((genre) => ({
+        value: genre.id,
+        label: genre.translations.find((t) => t.language === "ko")?.name || "",
+      })) ?? [],
+    [genreSearchResult],
+  );
 
   useEffect(() => {
     if (error) {
@@ -58,6 +81,18 @@ export default function FanartsListPage() {
   const handleGenreChange = (values: string[]) => {
     setPage(1);
     setGenres(values);
+
+    const newInfos = values.map((value) => {
+      const existing = selectedGenreInfos.find((info) => info.value === value);
+      if (existing) return existing;
+
+      const newInfo = genreOptions.find((opt) => opt.value === value);
+      if (newInfo) return newInfo;
+
+      return { value, label: "" };
+    });
+
+    setSelectedGenreInfos(newInfos);
   };
 
   const handleStatusChange = (values: string[]) => {
@@ -99,11 +134,13 @@ export default function FanartsListPage() {
             id: "genre",
             type: "combobox",
             label: "장르",
-            options: [], // TODO: 장르 목록 API 구현 필요
+            options: genreOptions,
+            selectedOptions: selectedGenreInfos,
             value: genres,
             onChange: handleGenreChange,
             searchValue: genreSearch,
             onSearch: setGenreSearch,
+            isLoading: isGenreSearchLoading,
           },
           {
             id: "status",
@@ -129,10 +166,10 @@ export default function FanartsListPage() {
       />
       <DataTable
         columns={columns}
-        data={data?.data.items ?? []}
-        isLoading={isLoading}
-        pageCount={data?.data.metadata.totalPages}
-        currentPage={data?.data.metadata.currentPage}
+        data={artworksResult?.data.items ?? []}
+        isLoading={isArtworksLoading}
+        pageCount={artworksResult?.data.metadata.totalPages}
+        currentPage={artworksResult?.data.metadata.currentPage}
         onPageChange={setPage}
       />
     </PageWrapper>

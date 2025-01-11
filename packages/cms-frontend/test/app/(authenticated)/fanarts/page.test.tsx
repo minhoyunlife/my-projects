@@ -7,6 +7,11 @@ vi.mock("@/src/hooks/artworks/use-artwork-query", () => ({
   useArtworkQuery: (params: any) => mockUseArtworkQuery(params),
 }));
 
+const mockUseGenreSearchQuery = vi.fn();
+vi.mock("@/src/hooks/genres/use-genre-search-query", () => ({
+  useGenreSearchQuery: (params: any) => mockUseGenreSearchQuery(params),
+}));
+
 const mockToast = vi.fn();
 vi.mock("@/src/hooks/use-toast", () => ({
   useToast: () => ({ toast: mockToast }),
@@ -39,6 +44,16 @@ describe("FanartsListPage", () => {
             totalPages: 1,
             currentPage: 1,
           },
+        },
+      },
+      isLoading: false,
+      error: null,
+    });
+
+    mockUseGenreSearchQuery.mockReturnValue({
+      data: {
+        data: {
+          items: [],
         },
       },
       isLoading: false,
@@ -126,7 +141,40 @@ describe("FanartsListPage", () => {
         );
       });
 
-      it.todo("장르 필터 선택 시 API 파라미터가 갱신됨", () => {});
+      it("장르 필터 선택 시 API 파라미터가 갱신됨", async () => {
+        mockUseGenreSearchQuery.mockReturnValue({
+          data: {
+            data: {
+              items: [
+                {
+                  id: "genre1",
+                  translations: [{ language: "ko", name: "RPG" }],
+                },
+              ],
+            },
+          },
+          isLoading: false,
+        });
+
+        render(<FanartsListPage />);
+
+        await userEvent.click(
+          reactScreen.getByRole("button", { name: "장르" }),
+        );
+
+        const searchInput = reactScreen.getByPlaceholderText("장르 검색...");
+        await userEvent.type(searchInput, "RPG");
+
+        const genreOption = await reactScreen.findByText("RPG");
+        await userEvent.click(genreOption);
+
+        expect(mockUseArtworkQuery).toHaveBeenCalledWith(
+          expect.objectContaining({
+            genres: ["genre1"],
+            page: 1,
+          }),
+        );
+      });
 
       it("상태 필터 선택 시 API 파라미터가 갱신됨", async () => {
         render(<FanartsListPage />);
