@@ -39,15 +39,25 @@ export class GenresRepository extends TransactionalRepository<Genre> {
     pageSize: number;
     search?: string;
   }): Promise<[Genre[], number]> {
-    const query = this.createQueryBuilder('genre').leftJoinAndSelect(
+    let query = this.createQueryBuilder('genre').leftJoinAndSelect(
       'genre.translations',
       'translation',
     );
 
     if (filters.search) {
-      query.andWhere('translation.name ILIKE :search', {
-        search: `%${filters.search}%`,
-      });
+      // 일단 특정 번역 정보를 가진 장르의 ID만 조회 후,
+      const subQuery = this.createQueryBuilder()
+        .select('DISTINCT genre.id')
+        .from(Genre, 'genre')
+        .leftJoin('genre.translations', 'translation')
+        .where('translation.name ILIKE :search', {
+          search: `%${filters.search}%`,
+        });
+
+      // 해당 장르의 ID 목록을 기반으로 모든 정보가 포함된 장르 데이터를 조회
+      query = query
+        .where(`genre.id IN (${subQuery.getQuery()})`)
+        .setParameters(subQuery.getParameters());
     }
 
     query.orderBy('genre.id', 'ASC');

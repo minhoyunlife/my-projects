@@ -86,6 +86,8 @@ describe("FanartsListPage", () => {
 
         const sortSelect = reactScreen.getByRole("combobox");
         expect(sortSelect).toBeInTheDocument();
+
+        expect(reactScreen.getByRole("table")).toBeInTheDocument();
       });
     });
 

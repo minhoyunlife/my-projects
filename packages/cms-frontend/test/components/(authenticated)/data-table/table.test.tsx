@@ -1,5 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table";
 
+import type { ColumnSkeleton } from "@/src/components/(authenticated)/data-table/skeleton";
 import { DataTable } from "@/src/components/(authenticated)/data-table/table";
 
 describe("DataTable", () => {
@@ -16,6 +17,11 @@ describe("DataTable", () => {
     },
   ];
 
+  const skeletonColumns: ColumnSkeleton[] = [
+    { content: "text", align: "center", width: "w-full" },
+    { content: "text", align: "center", width: "w-full" },
+  ];
+
   const data: TestData[] = [
     { id: "1", name: "Test 1" },
     { id: "2", name: "Test 2" },
@@ -27,6 +33,7 @@ describe("DataTable", () => {
     pageCount: 1,
     currentPage: 1,
     onPageChange: vi.fn(),
+    skeletonColumns,
   };
 
   describe("로딩 상태", () => {

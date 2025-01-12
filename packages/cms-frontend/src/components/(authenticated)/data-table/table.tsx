@@ -10,10 +10,8 @@ import {
 } from "@tanstack/react-table";
 
 import { DataTablePagination } from "@/src/components/(authenticated)/data-table/pagination";
-import {
-  artworkSkeletonColumns,
-  DataTableSkeleton,
-} from "@/src/components/(authenticated)/data-table/skeleton";
+import type { ColumnSkeleton } from "@/src/components/(authenticated)/data-table/skeleton";
+import { DataTableSkeleton } from "@/src/components/(authenticated)/data-table/skeleton";
 import {
   Table,
   TableBody,
@@ -30,6 +28,7 @@ interface DataTableProps<TData, TValue> {
   pageCount?: number;
   currentPage?: number;
   onPageChange?: (page: number) => void;
+  skeletonColumns: ColumnSkeleton[];
 }
 
 export function DataTable<TData, TValue>({
@@ -39,6 +38,7 @@ export function DataTable<TData, TValue>({
   pageCount = 1,
   currentPage = 1,
   onPageChange,
+  skeletonColumns,
 }: DataTableProps<TData, TValue>) {
   const pagination = useMemo(
     () => ({
@@ -66,7 +66,7 @@ export function DataTable<TData, TValue>({
   });
 
   if (isLoading) {
-    return <DataTableSkeleton columns={artworkSkeletonColumns} />;
+    return <DataTableSkeleton columns={skeletonColumns} />;
   }
 
   return (

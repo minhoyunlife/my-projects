@@ -123,3 +123,10 @@ export const artworkSkeletonColumns: ColumnSkeleton[] = [
   { content: "action", align: "center", width: "w-10" },
   { content: "action", align: "center", width: "w-10" },
 ];
+
+export const genreSkeletonColumns: ColumnSkeleton[] = [
+  { content: "text", align: "center", width: "w-1/3" },
+  { content: "text", align: "center", width: "w-1/3" },
+  { content: "text", align: "center", width: "w-1/3" },
+  { content: "action", align: "center", width: "w-10" },
+];

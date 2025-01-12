@@ -9,6 +9,7 @@ import {
 } from "@minhoyunlife/my-ts-client";
 
 import { columns } from "@/src/app/(authenticated)/fanarts/columns";
+import { artworkSkeletonColumns } from "@/src/components/(authenticated)/data-table/skeleton";
 import { DataTable } from "@/src/components/(authenticated)/data-table/table";
 import { FilterContainer } from "@/src/components/(authenticated)/filter/filter-container";
 import { PageWrapper } from "@/src/components/(authenticated)/page-wrapper";
@@ -171,6 +172,7 @@ export default function FanartsListPage() {
         pageCount={artworksResult?.data.metadata.totalPages}
         currentPage={artworksResult?.data.metadata.currentPage}
         onPageChange={setPage}
+        skeletonColumns={artworkSkeletonColumns}
       />
     </PageWrapper>
   );
