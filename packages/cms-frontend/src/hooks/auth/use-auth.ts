@@ -6,7 +6,7 @@ import { AuthErrorCode } from "@/src/constants/auth/error-codes";
 import { authApi } from "@/src/lib/api/client";
 import { isApiError } from "@/src/lib/api/types";
 import { getUserFromCookie } from "@/src/lib/utils/cookie";
-import { handleAuthError } from "@/src/lib/utils/routes/auth/error";
+import { handleAuthError } from "@/src/lib/utils/errors/auth";
 import { ROUTES } from "@/src/routes";
 import { useAuthStore } from "@/src/store/auth";
 
