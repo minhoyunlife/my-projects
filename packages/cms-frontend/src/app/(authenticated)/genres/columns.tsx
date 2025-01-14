@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/base/dropdown-menu";
 
-export const columns: ColumnDef<GetArtworks200ResponseItemsInnerAllOfGenresInner>[] =
+export const genreColumns: ColumnDef<GetArtworks200ResponseItemsInnerAllOfGenresInner>[] =
   [
     {
       id: "koName",
