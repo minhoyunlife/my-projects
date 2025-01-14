@@ -4,7 +4,7 @@ import { AuthErrorCode } from "@/src/constants/auth/error-codes";
 import {
   findAuthErrorRoute,
   handleAuthError,
-} from "@/src/lib/utils/routes/auth/error";
+} from "@/src/lib/utils/errors/auth";
 import { createUrl } from "@/src/lib/utils/routes/base";
 import { ROUTES } from "@/src/routes";
 
