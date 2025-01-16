@@ -10,7 +10,7 @@ vi.mock("@/src/lib/api/client", () => ({
   },
 }));
 
-describe("useCreateGenre", () => {
+describe("useCreateGenreMutation", () => {
   const mockCreateGenreData = {
     koName: "액션",
     enName: "Action",
