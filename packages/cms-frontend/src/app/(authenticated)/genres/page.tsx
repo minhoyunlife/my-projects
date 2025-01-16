@@ -51,6 +51,11 @@ export default function GenresListPage() {
     setSearch(value);
   };
 
+  const handleSingleDelete = (id: string) => {
+    setSelectedGenreIds([id]);
+    setIsDeleteDialogOpen(true);
+  };
+
   useEffect(() => {
     if (error) {
       toast({
@@ -110,7 +115,7 @@ export default function GenresListPage() {
 
       {/* 장르 목록 테이블 */}
       <DataTable
-        columns={genreColumns}
+        columns={genreColumns({ onDeleteClick: handleSingleDelete })}
         data={genresResult?.data.items ?? []}
         isLoading={isGenresLoading}
         pageCount={genresResult?.data.metadata.totalPages}
