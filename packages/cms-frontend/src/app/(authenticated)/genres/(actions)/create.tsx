@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 
 import { Form } from "@/src/components/(authenticated)/form/form";
 import { FormField } from "@/src/components/(authenticated)/form/form-field";
-import { useCreateGenre } from "@/src/hooks/genres/use-genre-create";
+import { useCreateGenreMutation } from "@/src/hooks/genres/use-genre-create-mutation";
 import { useToast } from "@/src/hooks/use-toast";
 import { handleGenreError } from "@/src/lib/utils/errors/genre";
 import {
@@ -12,7 +12,7 @@ import {
 } from "@/src/schemas/genres/create";
 
 export function CreateGenreForm({ onSuccess }: { onSuccess?: () => void }) {
-  const createGenreMutation = useCreateGenre();
+  const createGenreMutation = useCreateGenreMutation();
   const { toast } = useToast();
   const {
     register,

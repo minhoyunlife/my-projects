@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
 
-import { useCreateGenre } from "@/src/hooks/genres/use-genre-create";
+import { useCreateGenreMutation } from "@/src/hooks/genres/use-genre-create-mutation";
 import { genresApi } from "@/src/lib/api/client";
 import { wrapper } from "@/test/utils/test-query-client";
 
@@ -10,7 +10,7 @@ vi.mock("@/src/lib/api/client", () => ({
   },
 }));
 
-describe("useCreateGenre", () => {
+describe("useCreateGenreMutation", () => {
   const mockCreateGenreData = {
     koName: "액션",
     enName: "Action",
@@ -25,7 +25,9 @@ describe("useCreateGenre", () => {
     it("장르 생성 API를 호출함", async () => {
       vi.mocked(genresApi.createGenre).mockResolvedValueOnce({} as any);
 
-      const { result } = renderHook(() => useCreateGenre(), { wrapper });
+      const { result } = renderHook(() => useCreateGenreMutation(), {
+        wrapper,
+      });
 
       await result.current.mutateAsync(mockCreateGenreData);
 
@@ -38,7 +40,9 @@ describe("useCreateGenre", () => {
       const mockError = new Error("API Error");
       vi.mocked(genresApi.createGenre).mockRejectedValueOnce(mockError);
 
-      const { result } = renderHook(() => useCreateGenre(), { wrapper });
+      const { result } = renderHook(() => useCreateGenreMutation(), {
+        wrapper,
+      });
 
       await expect(
         result.current.mutateAsync(mockCreateGenreData),

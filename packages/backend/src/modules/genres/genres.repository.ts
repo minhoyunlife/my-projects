@@ -181,6 +181,7 @@ export class GenresRepository extends TransactionalRepository<Genre> {
 
     const genresInUse = await this.createQueryBuilder('genre')
       .innerJoin('genre.artworks', 'artwork')
+      .leftJoinAndSelect('genre.translations', 'translation')
       .where('genre.id IN (:...ids)', { ids })
       .getMany();
 
@@ -189,7 +190,9 @@ export class GenresRepository extends TransactionalRepository<Genre> {
         GenreErrorCode.IN_USE,
         'Some of the genres are in use by artworks',
         {
-          ids: genresInUse.map((g) => g.id),
+          koNames: genresInUse.map(
+            (g) => g.translations.find((t) => t.language === Language.KO)?.name,
+          ),
         },
       );
     }
