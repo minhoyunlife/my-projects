@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, Table as TableType } from "@tanstack/react-table";
 import {
   flexRender,
   getCoreRowModel,
@@ -12,6 +12,7 @@ import {
 import { DataTablePagination } from "@/src/components/(authenticated)/data-table/pagination";
 import type { ColumnSkeleton } from "@/src/components/(authenticated)/data-table/skeleton";
 import { DataTableSkeleton } from "@/src/components/(authenticated)/data-table/skeleton";
+import { Checkbox } from "@/src/components/base/checkbox";
 import {
   Table,
   TableBody,
@@ -21,24 +22,30 @@ import {
   TableRow,
 } from "@/src/components/base/table";
 
-interface DataTableProps<TData, TValue> {
+interface DataTableProps<TData extends { id: string }, TValue> {
   columns: ColumnDef<TData, TValue>[];
-  data: TData[];
   isLoading?: boolean;
+  skeletonColumns: ColumnSkeleton[];
+  data: TData[];
   pageCount?: number;
   currentPage?: number;
   onPageChange?: (page: number) => void;
-  skeletonColumns: ColumnSkeleton[];
+  enableRowSelection?: boolean;
+  selectedIds?: string[];
+  onSelectedIdsChange?: (ids: string[]) => void;
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends { id: string }, TValue>({
   columns,
-  data,
   isLoading,
+  skeletonColumns,
+  data,
   pageCount = 1,
   currentPage = 1,
   onPageChange,
-  skeletonColumns,
+  enableRowSelection,
+  selectedIds = [],
+  onSelectedIdsChange,
 }: DataTableProps<TData, TValue>) {
   const pagination = useMemo(
     () => ({
@@ -48,7 +55,16 @@ export function DataTable<TData, TValue>({
     [currentPage],
   );
 
-  const table = useReactTable({
+  const rowSelection = useMemo(() => {
+    return Object.fromEntries(
+      data.map((row, index) => [
+        index.toString(),
+        selectedIds.includes(row.id),
+      ]),
+    );
+  }, [data, selectedIds]);
+
+  const table: TableType<TData> = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
@@ -56,6 +72,7 @@ export function DataTable<TData, TValue>({
     pageCount,
     state: {
       pagination,
+      rowSelection,
     },
     onPaginationChange: (updater) => {
       if (typeof updater === "function") {
@@ -63,7 +80,27 @@ export function DataTable<TData, TValue>({
         onPageChange?.(newState.pageIndex + 1);
       }
     },
+    enableRowSelection: enableRowSelection,
+    onRowSelectionChange: (updater) => {
+      if (typeof updater === "function") {
+        const newState = updater(rowSelection);
+        const newSelectedIds = data
+          .filter((_, index) => newState[index.toString()])
+          .map((item) => item.id);
+
+        onSelectedIdsChange?.(newSelectedIds);
+      }
+    },
   });
+
+  useEffect(() => {
+    const rowSelection = Object.fromEntries(
+      table
+        .getRowModel()
+        .rows.map((row) => [row.id, selectedIds.includes(row.original.id)]),
+    );
+    table.setRowSelection(rowSelection);
+  }, [selectedIds, table]);
 
   if (isLoading) {
     return <DataTableSkeleton columns={skeletonColumns} />;
@@ -76,6 +113,23 @@ export function DataTable<TData, TValue>({
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
+                {/* 체크박스 컬럼 */}
+                {enableRowSelection && (
+                  <TableHead className="w-[50px]">
+                    <Checkbox
+                      checked={
+                        table.getIsAllRowsSelected() ||
+                        (table.getIsSomeRowsSelected() && "indeterminate")
+                      }
+                      onCheckedChange={(value) => {
+                        table.toggleAllRowsSelected(!!value);
+                      }}
+                      aria-label="select-all"
+                    />
+                  </TableHead>
+                )}
+
+                {/* 헤더 컬럼 */}
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
@@ -100,6 +154,18 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && "selected"}
                   className="hover:bg-muted/50"
                 >
+                  {/* 체크박스 셀 */}
+                  {enableRowSelection && (
+                    <TableCell className="w-[50px]">
+                      <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label="row-select"
+                      />
+                    </TableCell>
+                  )}
+
+                  {/* 데이터 셀 */}
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(

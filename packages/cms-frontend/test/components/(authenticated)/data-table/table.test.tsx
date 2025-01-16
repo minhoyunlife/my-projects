@@ -89,6 +89,70 @@ describe("DataTable", () => {
     });
   });
 
+  describe("행 선택", () => {
+    it("enableRowSelection이 true일 때 체크박스 열이 표시됨", () => {
+      render(
+        <DataTable
+          {...defaultProps}
+          enableRowSelection={true}
+        />,
+      );
+
+      expect(document.querySelectorAll('button[role="checkbox"]')).toHaveLength(
+        data.length + 1,
+      );
+    });
+
+    it("체크박스로 행을 선택하면 onSelectedIdsChange가 호출됨", () => {
+      const onSelectedIdsChange = vi.fn();
+      render(
+        <DataTable
+          {...defaultProps}
+          enableRowSelection={true}
+          selectedIds={[]}
+          onSelectedIdsChange={onSelectedIdsChange}
+        />,
+      );
+
+      const firstRowCheckbox = document.querySelectorAll(
+        'button[role="checkbox"]',
+      )[1];
+      fireEvent.click(firstRowCheckbox!);
+
+      expect(onSelectedIdsChange).toHaveBeenCalledWith(["1"]);
+    });
+
+    it("헤더 체크박스로 모든 행을 선택 가능함", () => {
+      const onSelectedIdsChange = vi.fn();
+      render(
+        <DataTable
+          {...defaultProps}
+          enableRowSelection={true}
+          selectedIds={[]}
+          onSelectedIdsChange={onSelectedIdsChange}
+        />,
+      );
+
+      const headerCheckbox = document.querySelector('button[role="checkbox"]');
+      fireEvent.click(headerCheckbox!);
+
+      expect(onSelectedIdsChange).toHaveBeenCalledWith(["1", "2"]);
+    });
+
+    it("enableRowSelection이 false면 체크박스 열이 표시되지 않음", () => {
+      render(
+        <DataTable
+          {...defaultProps}
+          enableRowSelection={false}
+        />,
+      );
+
+      expect(document.querySelectorAll('button[role="checkbox"]')).toHaveLength(
+        0,
+      );
+    });
+  });
+
   describe("페이지네이션", () => {
     it("pageCount에 따라 페이지네이션을 렌더링", () => {
       render(

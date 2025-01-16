@@ -21,7 +21,7 @@ export function PageWrapper({ children, title }: PageWrapperProps) {
           {title}
         </h2>
       </header>
-      <div className="flex flex-1 flex-col gap-4 p-4">{children}</div>
+      <div className="relative flex flex-1 flex-col gap-4 p-4">{children}</div>
     </>
   );
 }
