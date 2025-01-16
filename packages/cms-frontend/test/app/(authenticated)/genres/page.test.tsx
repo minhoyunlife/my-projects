@@ -1,4 +1,5 @@
 import GenresListPage from "@/src/app/(authenticated)/genres/page";
+import { wrapper } from "@/test/utils/test-query-client";
 
 const mockUseGenreListQuery = vi.fn();
 vi.mock("@/src/hooks/genres/use-genre-list-query", () => ({
@@ -47,7 +48,7 @@ describe("GenresListPage", () => {
   describe("화면 렌더링 검증", () => {
     describe("기본 화면 요소", () => {
       it("제목, 검색, 테이블이 표시됨", () => {
-        render(<GenresListPage />);
+        render(<GenresListPage />, { wrapper });
 
         expect(reactScreen.getByRole("heading")).toHaveTextContent("장르 목록");
         expect(
@@ -65,7 +66,7 @@ describe("GenresListPage", () => {
           error: null,
         });
 
-        render(<GenresListPage />);
+        render(<GenresListPage />, { wrapper });
 
         expect(
           reactScreen.getByTestId("data-table-skeleton"),
@@ -77,7 +78,7 @@ describe("GenresListPage", () => {
   describe("동작 검증", () => {
     describe("검색 동작", () => {
       it("검색어 입력 시 API 파라미터가 갱신됨", () => {
-        render(<GenresListPage />);
+        render(<GenresListPage />, { wrapper });
 
         const searchInput = reactScreen.getByPlaceholderText("장르명 검색...");
         fireEvent.change(searchInput, { target: { value: "액션" } });
@@ -100,7 +101,7 @@ describe("GenresListPage", () => {
         error: new Error("API Error"),
       });
 
-      render(<GenresListPage />);
+      render(<GenresListPage />, { wrapper });
 
       expect(mockToast).toHaveBeenCalledWith(
         expect.objectContaining({
