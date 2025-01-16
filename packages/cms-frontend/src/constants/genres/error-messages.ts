@@ -27,10 +27,10 @@ export const GENRE_ERROR_MESSAGES = {
     },
   },
   [GenreErrorCode.IN_USE]: {
-    title: "작품에서 사용 중인 장르입니다",
+    title: "일부 장르가 현재 작품에서 사용중입니다",
     formatDescription: (errors?: GenreErrorDetail) => {
-      if (!errors?.ids?.length) return "";
-      return `사용 중인 장르 ID: ${errors.ids.join(", ")}`;
+      if (!errors?.koNames?.length) return "";
+      return `해당 장르명: ${errors.koNames.join(", ")}`;
     },
   },
   [GenreErrorCode.INVALID_INPUT_DATA]: {
