@@ -8,8 +8,10 @@ vi.mock("@/src/hooks/artworks/use-artwork-query", () => ({
 }));
 
 const mockUseGenreSearchQuery = vi.fn();
-vi.mock("@/src/hooks/genres/use-genre-search-query", () => ({
-  useGenreSearchQuery: (params: any) => mockUseGenreSearchQuery(params),
+vi.mock("@/src/hooks/genres/use-genres", () => ({
+  useGenres: () => ({
+    useSearch: (params: any) => mockUseGenreSearchQuery(params),
+  }),
 }));
 
 const mockToast = vi.fn();

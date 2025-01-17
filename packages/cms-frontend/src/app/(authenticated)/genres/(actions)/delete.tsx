@@ -1,5 +1,5 @@
 import { ConfirmDialog } from "@/src/components/(authenticated)/confirm-dialog";
-import { useDeleteGenresMutation } from "@/src/hooks/genres/use-delete-genres-mutation";
+import { useGenres } from "@/src/hooks/genres/use-genres";
 import { useToast } from "@/src/hooks/use-toast";
 import { handleGenreError } from "@/src/lib/utils/errors/genre";
 
@@ -17,8 +17,9 @@ export function DeleteGenresDialog({
   onSuccess,
 }: DeleteGenresDialogProps) {
   const { toast } = useToast();
+  const { useDelete } = useGenres();
 
-  const deleteGenresMutation = useDeleteGenresMutation();
+  const deleteGenresMutation = useDelete();
 
   const handleDelete = async () => {
     try {

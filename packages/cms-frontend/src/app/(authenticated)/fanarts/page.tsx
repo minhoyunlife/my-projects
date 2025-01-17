@@ -14,7 +14,7 @@ import { DataTable } from "@/src/components/(authenticated)/data-table/table";
 import { FilterContainer } from "@/src/components/(authenticated)/filter/filter-container";
 import { PageWrapper } from "@/src/components/(authenticated)/page-wrapper";
 import { useArtworkQuery } from "@/src/hooks/artworks/use-artwork-query";
-import { useGenreSearchQuery } from "@/src/hooks/genres/use-genre-search-query";
+import { useGenres } from "@/src/hooks/genres/use-genres";
 import { useToast } from "@/src/hooks/use-toast";
 
 export default function FanartsListPage() {
@@ -47,8 +47,10 @@ export default function FanartsListPage() {
     status,
   });
 
+  const { useSearch } = useGenres();
+
   const { data: genreSearchResult, isLoading: isGenreSearchLoading } =
-    useGenreSearchQuery(genreSearch);
+    useSearch(genreSearch);
 
   const genreOptions = useMemo(
     () =>

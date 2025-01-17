@@ -14,11 +14,12 @@ import { FilterContainer } from "@/src/components/(authenticated)/filter/filter-
 import { PageWrapper } from "@/src/components/(authenticated)/page-wrapper";
 import { SelectionActionBar } from "@/src/components/(authenticated)/selected-action-bar";
 import { SlideOver } from "@/src/components/(authenticated)/slide-over";
-import { useGenreListQuery } from "@/src/hooks/genres/use-genre-list-query";
+import { useGenres } from "@/src/hooks/genres/use-genres";
 import { useToast } from "@/src/hooks/use-toast";
 
 export default function GenresListPage() {
   const { toast } = useToast();
+  const { useList } = useGenres();
 
   // 페이징 및 검색 관련
   const [page, setPage] = useState(1);
@@ -35,7 +36,7 @@ export default function GenresListPage() {
     data: genresResult,
     isLoading: isGenresLoading,
     error,
-  } = useGenreListQuery({
+  } = useList({
     search,
     page,
   });

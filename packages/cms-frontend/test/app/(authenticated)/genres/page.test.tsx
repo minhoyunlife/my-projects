@@ -2,8 +2,11 @@ import GenresListPage from "@/src/app/(authenticated)/genres/page";
 import { wrapper } from "@/test/utils/test-query-client";
 
 const mockUseGenreListQuery = vi.fn();
-vi.mock("@/src/hooks/genres/use-genre-list-query", () => ({
-  useGenreListQuery: (params: any) => mockUseGenreListQuery(params),
+vi.mock("@/src/hooks/genres/use-genres", () => ({
+  useGenres: () => ({
+    useList: (params: any) => mockUseGenreListQuery(params),
+    useDelete: () => vi.fn(),
+  }),
 }));
 
 const mockToast = vi.fn();

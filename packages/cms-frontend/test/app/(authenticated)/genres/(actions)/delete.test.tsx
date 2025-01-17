@@ -5,10 +5,12 @@ import { DeleteGenresDialog } from "@/src/app/(authenticated)/genres/(actions)/d
 import { wrapper } from "@/test/utils/test-query-client";
 
 const mockMutateAsync = vi.fn();
-vi.mock("@/src/hooks/genres/use-delete-genres-mutation", () => ({
-  useDeleteGenresMutation: () => ({
-    mutateAsync: mockMutateAsync,
-    isPending: false,
+vi.mock("@/src/hooks/genres/use-genres", () => ({
+  useGenres: () => ({
+    useDelete: () => ({
+      mutateAsync: mockMutateAsync,
+      isPending: false,
+    }),
   }),
 }));
 

@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 
 import { Form } from "@/src/components/(authenticated)/form/form";
 import { FormField } from "@/src/components/(authenticated)/form/form-field";
-import { useCreateGenreMutation } from "@/src/hooks/genres/use-genre-create-mutation";
+import { useGenres } from "@/src/hooks/genres/use-genres";
 import { useToast } from "@/src/hooks/use-toast";
 import { handleGenreError } from "@/src/lib/utils/errors/genre";
 import {
@@ -12,8 +12,8 @@ import {
 } from "@/src/schemas/genres/create";
 
 export function CreateGenreForm({ onSuccess }: { onSuccess?: () => void }) {
-  const createGenreMutation = useCreateGenreMutation();
   const { toast } = useToast();
+  const { useCreate } = useGenres();
   const {
     register,
     handleSubmit,
@@ -23,6 +23,8 @@ export function CreateGenreForm({ onSuccess }: { onSuccess?: () => void }) {
     resolver: zodResolver(createGenreSchema),
     mode: "onChange",
   });
+
+  const createGenreMutation = useCreate();
 
   const onSubmit = async (data: CreateGenreFormData) => {
     try {
