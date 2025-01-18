@@ -5,6 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { GetArtworks200ResponseItemsInnerAllOfGenresInner } from "@minhoyunlife/my-ts-client";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
+import type { Genre } from "@/src/app/(authenticated)/genres/(actions)/update";
 import { Button } from "@/src/components/base/button";
 import {
   DropdownMenu,
@@ -14,10 +15,12 @@ import {
 } from "@/src/components/base/dropdown-menu";
 
 interface GenreColumnProps {
+  onEditClick: (genre: Genre) => void;
   onDeleteClick: (id: string) => void;
 }
 
 export const genreColumns = ({
+  onEditClick,
   onDeleteClick,
 }: GenreColumnProps): ColumnDef<GetArtworks200ResponseItemsInnerAllOfGenresInner>[] => [
   {
@@ -49,12 +52,13 @@ export const genreColumns = ({
               <Button
                 variant="ghost"
                 className="h-8 w-8 p-0"
+                aria-label="more"
               >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEditClick(row.original)}>
                 <Pencil className="mr-2 h-4 w-4" />
                 <span>수정</span>
               </DropdownMenuItem>

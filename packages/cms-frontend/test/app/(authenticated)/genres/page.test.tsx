@@ -2,8 +2,13 @@ import GenresListPage from "@/src/app/(authenticated)/genres/page";
 import { wrapper } from "@/test/utils/test-query-client";
 
 const mockUseGenreListQuery = vi.fn();
-vi.mock("@/src/hooks/genres/use-genre-list-query", () => ({
-  useGenreListQuery: (params: any) => mockUseGenreListQuery(params),
+vi.mock("@/src/hooks/genres/use-genres", () => ({
+  useGenres: () => ({
+    useList: (params: any) => mockUseGenreListQuery(params),
+    useCreate: () => vi.fn(),
+    useUpdate: () => vi.fn(),
+    useDelete: () => vi.fn(),
+  }),
 }));
 
 const mockToast = vi.fn();
@@ -71,6 +76,113 @@ describe("GenresListPage", () => {
         expect(
           reactScreen.getByTestId("data-table-skeleton"),
         ).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("UI 상호작용 검증", () => {
+    describe("장르 생성", () => {
+      it("추가 버튼 클릭 시 슬라이드오버가 열림", async () => {
+        render(<GenresListPage />, { wrapper });
+
+        const addButton = reactScreen.getByRole("button", {
+          name: "장르 추가",
+        });
+        await userEvent.click(addButton);
+
+        expect(reactScreen.getByRole("dialog")).toHaveTextContent("장르 추가");
+      });
+    });
+
+    describe("장르 수정", () => {
+      it("수정 메뉴 클릭 시 슬라이드오버가 열림", async () => {
+        mockUseGenreListQuery.mockReturnValue({
+          data: {
+            data: {
+              items: [
+                {
+                  id: "1",
+                  translations: [
+                    { language: "ko", name: "액션" },
+                    { language: "en", name: "Action" },
+                    { language: "ja", name: "アクション" },
+                  ],
+                },
+              ],
+              metadata: { totalPages: 1, currentPage: 1 },
+            },
+          },
+          isLoading: false,
+          error: null,
+        });
+
+        render(<GenresListPage />, { wrapper });
+
+        const menuButton = reactScreen.getByLabelText("more");
+        await userEvent.click(menuButton);
+
+        const editButton = reactScreen.getByRole("menuitem", { name: /수정/i });
+        await userEvent.click(editButton);
+
+        expect(reactScreen.getByRole("dialog")).toHaveTextContent("장르 수정");
+      });
+    });
+
+    describe("장르 삭제", () => {
+      it("삭제 메뉴 클릭 시 확인 다이얼로그가 열림", async () => {
+        mockUseGenreListQuery.mockReturnValue({
+          data: {
+            data: {
+              items: [
+                {
+                  id: "1",
+                  translations: [{ language: "ko", name: "액션" }],
+                },
+              ],
+              metadata: { totalPages: 1, currentPage: 1 },
+            },
+          },
+          isLoading: false,
+          error: null,
+        });
+
+        render(<GenresListPage />, { wrapper });
+
+        const menuButton = reactScreen.getByLabelText("more");
+        await userEvent.click(menuButton);
+
+        const deleteButton = reactScreen.getByRole("menuitem", {
+          name: /삭제/i,
+        });
+        await userEvent.click(deleteButton);
+
+        expect(reactScreen.getByRole("alertdialog")).toBeInTheDocument();
+      });
+
+      it("여러 행 선택 후 삭제 버튼 클릭 시 확인 다이얼로그가 열림", async () => {
+        mockUseGenreListQuery.mockReturnValue({
+          data: {
+            data: {
+              items: [
+                { id: "1", translations: [{ language: "ko", name: "액션" }] },
+                { id: "2", translations: [{ language: "ko", name: "RPG" }] },
+              ],
+              metadata: { totalPages: 1, currentPage: 1 },
+            },
+          },
+          isLoading: false,
+          error: null,
+        });
+
+        render(<GenresListPage />, { wrapper });
+
+        const checkboxes = reactScreen.getAllByRole("checkbox");
+        await userEvent.click(checkboxes[1]!); // 첫 번째 행 선택
+
+        const deleteButton = reactScreen.getByRole("button", { name: /삭제/i });
+        await userEvent.click(deleteButton);
+
+        expect(reactScreen.getByRole("alertdialog")).toBeInTheDocument();
       });
     });
   });

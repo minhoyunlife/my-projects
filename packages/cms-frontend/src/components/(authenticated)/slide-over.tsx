@@ -10,7 +10,7 @@ import {
 } from "@/src/components/base/sheet";
 
 interface SlideOverProps {
-  trigger: ReactNode;
+  trigger?: ReactNode;
   title: string;
   description?: string;
   children: ReactNode;
@@ -31,7 +31,7 @@ export function SlideOver({
       open={open}
       onOpenChange={onOpenChange}
     >
-      <SheetTrigger asChild>{trigger}</SheetTrigger>
+      {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
       <SheetContent>
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>

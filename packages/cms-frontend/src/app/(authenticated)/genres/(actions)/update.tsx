@@ -7,45 +7,64 @@ import { useGenres } from "@/src/hooks/genres/use-genres";
 import { useToast } from "@/src/hooks/use-toast";
 import { handleGenreError } from "@/src/lib/utils/errors/genre";
 import {
-  createGenreSchema,
-  type CreateGenreFormData,
-} from "@/src/schemas/genres/create";
+  updateGenreSchema,
+  type UpdateGenreFormData,
+} from "@/src/schemas/genres/update";
 
-export function CreateGenreForm({ onSuccess }: { onSuccess?: () => void }) {
+export interface Genre {
+  id: string;
+  translations: Array<{
+    language: "ko" | "en" | "ja";
+    name: string;
+  }>;
+}
+
+interface UpdateGenreFormProps {
+  genre: Genre;
+  onSuccess?: () => void;
+}
+
+export function UpdateGenreForm({ genre, onSuccess }: UpdateGenreFormProps) {
   const { toast } = useToast();
-  const { useCreate } = useGenres();
+  const { useUpdate } = useGenres();
   const {
     register,
     handleSubmit,
-    reset,
     formState: { errors, isValid },
-  } = useForm<CreateGenreFormData>({
-    resolver: zodResolver(createGenreSchema),
+  } = useForm<UpdateGenreFormData>({
+    resolver: zodResolver(updateGenreSchema),
     mode: "onChange",
+    defaultValues: {
+      koName: genre?.translations?.find((t) => t.language === "ko")?.name || "",
+      enName: genre?.translations?.find((t) => t.language === "en")?.name || "",
+      jaName: genre?.translations?.find((t) => t.language === "ja")?.name || "",
+    },
   });
 
-  const createGenreMutation = useCreate();
+  const updateGenreMutation = useUpdate();
 
-  const onSubmit = async (data: CreateGenreFormData) => {
+  const onSubmit = async (data: UpdateGenreFormData) => {
     try {
-      await createGenreMutation.mutateAsync(data);
+      await updateGenreMutation.mutateAsync({
+        id: genre.id,
+        data,
+      });
       toast({
-        title: "장르가 추가되었습니다",
+        title: "장르가 수정되었습니다",
         variant: "success",
       });
-      reset();
 
       onSuccess?.();
     } catch (error) {
-      handleGenreError(error, toast, "장르 추가 중 에러가 발생했습니다");
+      handleGenreError(error, toast, "장르 수정 중 에러가 발생했습니다");
     }
   };
 
   return (
     <Form
       onSubmit={handleSubmit(onSubmit)}
-      isSubmitting={createGenreMutation.isPending}
-      submitText="장르 추가"
+      isSubmitting={updateGenreMutation.isPending}
+      submitText="장르 수정"
       disabled={!isValid}
     >
       <FormField

@@ -7,10 +7,12 @@ vi.mock("@/src/hooks/genres/use-genre-create");
 vi.mock("@/src/hooks/use-toast");
 
 const mockMutateAsync = vi.fn();
-vi.mock("@/src/hooks/genres/use-genre-create-mutation", () => ({
-  useCreateGenreMutation: () => ({
-    mutateAsync: mockMutateAsync,
-    isPending: false,
+vi.mock("@/src/hooks/genres/use-genres", () => ({
+  useGenres: () => ({
+    useCreate: () => ({
+      mutateAsync: mockMutateAsync,
+      isPending: false,
+    }),
   }),
 }));
 
