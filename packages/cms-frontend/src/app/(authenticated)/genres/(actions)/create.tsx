@@ -31,6 +31,7 @@ export function CreateGenreForm({ onSuccess }: { onSuccess?: () => void }) {
       await createGenreMutation.mutateAsync(data);
       toast({
         title: "장르가 추가되었습니다",
+        variant: "success",
       });
       reset();
 

@@ -26,6 +26,7 @@ export function DeleteGenresDialog({
       await deleteGenresMutation.mutateAsync({ ids: selectedIds });
       toast({
         title: "장르가 삭제되었습니다",
+        variant: "success",
       });
 
       onOpenChange(false);
