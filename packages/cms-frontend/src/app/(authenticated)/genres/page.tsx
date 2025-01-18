@@ -6,6 +6,8 @@ import { Trash2 } from "lucide-react";
 
 import { CreateGenreForm } from "@/src/app/(authenticated)/genres/(actions)/create";
 import { DeleteGenresDialog } from "@/src/app/(authenticated)/genres/(actions)/delete";
+import type { Genre } from "@/src/app/(authenticated)/genres/(actions)/update";
+import { UpdateGenreForm } from "@/src/app/(authenticated)/genres/(actions)/update";
 import { genreColumns } from "@/src/app/(authenticated)/genres/columns";
 import { ActionButton } from "@/src/components/(authenticated)/action-button";
 import { genreSkeletonColumns } from "@/src/components/(authenticated)/data-table/skeleton";
@@ -28,8 +30,12 @@ export default function GenresListPage() {
   // 장르 추가 슬라이드오버 관련
   const [isAddOpen, setIsAddOpen] = useState(false);
 
+  // 장르 수정 슬라이드오버 관련
+  const [isEditOpen, setIsEditOpen] = useState(false);
+
   // 행 선택 및 삭제 관련
   const [selectedGenreIds, setSelectedGenreIds] = useState<string[]>([]);
+  const [selectedGenre, setSelectedGenre] = useState<Genre | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const {
@@ -50,6 +56,11 @@ export default function GenresListPage() {
     setSelectedGenreIds([]);
     setPage(1);
     setSearch(value);
+  };
+
+  const handleSingleEdit = (genre: Genre) => {
+    setSelectedGenre(genre);
+    setIsEditOpen(true);
   };
 
   const handleSingleDelete = (id: string) => {
@@ -102,7 +113,7 @@ export default function GenresListPage() {
           }}
         />
 
-        {/* 장르 삭제 시 표시될 슬라이드오버 */}
+        {/* 장르 생성 시 표시될 슬라이드오버 */}
         <SlideOver
           open={isAddOpen}
           onOpenChange={setIsAddOpen}
@@ -114,9 +125,30 @@ export default function GenresListPage() {
         </SlideOver>
       </div>
 
+      {/* 장르 수정을 위한 슬라이드오버 */}
+      <SlideOver
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        title="장르 수정"
+        description="장르의 정보를 수정합니다."
+      >
+        {selectedGenre && (
+          <UpdateGenreForm
+            genre={selectedGenre}
+            onSuccess={() => {
+              setIsEditOpen(false);
+              setSelectedGenre(null);
+            }}
+          />
+        )}
+      </SlideOver>
+
       {/* 장르 목록 테이블 */}
       <DataTable
-        columns={genreColumns({ onDeleteClick: handleSingleDelete })}
+        columns={genreColumns({
+          onDeleteClick: handleSingleDelete,
+          onEditClick: handleSingleEdit,
+        })}
         data={genresResult?.data.items ?? []}
         isLoading={isGenresLoading}
         pageCount={genresResult?.data.metadata.totalPages}
