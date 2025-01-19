@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { Artwork } from '@/src/modules/artworks/artworks.entity';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';

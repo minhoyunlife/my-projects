@@ -4,7 +4,7 @@ import request from 'supertest';
 import { DataSource, In, Repository } from 'typeorm';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
-import { Artwork } from '@/src/modules/artworks/artworks.entity';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
 import { TokenErrorCode } from '@/src/modules/auth/exceptions/token.exception';

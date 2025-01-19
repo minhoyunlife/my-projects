@@ -4,10 +4,10 @@ import { In } from 'typeorm';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { EntityList } from '@/src/common/interfaces/entity-list.interface';
-import { Artwork } from '@/src/modules/artworks/artworks.entity';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { GetArtworksQueryDto } from '@/src/modules/artworks/dtos/get-artworks-query.dto';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
 import { Status } from '@/src/modules/artworks/enums/status.enum';
 import {

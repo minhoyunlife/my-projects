@@ -1,7 +1,7 @@
 import { EntityManager } from 'typeorm';
 
 import { TransactionalRepository } from '@/src/common/repositories/transactional.repository';
-import { Artwork } from '@/src/modules/artworks/artworks.entity';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 

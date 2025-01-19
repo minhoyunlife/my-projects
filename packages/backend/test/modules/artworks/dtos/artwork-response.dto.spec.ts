@@ -1,8 +1,8 @@
-import { Artwork } from '@/src/modules/artworks/artworks.entity';
 import {
   ArtworkListResponse,
   ArtworkResponse,
 } from '@/src/modules/artworks/dtos/artwork-response.dto';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { GenreResponse } from '@/src/modules/genres/dtos/genre-response.dto';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';

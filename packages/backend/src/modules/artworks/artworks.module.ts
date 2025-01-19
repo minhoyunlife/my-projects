@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { ArtworksController } from '@/src/modules/artworks/artworks.controller';
-import { Artwork } from '@/src/modules/artworks/artworks.entity';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { AuthModule } from '@/src/modules/auth/auth.module';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';

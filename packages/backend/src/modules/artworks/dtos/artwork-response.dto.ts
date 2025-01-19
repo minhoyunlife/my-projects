@@ -1,4 +1,4 @@
-import { Artwork } from '@/src/modules/artworks/artworks.entity';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { GenreResponse } from '@/src/modules/genres/dtos/genre-response.dto';
 
 export class ArtworkResponse {

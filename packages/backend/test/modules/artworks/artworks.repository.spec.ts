@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
 
-import { Artwork } from '@/src/modules/artworks/artworks.entity';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';

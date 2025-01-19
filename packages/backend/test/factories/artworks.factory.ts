@@ -1,4 +1,4 @@
-import { Artwork } from '@/src/modules/artworks/artworks.entity';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 
