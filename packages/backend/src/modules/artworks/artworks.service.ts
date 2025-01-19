@@ -7,7 +7,10 @@ import { EntityList } from '@/src/common/interfaces/entity-list.interface';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { GetArtworksQueryDto } from '@/src/modules/artworks/dtos/get-artworks-query.dto';
+<<<<<<< HEAD
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
+=======
+>>>>>>> 3ddd721 (chore: move current entity to sub folder)
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
 import { Status } from '@/src/modules/artworks/enums/status.enum';

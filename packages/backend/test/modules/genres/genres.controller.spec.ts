@@ -4,7 +4,10 @@ import request from 'supertest';
 import { DataSource, In, Repository } from 'typeorm';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
+<<<<<<< HEAD
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
+=======
+>>>>>>> 3ddd721 (chore: move current entity to sub folder)
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';

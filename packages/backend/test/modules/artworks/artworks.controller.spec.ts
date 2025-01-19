@@ -9,7 +9,10 @@ import { ArtworksController } from '@/src/modules/artworks/artworks.controller';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
+<<<<<<< HEAD
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
+=======
+>>>>>>> 3ddd721 (chore: move current entity to sub folder)
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { ImageFileType } from '@/src/modules/artworks/enums/file-type.enum';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
