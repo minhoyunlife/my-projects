@@ -1,7 +1,11 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 =======
 >>>>>>> 3ddd721 (chore: move current entity to sub folder)
+=======
+import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
+>>>>>>> 6a6af5c (chore: modify dtos related to artworks)
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { GenreResponse } from '@/src/modules/genres/dtos/genre-response.dto';
 
