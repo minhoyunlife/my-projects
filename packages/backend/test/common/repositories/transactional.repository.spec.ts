@@ -59,7 +59,7 @@ describeWithoutDeps('TransactionalRepository', () => {
             mockArtworkRepository.forTransaction(entityManager);
           const txGenreRepo = mockGenreRepository.forTransaction(entityManager);
 
-          await txArtworkRepo.save({ title: 'Test Artwork' });
+          await txArtworkRepo.save({ imageKey: 'test-key' });
           await txGenreRepo.save({
             translations: [
               { language: 'ko', name: '테스트 장르' },

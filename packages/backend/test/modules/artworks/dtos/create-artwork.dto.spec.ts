@@ -6,41 +6,18 @@ import { createDto } from '@/test/utils/dto.util';
 
 describeWithoutDeps('CreateArtworkDto', () => {
   const validDtoData: Partial<CreateArtworkDto> = {
-    title: '테스트 작품 제목',
     imageKey: 'artworks/2024/03/abc123def456',
+    koTitle: '테스트 작품 제목',
+    enTitle: 'Test Artwork Title',
+    jaTitle: 'テスト作品のタイトル',
     createdAt: '2022-01-01',
     playedOn: Platform.STEAM,
-    genreIds: ['id1', 'id2'],
     rating: 19,
-    shortReview: '이 작품은 정말 재미있었습니다.',
+    koShortReview: '이 작품은 정말 재미있었습니다.',
+    enShortReview: 'This artwork was really fun.',
+    jaShortReview: 'この作品は本当に楽しかったです。',
+    genreIds: ['id1', 'id2'],
   };
-
-  describe('title', () => {
-    it('값이 유효한 경우, 에러가 발생하지 않음', async () => {
-      const dto = createDto(CreateArtworkDto, validDtoData);
-      const errors = await validate(dto);
-
-      expect(errors).toHaveLength(0);
-    });
-
-    it('값이 화이트 스페이스로만 이뤄진 경우, 에러가 발생함', async () => {
-      const dto = createDto(CreateArtworkDto, validDtoData, { title: '　' });
-      const errors = await validate(dto);
-
-      expect(errors).toHaveLength(1);
-      expect(errors[0].property).toBe('title');
-      expect(errors[0].constraints).toHaveProperty('isNotEmpty');
-    });
-
-    it('값이 null인 경우, 에러가 발생함', async () => {
-      const dto = createDto(CreateArtworkDto, validDtoData, { title: null });
-      const errors = await validate(dto);
-
-      expect(errors).toHaveLength(1);
-      expect(errors[0].property).toBe('title');
-      expect(errors[0].constraints).toHaveProperty('isNotEmpty');
-    });
-  });
 
   describe('imageKey', () => {
     it('값이 유효한 경우, 에러가 발생하지 않음', async () => {
@@ -65,6 +42,87 @@ describeWithoutDeps('CreateArtworkDto', () => {
 
       expect(errors).toHaveLength(1);
       expect(errors[0].property).toBe('imageKey');
+      expect(errors[0].constraints).toHaveProperty('isNotEmpty');
+    });
+  });
+
+  describe('koTitle', () => {
+    it('값이 유효한 경우, 에러가 발생하지 않음', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData);
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(0);
+    });
+
+    it('값이 화이트 스페이스로만 이뤄진 경우, 에러가 발생함', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, { koTitle: '　' });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].property).toBe('koTitle');
+      expect(errors[0].constraints).toHaveProperty('isNotEmpty');
+    });
+
+    it('값이 null인 경우, 에러가 발생함', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, { koTitle: null });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].property).toBe('koTitle');
+      expect(errors[0].constraints).toHaveProperty('isNotEmpty');
+    });
+  });
+
+  describe('enTitle', () => {
+    it('값이 유효한 경우, 에러가 발생하지 않음', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData);
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(0);
+    });
+
+    it('값이 화이트 스페이스로만 이뤄진 경우, 에러가 발생함', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, { enTitle: '　' });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].property).toBe('enTitle');
+      expect(errors[0].constraints).toHaveProperty('isNotEmpty');
+    });
+
+    it('값이 null인 경우, 에러가 발생함', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, { enTitle: null });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].property).toBe('enTitle');
+      expect(errors[0].constraints).toHaveProperty('isNotEmpty');
+    });
+  });
+
+  describe('jaTitle', () => {
+    it('값이 유효한 경우, 에러가 발생하지 않음', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData);
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(0);
+    });
+
+    it('값이 화이트 스페이스로만 이뤄진 경우, 에러가 발생함', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, { jaTitle: '　' });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].property).toBe('jaTitle');
+      expect(errors[0].constraints).toHaveProperty('isNotEmpty');
+    });
+
+    it('값이 null인 경우, 에러가 발생함', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, { jaTitle: null });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].property).toBe('jaTitle');
       expect(errors[0].constraints).toHaveProperty('isNotEmpty');
     });
   });
@@ -106,31 +164,6 @@ describeWithoutDeps('CreateArtworkDto', () => {
       expect(errors).toHaveLength(1);
       expect(errors[0].property).toBe('createdAt');
       expect(errors[0].constraints).toHaveProperty('isDateString');
-    });
-  });
-
-  describe('genreIds', () => {
-    it('값이 유효한 경우, 에러가 발생하지 않음', async () => {
-      const dto = createDto(CreateArtworkDto, validDtoData);
-      const errors = await validate(dto);
-
-      expect(errors).toHaveLength(0);
-    });
-
-    it('값이 빈 배열인 경우, 에러가 발생함', async () => {
-      const dto = createDto(CreateArtworkDto, validDtoData, { genreIds: [] });
-      const errors = await validate(dto);
-
-      expect(errors).toHaveLength(1);
-    });
-
-    it('값이 생략된 경우, 에러가 발생함', async () => {
-      const dto = createDto(CreateArtworkDto, validDtoData, {
-        genreIds: undefined,
-      });
-      const errors = await validate(dto);
-
-      expect(errors).toHaveLength(1);
     });
   });
 
@@ -204,7 +237,7 @@ describeWithoutDeps('CreateArtworkDto', () => {
     });
   });
 
-  describe('shortReview', () => {
+  describe('koShortReview', () => {
     it('값이 유효한 경우, 에러가 발생하지 않음', async () => {
       const dto = createDto(CreateArtworkDto, validDtoData);
       const errors = await validate(dto);
@@ -214,7 +247,7 @@ describeWithoutDeps('CreateArtworkDto', () => {
 
     it('값이 null인 경우에도 에러가 발생하지 않음', async () => {
       const dto = createDto(CreateArtworkDto, validDtoData, {
-        shortReview: null,
+        koShortReview: null,
       });
       const errors = await validate(dto);
 
@@ -223,24 +256,129 @@ describeWithoutDeps('CreateArtworkDto', () => {
 
     it('값의 길이가 0인 경우, 에러가 발생함', async () => {
       const dto = createDto(CreateArtworkDto, validDtoData, {
-        shortReview: '',
+        koShortReview: '',
       });
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(1);
-      expect(errors[0].property).toBe('shortReview');
+      expect(errors[0].property).toBe('koShortReview');
       expect(errors[0].constraints).toHaveProperty('minLength');
     });
 
     it('값이 화이트 스페이스로만 이뤄진 경우, 에러가 발생함', async () => {
       const dto = createDto(CreateArtworkDto, validDtoData, {
-        shortReview: '　',
+        koShortReview: '　',
       });
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(1);
-      expect(errors[0].property).toBe('shortReview');
+      expect(errors[0].property).toBe('koShortReview');
       expect(errors[0].constraints).toHaveProperty('minLength');
+    });
+  });
+
+  describe('enShortReview', () => {
+    it('값이 유효한 경우, 에러가 발생하지 않음', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData);
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(0);
+    });
+
+    it('값이 null인 경우에도 에러가 발생하지 않음', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, {
+        enShortReview: null,
+      });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(0);
+    });
+
+    it('값의 길이가 0인 경우, 에러가 발생함', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, {
+        enShortReview: '',
+      });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].property).toBe('enShortReview');
+      expect(errors[0].constraints).toHaveProperty('minLength');
+    });
+
+    it('값이 화이트 스페이스로만 이뤄진 경우, 에러가 발생함', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, {
+        enShortReview: '　',
+      });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].property).toBe('enShortReview');
+      expect(errors[0].constraints).toHaveProperty('minLength');
+    });
+  });
+
+  describe('jaShortReview', () => {
+    it('값이 유효한 경우, 에러가 발생하지 않음', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData);
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(0);
+    });
+
+    it('값이 null인 경우에도 에러가 발생하지 않음', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, {
+        jaShortReview: null,
+      });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(0);
+    });
+
+    it('값의 길이가 0인 경우, 에러가 발생함', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, {
+        jaShortReview: '',
+      });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].property).toBe('jaShortReview');
+      expect(errors[0].constraints).toHaveProperty('minLength');
+    });
+
+    it('값이 화이트 스페이스로만 이뤄진 경우, 에러가 발생함', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, {
+        jaShortReview: '　',
+      });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].property).toBe('jaShortReview');
+      expect(errors[0].constraints).toHaveProperty('minLength');
+    });
+  });
+
+  describe('genreIds', () => {
+    it('값이 유효한 경우, 에러가 발생하지 않음', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData);
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(0);
+    });
+
+    it('값이 빈 배열인 경우, 에러가 발생함', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, { genreIds: [] });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
+    });
+
+    it('값이 생략된 경우, 에러가 발생함', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, {
+        genreIds: undefined,
+      });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
     });
   });
 });
