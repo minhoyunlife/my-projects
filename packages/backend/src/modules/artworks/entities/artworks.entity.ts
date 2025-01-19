@@ -1,6 +1,15 @@
-import { Entity, Column, Index, Check, JoinTable, ManyToMany } from 'typeorm';
+import {
+  Entity,
+  Column,
+  Index,
+  Check,
+  JoinTable,
+  ManyToMany,
+  OneToMany,
+} from 'typeorm';
 
 import { NanoId } from '@/src/common/decorators/id.decorator';
+import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 
@@ -18,12 +27,6 @@ export class Artwork {
   id: string;
 
   /**
-   * 작품 대상인 게임의 제목
-   */
-  @Column({ nullable: false })
-  title: string;
-
-  /**
    * 작품의 S3 이미지 키 값
    */
   @Column({ nullable: false })
@@ -34,13 +37,6 @@ export class Artwork {
    */
   @Column({ type: 'timestamp', nullable: true })
   createdAt: Date;
-
-  /**
-   * 작품 대상 게임의 장르
-   */
-  @ManyToMany(() => Genre, (genre) => genre.artworks)
-  @JoinTable()
-  genres: Genre[];
 
   /**
    * 작품 대상 게임을 즐긴 플랫폼
@@ -61,12 +57,6 @@ export class Artwork {
   })
   rating: number;
 
-  /**
-   * 작품 대상 게임에 대한 개인적인 한줄평
-   */
-  @Column({ nullable: true })
-  shortReview: string;
-
   // TODO: 프론트 구현 방식에 따라, 작품 이미지로부터 주요 색상들을 추출한 값을 저장할 칼럼을 추가할지도?
   // colorPalette: string[];
 
@@ -75,4 +65,19 @@ export class Artwork {
    */
   @Column({ default: true })
   isDraft: boolean;
+
+  /**
+   * 작품 대상 게임의 장르
+   */
+  @ManyToMany(() => Genre, (genre) => genre.artworks)
+  @JoinTable()
+  genres: Genre[];
+
+  /**
+   * 작품 정보를 다언어로 관리하기 위한 번역 정보
+   */
+  @OneToMany(() => ArtworkTranslation, (translation) => translation.artwork, {
+    cascade: true,
+  })
+  translations: ArtworkTranslation[];
 }
