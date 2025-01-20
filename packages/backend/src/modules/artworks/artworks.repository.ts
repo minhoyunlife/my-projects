@@ -42,7 +42,8 @@ export class ArtworksRepository extends TransactionalRepository<Artwork> {
   }): Promise<[Artwork[], number]> {
     let query = this.createQueryBuilder('artwork')
       .leftJoinAndSelect('artwork.genres', 'genre')
-      .leftJoinAndSelect('genre.translations', 'translation');
+      .leftJoinAndSelect('genre.translations', 'translation')
+      .leftJoinAndSelect('artwork.translations', 'artworkTranslation');
 
     if (filters.genreIds?.length) {
       // 일단 특정 장르를 가진 작품의 ID만 조회 후,
@@ -63,9 +64,12 @@ export class ArtworksRepository extends TransactionalRepository<Artwork> {
     });
 
     if (filters.search) {
-      query.andWhere('artwork.title ILIKE :search', {
-        search: `%${filters.search}%`,
-      });
+      query.innerJoin(
+        'artwork.translations',
+        'searchTranslation',
+        'searchTranslation.title ILIKE :search',
+        { search: `%${filters.search}%` },
+      );
     }
 
     if (filters.platforms?.length) {

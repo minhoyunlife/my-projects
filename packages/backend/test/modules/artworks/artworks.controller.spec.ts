@@ -9,6 +9,7 @@ import { ArtworksController } from '@/src/modules/artworks/artworks.controller';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
+import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { ImageFileType } from '@/src/modules/artworks/enums/file-type.enum';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
@@ -33,7 +34,13 @@ describeWithDeps('ArtworksController', () => {
 
   beforeAll(async () => {
     app = await createTestingApp({
-      entities: [Artwork, Genre, GenreTranslation, Administrator],
+      entities: [
+        Artwork,
+        ArtworkTranslation,
+        Genre,
+        GenreTranslation,
+        Administrator,
+      ],
       controllers: [ArtworksController],
       providers: [
         ArtworksService,
@@ -97,7 +104,6 @@ describeWithDeps('ArtworksController', () => {
 
       await saveEntities(artworkRepository, [
         ArtworksFactory.createTestData({
-          title: '공개 작품 1',
           imageKey: 'artworks/2024/03/public1',
           createdAt: new Date('2024-03-01'),
           playedOn: Platform.STEAM,
@@ -105,7 +111,6 @@ describeWithDeps('ArtworksController', () => {
           isDraft: false,
         }),
         ArtworksFactory.createTestData({
-          title: '비공개 작품 1',
           imageKey: 'artworks/2024/03/draft1',
           createdAt: new Date('2024-03-02'),
           playedOn: Platform.GOG,
@@ -113,7 +118,6 @@ describeWithDeps('ArtworksController', () => {
           isDraft: true,
         }),
         ArtworksFactory.createTestData({
-          title: '공개 작품 2',
           imageKey: 'artworks/2024/03/public2',
           createdAt: new Date('2024-03-03'),
           playedOn: Platform.ANDROID,
@@ -269,13 +273,17 @@ describeWithDeps('ArtworksController', () => {
     });
 
     const createDto: CreateArtworkDto = {
-      title: '테스트 작품명',
+      koTitle: '테스트 작품명',
+      enTitle: 'Test Artwork',
+      jaTitle: 'テスト作品',
       imageKey: 'artworks/2024/03/abc123def456',
       createdAt: '2024-11-01',
       playedOn: Platform.STEAM,
-      genreIds: ['genre-1'],
       rating: 18,
-      shortReview: '정말 재미있는 게임!',
+      koShortReview: '한국어 짧은 리뷰',
+      enShortReview: 'English Short Review',
+      jaShortReview: '日本語の短いレビュー',
+      genreIds: ['genre-1'],
     };
 
     it('유효한 DTO로 작품 생성 시 DB에 정상적으로 저장됨', async () => {
@@ -292,17 +300,26 @@ describeWithDeps('ArtworksController', () => {
           genres: {
             translations: true,
           },
+          translations: true,
         },
       });
 
       expect(savedArtwork).toBeDefined();
-      expect(savedArtwork.title).toBe(createDto.title);
+      expect(
+        savedArtwork.translations.find((t) => t.language === Language.KO).title,
+      ).toBe(createDto.koTitle);
+      expect(
+        savedArtwork.translations.find((t) => t.language === Language.EN).title,
+      ).toBe(createDto.enTitle);
+      expect(
+        savedArtwork.translations.find((t) => t.language === Language.JA).title,
+      ).toBe(createDto.jaTitle);
       expect(savedArtwork.genres).toHaveLength(createDto.genreIds.length);
       expect(savedArtwork.genres[0].translations).toHaveLength(3);
     });
 
     it('필수 필드 누락 시 400 에러가 반환되어야 함', async () => {
-      const { title, ...invalidDto } = createDto;
+      const { koTitle, ...invalidDto } = createDto;
 
       const response = await request(app.getHttpServer())
         .post('/artworks')

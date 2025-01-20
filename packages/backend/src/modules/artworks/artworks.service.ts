@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 
-import { In } from 'typeorm';
+import { EntityManager, In } from 'typeorm';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { EntityList } from '@/src/common/interfaces/entity-list.interface';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { GetArtworksQueryDto } from '@/src/modules/artworks/dtos/get-artworks-query.dto';
+import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
 import { Status } from '@/src/modules/artworks/enums/status.enum';
@@ -14,6 +15,7 @@ import {
   ArtworkErrorCode,
   ArtworkException,
 } from '@/src/modules/artworks/exceptions/artworks.exception';
+import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 
 @Injectable()
@@ -21,6 +23,7 @@ export class ArtworksService {
   constructor(
     private readonly artworksRepository: ArtworksRepository,
     private readonly genresRepository: GenresRepository,
+    private readonly entityManager: EntityManager,
   ) {}
 
   /**
@@ -88,25 +91,44 @@ export class ArtworksService {
    * @returns 생성된 작품
    */
   async createArtwork(dto: CreateArtworkDto): Promise<Artwork> {
-    const genres = await this.genresRepository.findBy({ id: In(dto.genreIds) });
-    if (genres.length !== dto.genreIds.length) {
-      throw new ArtworkException(
-        ArtworkErrorCode.NOT_EXISTING_GENRES_INCLUDED,
-        "Some of the provided genres don't exist in DB",
-      );
-    }
+    return this.entityManager.transaction(async (manager) => {
+      const genres = await this.genresRepository.findBy({
+        id: In(dto.genreIds),
+      });
+      if (genres.length !== dto.genreIds.length) {
+        throw new ArtworkException(
+          ArtworkErrorCode.NOT_EXISTING_GENRES_INCLUDED,
+          "Some of the provided genres don't exist in DB",
+        );
+      }
 
-    const artwork = await this.artworksRepository.createOne({
-      title: dto.title,
-      imageKey: dto.imageKey,
-      createdAt: new Date(dto.createdAt),
-      playedOn: dto.playedOn,
-      genres: genres,
-      rating: dto.rating,
-      shortReview: dto.shortReview,
-      isDraft: true, // 작품 생성 시에는 무조건 초안 상태
+      const artwork: Partial<Artwork> = {
+        imageKey: dto.imageKey,
+        createdAt: new Date(dto.createdAt),
+        playedOn: dto.playedOn,
+        rating: dto.rating,
+        isDraft: true, // 작품 생성 시에는 무조건 초안 상태
+        genres: genres,
+        translations: [
+          {
+            language: Language.KO,
+            title: dto.koTitle,
+            shortReview: dto.koShortReview,
+          },
+          {
+            language: Language.EN,
+            title: dto.enTitle,
+            shortReview: dto.enShortReview,
+          },
+          {
+            language: Language.JA,
+            title: dto.jaTitle,
+            shortReview: dto.jaShortReview,
+          },
+        ] as ArtworkTranslation[],
+      };
+
+      return await this.artworksRepository.createOne(artwork);
     });
-
-    return artwork;
   }
 }

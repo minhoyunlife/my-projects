@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
+import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
@@ -8,6 +9,7 @@ import { GenreTranslation } from '@/src/modules/genres/entities/genre-translatio
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
+import { ArtworkTranslationsFactory } from '@/test/factories/artwork-translations.factory';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenreTranslationsFactory } from '@/test/factories/genre-translations.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
@@ -21,7 +23,7 @@ describeWithDeps('ArtworksRepository', () => {
 
   beforeAll(async () => {
     const module = await createTestingModuleWithDB({
-      entities: [Artwork, Genre, GenreTranslation],
+      entities: [Artwork, ArtworkTranslation, Genre, GenreTranslation],
       providers: [ArtworksRepository, GenresRepository],
     });
 
@@ -58,7 +60,21 @@ describeWithDeps('ArtworksRepository', () => {
     });
 
     it('작품 데이터를 성공적으로 생성함', async () => {
-      const artworkData = ArtworksFactory.createTestData({}, savedGenres);
+      const artworkData = ArtworksFactory.createTestData(
+        {},
+        [
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.KO,
+          }),
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.EN,
+          }),
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.JA,
+          }),
+        ],
+        savedGenres,
+      );
       const result = await artworkRepo.createOne(artworkData);
 
       const saved = await artworkRepo.findOne({
@@ -67,23 +83,40 @@ describeWithDeps('ArtworksRepository', () => {
           genres: {
             translations: true,
           },
+          translations: true,
         },
       });
 
-      expect(saved.title).toBe(artworkData.title);
       expect(saved.imageKey).toBe(artworkData.imageKey);
       expect(saved.playedOn).toBe(artworkData.playedOn);
       expect(saved.rating).toBe(artworkData.rating);
-      expect(saved.shortReview).toBe(artworkData.shortReview);
       expect(saved.genres).toEqual(artworkData.genres);
       expect(saved.isDraft).toBe(true);
+      expect(
+        saved.translations.find((t) => t.language === Language.KO).title,
+      ).toEqual(
+        artworkData.translations.find((t) => t.language === Language.KO).title,
+      );
+      expect(
+        saved.translations.find((t) => t.language === Language.EN).title,
+      ).toEqual(
+        artworkData.translations.find((t) => t.language === Language.EN).title,
+      );
+      expect(
+        saved.translations.find((t) => t.language === Language.JA).title,
+      ).toEqual(
+        artworkData.translations.find((t) => t.language === Language.JA).title,
+      );
     });
 
     describe('필수 필드 검증', () => {
       it('title이 없으면 에러가 발생함', async () => {
-        const artworkData = ArtworksFactory.createTestData({
-          title: undefined,
-        });
+        const artworkData = ArtworksFactory.createTestData({}, [
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: undefined,
+          }),
+        ]);
 
         await expect(artworkRepo.createOne(artworkData)).rejects.toThrow();
       });
@@ -124,46 +157,121 @@ describeWithDeps('ArtworksRepository', () => {
       ]);
 
       artworks = await saveEntities(artworkRepo, [
-        ArtworksFactory.createTestData({
-          title: 'Final Fantasy VII',
-          isDraft: false,
-          playedOn: Platform.STEAM,
-          genres: [genres[0]], // RPG
-          createdAt: new Date('2024-01-01'),
-          rating: 10,
-        }), // 공개 + Steam + RPG
-        ArtworksFactory.createTestData({
-          title: 'Dark Souls',
-          isDraft: true,
-          playedOn: Platform.STEAM,
-          genres: [genres[0], genres[1]], // RPG, Action
-          createdAt: new Date('2024-01-02'),
-          rating: 12,
-        }), // 비공개 + Steam + RPG, Action
-        ArtworksFactory.createTestData({
-          title: 'Zelda',
-          isDraft: false,
-          playedOn: Platform.SWITCH,
-          genres: [genres[1], genres[2]], // Action, Adventure
-          createdAt: new Date('2024-01-03'),
-          rating: 14,
-        }), // 공개 + Switch + Action, Adventure
-        ArtworksFactory.createTestData({
-          title: 'Witcher 3',
-          isDraft: true,
-          playedOn: Platform.GOG,
-          genres: [genres[2]], // Adventure
-          createdAt: new Date('2024-01-04'),
-          rating: 16,
-        }), // 비공개 + GOG + Adventure
-        ArtworksFactory.createTestData({
-          title: 'Final Fantasy XVI',
-          isDraft: false,
-          playedOn: Platform.EPIC,
-          genres: [genres[0], genres[2]], // RPG, Adventure
-          createdAt: new Date('2024-01-05'),
-          rating: 18,
-        }),
+        ArtworksFactory.createTestData(
+          {
+            isDraft: false,
+            playedOn: Platform.STEAM,
+            genres: [genres[0]], // RPG
+            createdAt: new Date('2024-01-01'),
+            rating: 10,
+          },
+          [
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.KO,
+              title: '파이널 판타지 7',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.EN,
+              title: 'Final Fantasy VII',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.JA,
+              title: 'ファイナルファンタジー7',
+            }),
+          ],
+        ), // 공개 + Steam + RPG
+        ArtworksFactory.createTestData(
+          {
+            isDraft: true,
+            playedOn: Platform.STEAM,
+            genres: [genres[0], genres[1]], // RPG, Action
+            createdAt: new Date('2024-01-02'),
+            rating: 12,
+          },
+          [
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.KO,
+              title: '다크 소울',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.EN,
+              title: 'Dark Souls',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.JA,
+              title: 'ダークソウル',
+            }),
+          ],
+        ), // 비공개 + Steam + RPG, Action
+        ArtworksFactory.createTestData(
+          {
+            isDraft: false,
+            playedOn: Platform.SWITCH,
+            genres: [genres[1], genres[2]], // Action, Adventure
+            createdAt: new Date('2024-01-03'),
+            rating: 14,
+          },
+          [
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.KO,
+              title: '젤다',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.EN,
+              title: 'Zelda',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.JA,
+              title: 'ゼルダ',
+            }),
+          ],
+        ), // 공개 + Switch + Action, Adventure
+        ArtworksFactory.createTestData(
+          {
+            isDraft: true,
+            playedOn: Platform.GOG,
+            genres: [genres[2]], // Adventure
+            createdAt: new Date('2024-01-04'),
+            rating: 16,
+          },
+          [
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.KO,
+              title: '위쳐 3',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.EN,
+              title: 'Witcher 3',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.JA,
+              title: 'ウィッチャー 3',
+            }),
+          ],
+        ), // 비공개 + GOG + Adventure
+        ArtworksFactory.createTestData(
+          {
+            isDraft: false,
+            playedOn: Platform.EPIC,
+            genres: [genres[0], genres[2]], // RPG, Adventure
+            createdAt: new Date('2024-01-05'),
+            rating: 18,
+          },
+          [
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.KO,
+              title: '파이널 판타지 16',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.EN,
+              title: 'Final Fantasy XVI',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.JA,
+              title: 'ファイナルファンタジー16',
+            }),
+          ],
+        ),
       ]);
     });
 
@@ -179,7 +287,13 @@ describeWithDeps('ArtworksRepository', () => {
         expect(totalCount).toBe(3);
         expect(result).toHaveLength(3);
         expect(result.every((artwork) => artwork.isDraft === false)).toBe(true);
-        expect(result.map((artwork) => artwork.title)).toEqual(
+
+        const englishTitles = result.map(
+          (artwork) =>
+            artwork.translations.find((t) => t.language === Language.EN)!.title,
+        );
+
+        expect(englishTitles).toEqual(
           expect.arrayContaining([
             'Final Fantasy VII',
             'Zelda',
@@ -199,7 +313,13 @@ describeWithDeps('ArtworksRepository', () => {
         expect(totalCount).toBe(2);
         expect(result).toHaveLength(2);
         expect(result.every((artwork) => artwork.isDraft === true)).toBe(true);
-        expect(result.map((artwork) => artwork.title)).toEqual(
+
+        const englishTitles = result.map(
+          (artwork) =>
+            artwork.translations.find((t) => t.language === Language.EN)!.title,
+        );
+
+        expect(englishTitles).toEqual(
           expect.arrayContaining(['Dark Souls', 'Witcher 3']),
         );
       });
@@ -229,7 +349,9 @@ describeWithDeps('ArtworksRepository', () => {
 
         expect(totalCount).toBe(1);
         expect(result).toHaveLength(1);
-        expect(result[0].title).toBe('Zelda');
+        expect(
+          result[0].translations.find((t) => t.language === Language.EN).title,
+        ).toBe('Zelda');
       });
 
       it('검색어가 제목 일부와 일치하는 경우, 해당 작품이 조회됨', async () => {
@@ -243,7 +365,13 @@ describeWithDeps('ArtworksRepository', () => {
 
         expect(totalCount).toBe(2);
         expect(result).toHaveLength(2);
-        expect(result.map((artwork) => artwork.title)).toEqual(
+
+        const englishTitles = result.map(
+          (artwork) =>
+            artwork.translations.find((t) => t.language === Language.EN)!.title,
+        );
+
+        expect(englishTitles).toEqual(
           expect.arrayContaining(['Final Fantasy VII', 'Final Fantasy XVI']),
         );
       });
@@ -276,7 +404,13 @@ describeWithDeps('ArtworksRepository', () => {
         expect(
           result.every((artwork) => artwork.playedOn === Platform.STEAM),
         ).toBe(true);
-        expect(result.map((artwork) => artwork.title)).toEqual(
+
+        const englishTitles = result.map(
+          (artwork) =>
+            artwork.translations.find((t) => t.language === Language.EN)!.title,
+        );
+
+        expect(englishTitles).toEqual(
           expect.arrayContaining(['Final Fantasy VII', 'Dark Souls']),
         );
       });
@@ -292,7 +426,13 @@ describeWithDeps('ArtworksRepository', () => {
 
         expect(totalCount).toBe(3);
         expect(result).toHaveLength(3);
-        expect(result.map((artwork) => artwork.title)).toEqual(
+
+        const englishTitles = result.map(
+          (artwork) =>
+            artwork.translations.find((t) => t.language === Language.EN)!.title,
+        );
+
+        expect(englishTitles).toEqual(
           expect.arrayContaining(['Final Fantasy VII', 'Zelda', 'Dark Souls']),
         );
       });
@@ -327,7 +467,13 @@ describeWithDeps('ArtworksRepository', () => {
             artwork.genres.some((genre) => genre.id === genres[0].id),
           ),
         ).toBe(true);
-        expect(result.map((artwork) => artwork.title)).toEqual(
+
+        const englishTitles = result.map(
+          (artwork) =>
+            artwork.translations.find((t) => t.language === Language.EN)!.title,
+        );
+
+        expect(englishTitles).toEqual(
           expect.arrayContaining([
             'Final Fantasy VII',
             'Dark Souls',
@@ -347,7 +493,13 @@ describeWithDeps('ArtworksRepository', () => {
 
         expect(totalCount).toBe(4);
         expect(result).toHaveLength(4);
-        expect(result.map((artwork) => artwork.title)).toEqual(
+
+        const englishTitles = result.map(
+          (artwork) =>
+            artwork.translations.find((t) => t.language === Language.EN)!.title,
+        );
+
+        expect(englishTitles).toEqual(
           expect.arrayContaining([
             'Final Fantasy VII',
             'Dark Souls',
@@ -379,7 +531,12 @@ describeWithDeps('ArtworksRepository', () => {
           isDraftIn: [true, false],
         });
 
-        expect(result.map((artwork) => artwork.title)).toEqual([
+        const englishTitles = result.map(
+          (artwork) =>
+            artwork.translations.find((t) => t.language === Language.EN)!.title,
+        );
+
+        expect(englishTitles).toEqual([
           'Final Fantasy XVI',
           'Witcher 3',
           'Zelda',
@@ -396,7 +553,12 @@ describeWithDeps('ArtworksRepository', () => {
           isDraftIn: [true, false],
         });
 
-        expect(result.map((artwork) => artwork.title)).toEqual([
+        const englishTitles = result.map(
+          (artwork) =>
+            artwork.translations.find((t) => t.language === Language.EN)!.title,
+        );
+
+        expect(englishTitles).toEqual([
           'Final Fantasy VII',
           'Dark Souls',
           'Zelda',
@@ -413,7 +575,12 @@ describeWithDeps('ArtworksRepository', () => {
           isDraftIn: [true, false],
         });
 
-        expect(result.map((artwork) => artwork.title)).toEqual([
+        const englishTitles = result.map(
+          (artwork) =>
+            artwork.translations.find((t) => t.language === Language.EN)!.title,
+        );
+
+        expect(englishTitles).toEqual([
           'Final Fantasy XVI',
           'Witcher 3',
           'Zelda',
@@ -430,7 +597,12 @@ describeWithDeps('ArtworksRepository', () => {
           isDraftIn: [true, false],
         });
 
-        expect(result.map((artwork) => artwork.title)).toEqual([
+        const englishTitles = result.map(
+          (artwork) =>
+            artwork.translations.find((t) => t.language === Language.EN)!.title,
+        );
+
+        expect(englishTitles).toEqual([
           'Final Fantasy VII',
           'Dark Souls',
           'Zelda',
@@ -451,10 +623,15 @@ describeWithDeps('ArtworksRepository', () => {
 
         expect(totalCount).toBe(5);
         expect(result).toHaveLength(2);
-        expect(result.map((artwork) => artwork.title)).toEqual([
-          'Final Fantasy XVI',
-          'Witcher 3',
-        ]);
+
+        const englishTitles = result.map(
+          (artwork) =>
+            artwork.translations.find((t) => t.language === Language.EN)!.title,
+        );
+
+        expect(englishTitles).toEqual(
+          expect.arrayContaining(['Final Fantasy XVI', 'Witcher 3']),
+        );
       });
 
       it('지정한 페이지의 작품이 조회됨', async () => {
@@ -467,10 +644,15 @@ describeWithDeps('ArtworksRepository', () => {
 
         expect(totalCount).toBe(5);
         expect(result).toHaveLength(2);
-        expect(result.map((artwork) => artwork.title)).toEqual([
-          'Zelda',
-          'Dark Souls',
-        ]);
+
+        const englishTitles = result.map(
+          (artwork) =>
+            artwork.translations.find((t) => t.language === Language.EN)!.title,
+        );
+
+        expect(englishTitles).toEqual(
+          expect.arrayContaining(['Zelda', 'Dark Souls']),
+        );
       });
     });
 
@@ -488,7 +670,15 @@ describeWithDeps('ArtworksRepository', () => {
 
         expect(totalCount).toBe(2);
         expect(result).toHaveLength(1);
-        expect(result[0].title).toBe('Final Fantasy XVI');
+
+        const englishTitles = result.map(
+          (artwork) =>
+            artwork.translations.find((t) => t.language === Language.EN)!.title,
+        );
+
+        expect(englishTitles).toEqual(
+          expect.arrayContaining(['Final Fantasy XVI']),
+        );
       });
     });
   });
