@@ -2,9 +2,13 @@ import { DataSource } from 'typeorm';
 
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 =======
 >>>>>>> 3ddd721 (chore: move current entity to sub folder)
+=======
+import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
+>>>>>>> e9fd285 (chore: modify service and repository related to artworks)
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';

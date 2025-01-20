@@ -1,9 +1,13 @@
 import { DataSource, In, Repository } from 'typeorm';
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 =======
 >>>>>>> 3ddd721 (chore: move current entity to sub folder)
+=======
+import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
+>>>>>>> e9fd285 (chore: modify service and repository related to artworks)
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
