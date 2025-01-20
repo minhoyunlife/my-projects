@@ -1,7 +1,7 @@
 import { Entity, Index, ManyToMany, OneToMany } from 'typeorm';
 
 import { NanoId } from '@/src/common/decorators/id.decorator';
-import { Artwork } from '@/src/modules/artworks/artworks.entity';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 
 /**

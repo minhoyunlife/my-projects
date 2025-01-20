@@ -1,11 +1,13 @@
 import { DataSource, In, Repository } from 'typeorm';
 
-import { Artwork } from '@/src/modules/artworks/artworks.entity';
+import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenreException } from '@/src/modules/genres/exceptions/genres.exception';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
+import { ArtworkTranslationsFactory } from '@/test/factories/artwork-translations.factory';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
 import { clearTables, saveEntities } from '@/test/utils/database.util';
@@ -20,7 +22,7 @@ describeWithDeps('GenresRepository', () => {
 
   beforeAll(async () => {
     const module = await createTestingModuleWithDB({
-      entities: [Genre, GenreTranslation, Artwork],
+      entities: [Genre, GenreTranslation, Artwork, ArtworkTranslation],
       providers: [GenresRepository],
     });
 
@@ -426,7 +428,21 @@ describeWithDeps('GenresRepository', () => {
       ]);
 
       await saveEntities(artworkRepo, [
-        ArtworksFactory.createTestData({}, [genres[2]]),
+        ArtworksFactory.createTestData(
+          {},
+          [
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.KO,
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.EN,
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.JA,
+            }),
+          ],
+          [genres[2]],
+        ),
       ]);
     });
 

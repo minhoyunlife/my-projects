@@ -1,7 +1,7 @@
 import { EntityManager } from 'typeorm';
 
 import { TransactionalRepository } from '@/src/common/repositories/transactional.repository';
-import { Artwork } from '@/src/modules/artworks/artworks.entity';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 
@@ -59,7 +59,7 @@ describeWithoutDeps('TransactionalRepository', () => {
             mockArtworkRepository.forTransaction(entityManager);
           const txGenreRepo = mockGenreRepository.forTransaction(entityManager);
 
-          await txArtworkRepo.save({ title: 'Test Artwork' });
+          await txArtworkRepo.save({ imageKey: 'test-key' });
           await txGenreRepo.save({
             translations: [
               { language: 'ko', name: '테스트 장르' },

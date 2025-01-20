@@ -4,7 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { Repository } from 'typeorm';
 
-import { Artwork } from '@/src/modules/artworks/artworks.entity';
+import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
@@ -21,6 +22,8 @@ export class SeedService {
     private readonly artworkRepository: Repository<Artwork>,
     @InjectRepository(Genre)
     private readonly genreRepository: Repository<Genre>,
+    @InjectRepository(ArtworkTranslation)
+    private readonly artworkTranslationRepository: Repository<ArtworkTranslation>,
     @InjectRepository(GenreTranslation)
     private readonly genreTranslationRepository: Repository<GenreTranslation>,
     private readonly configService: ConfigService,
@@ -34,7 +37,7 @@ export class SeedService {
 
     await this.createAdministrator();
     const genres = await this.createGenres();
-    if (genres) {
+    if (genres.length > 0) {
       await this.createArtworks(genres);
     }
   }
@@ -54,8 +57,6 @@ export class SeedService {
       return;
     }
 
-    await this.administratorRepository.delete({});
-
     await this.administratorRepository.save({ email: adminEmail });
   }
 
@@ -63,10 +64,8 @@ export class SeedService {
     const existingGenres = await this.genreRepository.count();
     if (existingGenres > 0) {
       console.log('Genre data already exist. Pass seeding data.');
-      return;
+      return this.genreRepository.find({ relations: { translations: true } });
     }
-
-    await this.genreRepository.delete({});
 
     const genres: Genre[] = [];
 
@@ -98,8 +97,6 @@ export class SeedService {
       return;
     }
 
-    await this.artworkRepository.delete({});
-
     const genreMap = new Map(
       genres.map((g) => [
         g.translations.find((t) => t.language === 'en')!.name,
@@ -107,20 +104,30 @@ export class SeedService {
       ]),
     );
 
-    const artworksData = ARTWORKS.map((seed) => ({
-      title: seed.title,
-      imageKey: 'example-key',
-      imageUrl: `http://example.com/images/${encodeURIComponent(seed.title)}.png`,
-      genres: seed.genres.map((name) => genreMap.get(name)!),
-      playedOn: seed.playedOn,
-      rating: seed.rating,
-      shortReview: seed.shortReview,
-      isDraft: seed.isDraft,
-      createdAt: new Date(seed.createdAt),
-    }));
+    for (const seed of ARTWORKS) {
+      const artwork = this.artworkRepository.create({
+        imageKey: 'example-key',
+        genres: seed.genres.map((name) => genreMap.get(name)!),
+        playedOn: seed.playedOn,
+        rating: seed.rating,
+        isDraft: seed.isDraft,
+        createdAt: new Date(seed.createdAt),
+      });
 
-    for (const data of artworksData) {
-      await this.artworkRepository.save(this.artworkRepository.create(data));
+      await this.artworkRepository.save(artwork);
+
+      const translations = Object.entries(seed.translations).map(
+        ([language, content]) =>
+          this.artworkTranslationRepository.create({
+            artworkId: artwork.id,
+            language: language as Language,
+            title: content.title,
+            shortReview: content.shortReview,
+            artwork,
+          }),
+      );
+
+      await this.artworkTranslationRepository.save(translations);
     }
   }
 }

@@ -10,6 +10,7 @@ import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
 import { Status } from '@/src/modules/artworks/enums/status.enum';
 import { ArtworkException } from '@/src/modules/artworks/exceptions/artworks.exception';
+import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
 
@@ -223,10 +224,15 @@ describeWithoutDeps('ArtworksService', () => {
     const findByMock = vi.fn();
 
     const dto: CreateArtworkDto = {
-      title: '테스트 작품',
       imageKey: 'artworks/2024/03/abc123def456',
       playedOn: Platform.STEAM,
       genreIds: ['genre-1'],
+      koTitle: '테스트 작품',
+      koShortReview: '한국어 리뷰입니다',
+      enTitle: 'Test Artwork',
+      enShortReview: 'This is English review',
+      jaTitle: 'テスト作品',
+      jaShortReview: '日本語レビューです',
     };
 
     beforeEach(() => {
@@ -242,19 +248,35 @@ describeWithoutDeps('ArtworksService', () => {
         {
           id: 'genre-1',
           translations: [
-            { language: 'ko', name: '롤플레잉' },
-            { language: 'en', name: 'RPG' },
-            { language: 'ja', name: 'ロールプレイング' },
+            { language: Language.KO, name: '롤플레잉' },
+            { language: Language.EN, name: 'RPG' },
+            { language: Language.JA, name: 'ロールプレイング' },
           ],
         },
       ];
 
       const expectedArtwork = {
         id: 'artwork-1',
-        title: dto.title,
         imageKey: dto.imageKey,
         playedOn: dto.playedOn,
         genres: mockGenres,
+        translations: [
+          {
+            language: Language.KO,
+            title: dto.koTitle,
+            shortReview: dto.koShortReview,
+          },
+          {
+            language: Language.EN,
+            title: dto.enTitle,
+            shortReview: dto.enShortReview,
+          },
+          {
+            language: Language.JA,
+            title: dto.jaTitle,
+            shortReview: dto.jaShortReview,
+          },
+        ],
       };
 
       findByMock.mockResolvedValue(mockGenres);

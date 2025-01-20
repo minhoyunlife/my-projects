@@ -1,30 +1,41 @@
-import { Artwork } from '@/src/modules/artworks/artworks.entity';
 import {
   ArtworkListResponse,
   ArtworkResponse,
 } from '@/src/modules/artworks/dtos/artwork-response.dto';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { GenreResponse } from '@/src/modules/genres/dtos/genre-response.dto';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
+import { Language } from '@/src/modules/genres/enums/language.enum';
+import { ArtworkTranslationsFactory } from '@/test/factories/artwork-translations.factory';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
 
 describeWithoutDeps('ArtworkResponse', () => {
   const genres = [GenresFactory.createTestData({ id: 'some-nanoid' }) as Genre];
-  const artwork = ArtworksFactory.createTestData({
-    id: 'some-nanoid',
-    isDraft: true,
+  const artwork = ArtworksFactory.createTestData(
+    {
+      id: 'some-nanoid',
+      isDraft: true,
+    },
+    [
+      ArtworkTranslationsFactory.createTestData({
+        language: Language.KO,
+      }),
+      ArtworkTranslationsFactory.createTestData({
+        language: Language.EN,
+      }),
+      ArtworkTranslationsFactory.createTestData({
+        language: Language.JA,
+      }),
+    ],
     genres,
-  }) as Artwork;
+  ) as Artwork;
 
   describe('ArtworkResponse', () => {
     const response = new ArtworkResponse(artwork);
 
     it('엔티티의 속성 값대로 id 가 반환됨', () => {
       expect(response.id).toBe(artwork.id);
-    });
-
-    it('엔티티의 속성 값대로 title 이 반환됨', () => {
-      expect(response.title).toBe(artwork.title);
     });
 
     // TODO: 액세스 가능한 URL 로 변환하는 처리 구현 후 수정할 것.
@@ -47,38 +58,6 @@ describeWithoutDeps('ArtworkResponse', () => {
         );
 
         expect(responseWithNullCreatedAt.createdAt).toBe('');
-      });
-    });
-
-    describe('genres', () => {
-      it('엔티티의 속성 값이 존재하는 경우, GenreResponse 인스턴스의 배열이 반환됨', () => {
-        expect(response.genres).toEqual(
-          genres.map((genre) => new GenreResponse(genre)),
-        );
-      });
-
-      it('엔티티의 속성 값이 미정의인 경우, 빈 배열이 반환됨', () => {
-        const artworkWithUndefinedGenres = ArtworksFactory.createTestData({
-          genres: undefined,
-        }) as Artwork;
-
-        const responseWithUndefinedGenres = new ArtworkResponse(
-          artworkWithUndefinedGenres,
-        );
-
-        expect(responseWithUndefinedGenres.genres).toEqual([]);
-      });
-
-      it('엔티티의 속성 값이 빈 배열인 경우, 빈 배열이 반환됨', () => {
-        const artworkWithEmptyGenres = ArtworksFactory.createTestData({
-          genres: [],
-        }) as Artwork;
-
-        const responseWithEmptyGenres = new ArtworkResponse(
-          artworkWithEmptyGenres,
-        );
-
-        expect(responseWithEmptyGenres.genres).toEqual([]);
       });
     });
 
@@ -118,26 +97,59 @@ describeWithoutDeps('ArtworkResponse', () => {
       });
     });
 
-    describe('shortReview', () => {
-      it('엔티티의 속성 값이 존재하는 경우, shortReview 가 반환됨', () => {
-        expect(response.shortReview).toBe(artwork.shortReview);
+    it('엔티티의 속성 값대로 isDraft 가 반환됨', () => {
+      expect(response.isDraft).toBe(artwork.isDraft);
+    });
+
+    describe('translations', () => {
+      it('엔티티에 속성 값이 존재하는 경우, translations 가 반환됨', () => {
+        expect(response.translations).toHaveLength(3);
       });
 
-      it('엔티티의 속성 값이 존재하지 않는 경우, 빈 문자열이 반환됨', () => {
-        const artworkWithNullShortReview = ArtworksFactory.createTestData({
-          shortReview: null,
-        }) as Artwork;
+      it('엔티티에 속성 값이 존재하지 않는 경우, translations 이 빈 배열로 반환됨', () => {
+        const artworkWithNullTranslations = ArtworksFactory.createTestData(
+          {},
+          null,
+        ) as Artwork;
 
-        const responseWithNullShortReview = new ArtworkResponse(
-          artworkWithNullShortReview,
+        const responseWithNullTranslations = new ArtworkResponse(
+          artworkWithNullTranslations,
         );
 
-        expect(responseWithNullShortReview.shortReview).toBe('');
+        expect(responseWithNullTranslations.translations).toEqual([]);
       });
     });
 
-    it('엔티티의 속성 값대로 isDraft 가 반환됨', () => {
-      expect(response.isDraft).toBe(artwork.isDraft);
+    describe('genres', () => {
+      it('엔티티의 속성 값이 존재하는 경우, GenreResponse 인스턴스의 배열이 반환됨', () => {
+        expect(response.genres).toEqual(
+          genres.map((genre) => new GenreResponse(genre)),
+        );
+      });
+
+      it('엔티티의 속성 값이 미정의인 경우, 빈 배열이 반환됨', () => {
+        const artworkWithUndefinedGenres = ArtworksFactory.createTestData({
+          genres: undefined,
+        }) as Artwork;
+
+        const responseWithUndefinedGenres = new ArtworkResponse(
+          artworkWithUndefinedGenres,
+        );
+
+        expect(responseWithUndefinedGenres.genres).toEqual([]);
+      });
+
+      it('엔티티의 속성 값이 빈 배열인 경우, 빈 배열이 반환됨', () => {
+        const artworkWithEmptyGenres = ArtworksFactory.createTestData({
+          genres: [],
+        }) as Artwork;
+
+        const responseWithEmptyGenres = new ArtworkResponse(
+          artworkWithEmptyGenres,
+        );
+
+        expect(responseWithEmptyGenres.genres).toEqual([]);
+      });
     });
   });
 

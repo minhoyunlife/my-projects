@@ -2,7 +2,7 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 
-import type { GetArtworks200ResponseItemsInnerAllOfGenresInner } from "@minhoyunlife/my-ts-client";
+import type { GetArtworks200ResponseItemsInnerGenresInner } from "@minhoyunlife/my-ts-client";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
 import type { Genre } from "@/src/app/(authenticated)/genres/(actions)/update";
@@ -19,10 +19,11 @@ interface GenreColumnProps {
   onDeleteClick: (id: string) => void;
 }
 
+// TODO: ColumnDef type 을 현재로서는 생성된 클라이언트에 의존하고 있으나, 마음에 안 듦.
 export const genreColumns = ({
   onEditClick,
   onDeleteClick,
-}: GenreColumnProps): ColumnDef<GetArtworks200ResponseItemsInnerAllOfGenresInner>[] => [
+}: GenreColumnProps): ColumnDef<GetArtworks200ResponseItemsInnerGenresInner>[] => [
   {
     id: "koName",
     header: "한국어",

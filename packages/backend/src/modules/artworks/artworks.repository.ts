@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 
 import { TransactionalRepository } from '@/src/common/repositories/transactional.repository';
-import { Artwork } from '@/src/modules/artworks/artworks.entity';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
 
@@ -42,7 +42,8 @@ export class ArtworksRepository extends TransactionalRepository<Artwork> {
   }): Promise<[Artwork[], number]> {
     let query = this.createQueryBuilder('artwork')
       .leftJoinAndSelect('artwork.genres', 'genre')
-      .leftJoinAndSelect('genre.translations', 'translation');
+      .leftJoinAndSelect('genre.translations', 'translation')
+      .leftJoinAndSelect('artwork.translations', 'artworkTranslation');
 
     if (filters.genreIds?.length) {
       // 일단 특정 장르를 가진 작품의 ID만 조회 후,
@@ -63,9 +64,12 @@ export class ArtworksRepository extends TransactionalRepository<Artwork> {
     });
 
     if (filters.search) {
-      query.andWhere('artwork.title ILIKE :search', {
-        search: `%${filters.search}%`,
-      });
+      query.innerJoin(
+        'artwork.translations',
+        'searchTranslation',
+        'searchTranslation.title ILIKE :search',
+        { search: `%${filters.search}%` },
+      );
     }
 
     if (filters.platforms?.length) {

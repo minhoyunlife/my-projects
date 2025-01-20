@@ -19,22 +19,27 @@ export class CreateArtworkDto {
   @NormalizeWhitespace()
   @IsNotEmpty()
   @IsString()
-  title: string;
+  imageKey: string;
 
   @NormalizeWhitespace()
   @IsNotEmpty()
   @IsString()
-  imageKey: string;
+  koTitle: string;
+
+  @NormalizeWhitespace()
+  @IsNotEmpty()
+  @IsString()
+  enTitle: string;
+
+  @NormalizeWhitespace()
+  @IsNotEmpty()
+  @IsString()
+  jaTitle: string;
 
   @NormalizeWhitespace()
   @IsOptional()
   @IsDateString()
   createdAt?: string;
-
-  @IsArray()
-  @IsString({ each: true })
-  @ArrayNotEmpty()
-  genreIds: string[];
 
   @IsOptional()
   @IsEnum(Platform)
@@ -50,5 +55,22 @@ export class CreateArtworkDto {
   @IsOptional()
   @IsString()
   @MinLength(1)
-  shortReview?: string;
+  koShortReview?: string;
+
+  @NormalizeWhitespace()
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  enShortReview?: string;
+
+  @NormalizeWhitespace()
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  jaShortReview?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayNotEmpty()
+  genreIds: string[];
 }

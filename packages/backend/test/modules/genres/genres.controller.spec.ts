@@ -4,7 +4,8 @@ import request from 'supertest';
 import { DataSource, In, Repository } from 'typeorm';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
-import { Artwork } from '@/src/modules/artworks/artworks.entity';
+import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
 import { TokenErrorCode } from '@/src/modules/auth/exceptions/token.exception';
@@ -19,6 +20,7 @@ import { GenresController } from '@/src/modules/genres/genres.controller';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { GenresService } from '@/src/modules/genres/genres.service';
 import { AdministratorsFactory } from '@/test/factories/administrator.factory';
+import { ArtworkTranslationsFactory } from '@/test/factories/artwork-translations.factory';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
 import { createTestAccessToken } from '@/test/utils/auth.util';
@@ -38,7 +40,13 @@ describeWithDeps('GenresController', () => {
 
   beforeAll(async () => {
     app = await createTestingApp({
-      entities: [Genre, GenreTranslation, Artwork, Administrator],
+      entities: [
+        Genre,
+        GenreTranslation,
+        Artwork,
+        ArtworkTranslation,
+        Administrator,
+      ],
       controllers: [GenresController],
       providers: [GenresService, GenresRepository],
     });
@@ -440,7 +448,21 @@ describeWithDeps('GenresController', () => {
       ]);
 
       await saveEntities(artworkRepository, [
-        ArtworksFactory.createTestData({}, [genres[2]]),
+        ArtworksFactory.createTestData(
+          {},
+          [
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.KO,
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.EN,
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.JA,
+            }),
+          ],
+          [genres[2]],
+        ),
       ]);
     });
 
@@ -470,7 +492,7 @@ describeWithDeps('GenresController', () => {
         .query({ ids: [] })
         .expect(400);
 
-      // await expect(response).toMatchOpenAPISpec();
+      await expect(response).toMatchOpenAPISpec();
     });
 
     it('인증에 실패한 경우, 401 에러가 반환됨', async () => {
@@ -480,7 +502,7 @@ describeWithDeps('GenresController', () => {
         .query({ ids: [genres[0].id, genres[1].id] })
         .expect(401);
 
-      // await expect(response).toMatchOpenAPISpec();
+      await expect(response).toMatchOpenAPISpec();
     });
 
     it('존재하지 않는 ID로 장르 삭제 시 404 에러가 반환됨', async () => {
@@ -492,7 +514,7 @@ describeWithDeps('GenresController', () => {
         .query({ ids: ['invalid-id'] })
         .expect(404);
 
-      // await expect(response).toMatchOpenAPISpec();
+      await expect(response).toMatchOpenAPISpec();
     });
 
     it('작품에서 사용중인 장르를 지정할 경우, 409 에러가 반환됨', async () => {
@@ -504,7 +526,7 @@ describeWithDeps('GenresController', () => {
         .query({ ids: [genres[2].id] })
         .expect(409);
 
-      // await expect(response).toMatchOpenAPISpec();
+      await expect(response).toMatchOpenAPISpec();
     });
   });
 });
