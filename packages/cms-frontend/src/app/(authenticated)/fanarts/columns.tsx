@@ -39,7 +39,10 @@ export const columns: ColumnDef<GetArtworks200ResponseItemsInner>[] = [
     cell: ({ row }) => (
       <Image
         src={row.original.imageUrl}
-        alt={row.original.title || ""}
+        alt={
+          row.original.translations.find((t) => t.language === "en")?.title ||
+          ""
+        }
         width={64}
         height={64}
         className="object-cover rounded"
@@ -47,8 +50,10 @@ export const columns: ColumnDef<GetArtworks200ResponseItemsInner>[] = [
     ),
   },
   {
-    accessorKey: "title",
+    id: "title",
     header: "제목",
+    cell: ({ row }) =>
+      row.original.translations.find((t) => t.language === "ko")?.title || "",
   },
   {
     id: "genres",
