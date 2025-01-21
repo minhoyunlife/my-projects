@@ -253,28 +253,6 @@ describeWithoutDeps('CreateArtworkDto', () => {
 
       expect(errors).toHaveLength(0);
     });
-
-    it('값의 길이가 0인 경우, 에러가 발생함', async () => {
-      const dto = createDto(CreateArtworkDto, validDtoData, {
-        koShortReview: '',
-      });
-      const errors = await validate(dto);
-
-      expect(errors).toHaveLength(1);
-      expect(errors[0].property).toBe('koShortReview');
-      expect(errors[0].constraints).toHaveProperty('minLength');
-    });
-
-    it('값이 화이트 스페이스로만 이뤄진 경우, 에러가 발생함', async () => {
-      const dto = createDto(CreateArtworkDto, validDtoData, {
-        koShortReview: '　',
-      });
-      const errors = await validate(dto);
-
-      expect(errors).toHaveLength(1);
-      expect(errors[0].property).toBe('koShortReview');
-      expect(errors[0].constraints).toHaveProperty('minLength');
-    });
   });
 
   describe('enShortReview', () => {
@@ -292,28 +270,6 @@ describeWithoutDeps('CreateArtworkDto', () => {
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(0);
-    });
-
-    it('값의 길이가 0인 경우, 에러가 발생함', async () => {
-      const dto = createDto(CreateArtworkDto, validDtoData, {
-        enShortReview: '',
-      });
-      const errors = await validate(dto);
-
-      expect(errors).toHaveLength(1);
-      expect(errors[0].property).toBe('enShortReview');
-      expect(errors[0].constraints).toHaveProperty('minLength');
-    });
-
-    it('값이 화이트 스페이스로만 이뤄진 경우, 에러가 발생함', async () => {
-      const dto = createDto(CreateArtworkDto, validDtoData, {
-        enShortReview: '　',
-      });
-      const errors = await validate(dto);
-
-      expect(errors).toHaveLength(1);
-      expect(errors[0].property).toBe('enShortReview');
-      expect(errors[0].constraints).toHaveProperty('minLength');
     });
   });
 
@@ -333,28 +289,6 @@ describeWithoutDeps('CreateArtworkDto', () => {
 
       expect(errors).toHaveLength(0);
     });
-
-    it('값의 길이가 0인 경우, 에러가 발생함', async () => {
-      const dto = createDto(CreateArtworkDto, validDtoData, {
-        jaShortReview: '',
-      });
-      const errors = await validate(dto);
-
-      expect(errors).toHaveLength(1);
-      expect(errors[0].property).toBe('jaShortReview');
-      expect(errors[0].constraints).toHaveProperty('minLength');
-    });
-
-    it('값이 화이트 스페이스로만 이뤄진 경우, 에러가 발생함', async () => {
-      const dto = createDto(CreateArtworkDto, validDtoData, {
-        jaShortReview: '　',
-      });
-      const errors = await validate(dto);
-
-      expect(errors).toHaveLength(1);
-      expect(errors[0].property).toBe('jaShortReview');
-      expect(errors[0].constraints).toHaveProperty('minLength');
-    });
   });
 
   describe('genreIds', () => {
@@ -365,11 +299,11 @@ describeWithoutDeps('CreateArtworkDto', () => {
       expect(errors).toHaveLength(0);
     });
 
-    it('값이 빈 배열인 경우, 에러가 발생함', async () => {
+    it('값이 빈 배열인 경우, 에러가 발생하지 않음', async () => {
       const dto = createDto(CreateArtworkDto, validDtoData, { genreIds: [] });
       const errors = await validate(dto);
 
-      expect(errors).toHaveLength(1);
+      expect(errors).toHaveLength(0);
     });
 
     it('값이 생략된 경우, 에러가 발생함', async () => {

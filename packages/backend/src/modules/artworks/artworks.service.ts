@@ -119,7 +119,7 @@ export class ArtworksService {
 
       const artwork: Partial<Artwork> = {
         imageKey: dto.imageKey,
-        createdAt: new Date(dto.createdAt),
+        createdAt: dto.createdAt ? new Date(dto.createdAt) : null,
         playedOn: dto.playedOn,
         rating: dto.rating,
         isDraft: true, // 작품 생성 시에는 무조건 초안 상태

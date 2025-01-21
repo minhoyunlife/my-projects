@@ -51,26 +51,22 @@ export class CreateArtworkDto {
   @Max(20)
   rating?: number;
 
-  @NormalizeWhitespace()
   @IsOptional()
+  @NormalizeWhitespace()
   @IsString()
-  @MinLength(1)
   koShortReview?: string;
 
-  @NormalizeWhitespace()
   @IsOptional()
+  @NormalizeWhitespace()
   @IsString()
-  @MinLength(1)
   enShortReview?: string;
 
-  @NormalizeWhitespace()
   @IsOptional()
+  @NormalizeWhitespace()
   @IsString()
-  @MinLength(1)
   jaShortReview?: string;
 
   @IsArray()
   @IsString({ each: true })
-  @ArrayNotEmpty()
   genreIds: string[];
 }
