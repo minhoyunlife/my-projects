@@ -54,7 +54,6 @@ export class StorageService {
     return { imageKey };
   }
 
-  // TODO: 일단 스케치
   getImageUrl(imageKey: string): string {
     const cloudfrontDomain = this.configService.get('s3.cloudfrontDomain');
     return `https://${cloudfrontDomain}/${imageKey}`;

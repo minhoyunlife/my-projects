@@ -1,5 +1,10 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+import { Injectable } from '@nestjs/common';
+
+>>>>>>> fdaa943 (feat: enable to show images through cloudfront)
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 =======
 >>>>>>> 3ddd721 (chore: move current entity to sub folder)
@@ -8,7 +13,9 @@ import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-tran
 >>>>>>> 6a6af5c (chore: modify dtos related to artworks)
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { GenreResponse } from '@/src/modules/genres/dtos/genre-response.dto';
+import { StorageService } from '@/src/modules/storage/storage.service';
 
+@Injectable()
 export class ArtworkResponse {
   id: string;
   imageUrl: string;
@@ -19,9 +26,9 @@ export class ArtworkResponse {
   translations: ArtworkTranslation[];
   genres: GenreResponse[];
 
-  constructor(artwork: Artwork) {
+  constructor(storageService: StorageService, artwork: Artwork) {
     this.id = artwork.id;
-    this.imageUrl = 'https://example.com/img.png'; // TODO: 액세스 가능한 URL 로 변환하는 처리 구현 후 수정할 것.
+    this.imageUrl = storageService.getImageUrl(artwork.imageKey);
     this.createdAt = artwork.createdAt?.toISOString() ?? '';
     this.playedOn = artwork.playedOn ?? '';
     this.rating = artwork.rating ?? -1; // 0 이하는 무효한 값이므로, null 일 경우엔 일부러 무효한 값을 지정
@@ -32,6 +39,7 @@ export class ArtworkResponse {
   }
 }
 
+@Injectable()
 export class ArtworkListResponse {
   items: ArtworkResponse[];
   metadata: {
@@ -42,12 +50,15 @@ export class ArtworkListResponse {
   };
 
   constructor(
+    storageService: StorageService,
     artworks: Artwork[],
     totalCount: number,
     currentPage: number,
     pageSize: number,
   ) {
-    this.items = artworks.map((artwork) => new ArtworkResponse(artwork));
+    this.items = artworks.map(
+      (artwork) => new ArtworkResponse(storageService, artwork),
+    );
     this.metadata = {
       totalCount,
       totalPages: Math.ceil(totalCount / pageSize),

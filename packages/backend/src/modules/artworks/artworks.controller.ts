@@ -12,6 +12,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
@@ -86,6 +87,7 @@ export class ArtworksController {
     );
 
     return new ArtworkListResponse(
+      this.storageService,
       result.items,
       result.totalCount,
       query.page ?? 1,
@@ -99,7 +101,7 @@ export class ArtworksController {
     @Body() createArtworkDto: CreateArtworkDto,
   ): Promise<ArtworkResponse> {
     const artwork = await this.artworksService.createArtwork(createArtworkDto);
-    return new ArtworkResponse(artwork);
+    return new ArtworkResponse(this.storageService, artwork);
   }
 
   @Post('images')

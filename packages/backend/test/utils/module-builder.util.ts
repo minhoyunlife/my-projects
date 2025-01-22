@@ -118,6 +118,7 @@ const testConfigModule = ConfigModule.forRoot({
         secretAccessKey: TEST_S3_CONFIG.credentials.secretAccessKey,
         bucket: TEST_S3_CONFIG.bucket,
         endpoint: TEST_S3_CONFIG.endpoint,
+        cloudfrontDomain: TEST_S3_CONFIG.cloudfrontDomain,
       },
     }),
   ],
