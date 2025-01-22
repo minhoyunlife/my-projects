@@ -8,17 +8,21 @@ import {
   GetArtworksStatusEnum,
 } from "@minhoyunlife/my-ts-client";
 
+import { CreateArtworkForm } from "@/src/app/(authenticated)/fanarts/(actions)/(create)/create";
 import { columns } from "@/src/app/(authenticated)/fanarts/columns";
+import { ActionButton } from "@/src/components/(authenticated)/action-button";
 import { artworkSkeletonColumns } from "@/src/components/(authenticated)/data-table/skeleton";
 import { DataTable } from "@/src/components/(authenticated)/data-table/table";
 import { FilterContainer } from "@/src/components/(authenticated)/filter/filter-container";
 import { PageWrapper } from "@/src/components/(authenticated)/page-wrapper";
-import { useArtworkQuery } from "@/src/hooks/artworks/use-artwork-query";
+import { SlideOver } from "@/src/components/(authenticated)/slide-over";
+import { useArtworks } from "@/src/hooks/artworks/use-artworks";
 import { useGenres } from "@/src/hooks/genres/use-genres";
 import { useToast } from "@/src/hooks/use-toast";
 
 export default function FanartsListPage() {
   const { toast } = useToast();
+  const { useList } = useArtworks();
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState<string>("");
@@ -34,11 +38,14 @@ export default function FanartsListPage() {
   const [status, setStatus] = useState<GetArtworksStatusEnum[]>([]);
   const [sort, setSort] = useState<GetArtworksSortEnum>();
 
+  // 작품 추가 슬라이드오버 관련
+  const [isAddOpen, setIsAddOpen] = useState(false);
+
   const {
     data: artworksResult,
     isLoading: isArtworksLoading,
     error,
-  } = useArtworkQuery({
+  } = useList({
     search,
     genres,
     platforms,
@@ -110,63 +117,77 @@ export default function FanartsListPage() {
 
   return (
     <PageWrapper title="팬아트 작품 목록">
-      <FilterContainer
-        searchProps={{
-          placeholder: "작품 제목 검색...",
-          onSearch: handleSearch,
-        }}
-        filterProps={[
-          {
-            id: "platform",
-            type: "dropdown-checkbox",
-            label: "플랫폼",
+      <div className="flex justify-between items-center mb-6">
+        <FilterContainer
+          searchProps={{
+            placeholder: "작품 제목 검색...",
+            onSearch: handleSearch,
+          }}
+          filterProps={[
+            {
+              id: "platform",
+              type: "dropdown-checkbox",
+              label: "플랫폼",
+              options: [
+                { label: "Steam", value: GetArtworksPlatformsEnum.Steam },
+                { label: "Switch", value: GetArtworksPlatformsEnum.Switch },
+                { label: "GOG", value: GetArtworksPlatformsEnum.Gog },
+                {
+                  label: "Epic Games",
+                  value: GetArtworksPlatformsEnum.EpicGames,
+                },
+                { label: "Android", value: GetArtworksPlatformsEnum.Android },
+              ],
+              value: platforms,
+              onChange: handlePlatformChange,
+            },
+            {
+              id: "genre",
+              type: "combobox",
+              label: "장르",
+              options: genreOptions,
+              selectedOptions: selectedGenreInfos,
+              value: genres,
+              onChange: handleGenreChange,
+              searchValue: genreSearch,
+              onSearch: setGenreSearch,
+              isLoading: isGenreSearchLoading,
+            },
+            {
+              id: "status",
+              type: "dropdown-checkbox",
+              label: "상태",
+              options: [
+                { label: "공개", value: GetArtworksStatusEnum.Published },
+                { label: "비공개", value: GetArtworksStatusEnum.Draft },
+              ],
+              value: status,
+              onChange: handleStatusChange,
+            },
+          ]}
+          sortProps={{
             options: [
-              { label: "Steam", value: GetArtworksPlatformsEnum.Steam },
-              { label: "Switch", value: GetArtworksPlatformsEnum.Switch },
-              { label: "GOG", value: GetArtworksPlatformsEnum.Gog },
-              {
-                label: "Epic Games",
-                value: GetArtworksPlatformsEnum.EpicGames,
-              },
-              { label: "Android", value: GetArtworksPlatformsEnum.Android },
+              { label: "최신순", value: GetArtworksSortEnum.CreatedDesc },
+              { label: "과거순", value: GetArtworksSortEnum.CreatedAsc },
+              { label: "평점 높은 순", value: GetArtworksSortEnum.RatingDesc },
+              { label: "평점 낮은 순", value: GetArtworksSortEnum.RatingAsc },
             ],
-            value: platforms,
-            onChange: handlePlatformChange,
-          },
-          {
-            id: "genre",
-            type: "combobox",
-            label: "장르",
-            options: genreOptions,
-            selectedOptions: selectedGenreInfos,
-            value: genres,
-            onChange: handleGenreChange,
-            searchValue: genreSearch,
-            onSearch: setGenreSearch,
-            isLoading: isGenreSearchLoading,
-          },
-          {
-            id: "status",
-            type: "dropdown-checkbox",
-            label: "상태",
-            options: [
-              { label: "공개", value: GetArtworksStatusEnum.Published },
-              { label: "비공개", value: GetArtworksStatusEnum.Draft },
-            ],
-            value: status,
-            onChange: handleStatusChange,
-          },
-        ]}
-        sortProps={{
-          options: [
-            { label: "최신순", value: GetArtworksSortEnum.CreatedDesc },
-            { label: "과거순", value: GetArtworksSortEnum.CreatedAsc },
-            { label: "평점 높은 순", value: GetArtworksSortEnum.RatingDesc },
-            { label: "평점 낮은 순", value: GetArtworksSortEnum.RatingAsc },
-          ],
-          onSort: handleSort,
-        }}
-      />
+            onSort: handleSort,
+          }}
+        />
+
+        {/* 작품 생성 시 표시될 슬라이드오버 */}
+        <SlideOver
+          open={isAddOpen}
+          onOpenChange={setIsAddOpen}
+          trigger={<ActionButton action="add">작품 추가</ActionButton>}
+          title="작품 추가"
+          description="새로운 작품을 추가합니다."
+        >
+          <CreateArtworkForm onSuccess={() => setIsAddOpen(false)} />
+        </SlideOver>
+      </div>
+
       <DataTable
         columns={columns}
         data={artworksResult?.data.items ?? []}

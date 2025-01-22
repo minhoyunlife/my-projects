@@ -37,16 +37,18 @@ export const columns: ColumnDef<GetArtworks200ResponseItemsInner>[] = [
     id: "image",
     header: "이미지",
     cell: ({ row }) => (
-      <Image
-        src={row.original.imageUrl}
-        alt={
-          row.original.translations.find((t) => t.language === "en")?.title ||
-          ""
-        }
-        width={64}
-        height={64}
-        className="object-cover rounded"
-      />
+      <div className="flex justify-center">
+        <Image
+          src={row.original.imageUrl}
+          alt={
+            row.original.translations.find((t) => t.language === "en")?.title ||
+            ""
+          }
+          width={64}
+          height={64}
+          className="object-cover rounded"
+        />
+      </div>
     ),
   },
   {
@@ -113,7 +115,7 @@ export const columns: ColumnDef<GetArtworks200ResponseItemsInner>[] = [
     header: "평점",
     cell: ({ row }) => (
       <span className="block text-center">
-        {row.original.rating ? (row.original.rating / 4).toFixed(1) : "-"}
+        {row.original.rating >= 0 ? row.original.rating : "-"}
       </span>
     ),
   },

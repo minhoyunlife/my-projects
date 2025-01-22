@@ -1,10 +1,13 @@
 import { GetArtworksSortEnum } from "@minhoyunlife/my-ts-client";
 
 import FanartsListPage from "@/src/app/(authenticated)/fanarts/page";
+import { wrapper } from "@/test/utils/test-query-client";
 
 const mockUseArtworkQuery = vi.fn();
-vi.mock("@/src/hooks/artworks/use-artwork-query", () => ({
-  useArtworkQuery: (params: any) => mockUseArtworkQuery(params),
+vi.mock("@/src/hooks/artworks/use-artworks", () => ({
+  useArtworks: () => ({
+    useList: (params: any) => mockUseArtworkQuery(params),
+  }),
 }));
 
 const mockUseGenreSearchQuery = vi.fn();
@@ -66,7 +69,7 @@ describe("FanartsListPage", () => {
   describe("화면 렌더링 검증", () => {
     describe("기본 화면 요소", () => {
       it("제목, 필터, 테이블이 표시됨", () => {
-        render(<FanartsListPage />);
+        render(<FanartsListPage />, { wrapper });
 
         expect(reactScreen.getByRole("heading")).toHaveTextContent(
           "팬아트 작품 목록",
@@ -101,7 +104,7 @@ describe("FanartsListPage", () => {
           error: null,
         });
 
-        render(<FanartsListPage />);
+        render(<FanartsListPage />, { wrapper });
 
         expect(
           reactScreen.getByTestId("data-table-skeleton"),
@@ -113,7 +116,7 @@ describe("FanartsListPage", () => {
   describe("동작 검증", () => {
     describe("필터링 동작", () => {
       it("검색어 입력 시 API 파라미터가 갱신됨", () => {
-        render(<FanartsListPage />);
+        render(<FanartsListPage />, { wrapper });
 
         const searchInput =
           reactScreen.getByPlaceholderText("작품 제목 검색...");
@@ -128,7 +131,7 @@ describe("FanartsListPage", () => {
       });
 
       it("플랫폼 선택 시 API 파라미터가 갱신됨", async () => {
-        render(<FanartsListPage />);
+        render(<FanartsListPage />, { wrapper });
 
         await userEvent.click(
           reactScreen.getByRole("button", { name: "플랫폼" }),
@@ -160,7 +163,7 @@ describe("FanartsListPage", () => {
           isLoading: false,
         });
 
-        render(<FanartsListPage />);
+        render(<FanartsListPage />, { wrapper });
 
         await userEvent.click(
           reactScreen.getByRole("button", { name: "장르" }),
@@ -181,7 +184,7 @@ describe("FanartsListPage", () => {
       });
 
       it("상태 필터 선택 시 API 파라미터가 갱신됨", async () => {
-        render(<FanartsListPage />);
+        render(<FanartsListPage />, { wrapper });
 
         await userEvent.click(
           reactScreen.getByRole("button", { name: "상태" }),
@@ -199,7 +202,7 @@ describe("FanartsListPage", () => {
 
     describe("정렬 동작", () => {
       it("정렬 옵션 변경 시 API 파라미터가 갱신됨", async () => {
-        render(<FanartsListPage />);
+        render(<FanartsListPage />, { wrapper });
 
         const select = reactScreen.getByRole("combobox");
         await userEvent.click(select);
@@ -229,7 +232,7 @@ describe("FanartsListPage", () => {
         error: new Error("API Error"),
       });
 
-      render(<FanartsListPage />);
+      render(<FanartsListPage />, { wrapper });
 
       expect(mockToast).toHaveBeenCalled();
     });
