@@ -96,15 +96,23 @@ export class ArtworksService {
         id: In(dto.genreIds),
       });
       if (genres.length !== dto.genreIds.length) {
+        const existingGenreIds = new Set(genres.map((genre) => genre.id));
+        const notExistingIds = dto.genreIds.filter(
+          (id) => !existingGenreIds.has(id),
+        );
+
         throw new ArtworkException(
           ArtworkErrorCode.NOT_EXISTING_GENRES_INCLUDED,
           "Some of the provided genres don't exist in DB",
+          {
+            genreIds: notExistingIds,
+          },
         );
       }
 
       const artwork: Partial<Artwork> = {
         imageKey: dto.imageKey,
-        createdAt: new Date(dto.createdAt),
+        createdAt: dto.createdAt ? new Date(dto.createdAt) : null,
         playedOn: dto.playedOn,
         rating: dto.rating,
         isDraft: true, // 작품 생성 시에는 무조건 초안 상태

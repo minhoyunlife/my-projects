@@ -17,6 +17,17 @@ describeWithDeps('StorageService', () => {
     service = module.get<StorageService>(StorageService);
   });
 
+  describe('getImageUrl', () => {
+    it('이미지 키를 받아 URL을 반환함', () => {
+      const imageKey = 'artworks/2024/03/abc123def456.webp';
+      const result = service.getImageUrl(imageKey);
+
+      expect(result).toBe(
+        `https://${TEST_S3_CONFIG.cloudfrontDomain}/${imageKey}`,
+      );
+    });
+  });
+
   describe('uploadImage', async () => {
     const imageData = {
       originalname: 'test.jpg',

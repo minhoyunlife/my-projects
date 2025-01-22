@@ -7,6 +7,7 @@ import {
 
 import type { Response } from 'express';
 
+import { MAX_IMAGE_SIZE } from '@/src/modules/artworks/artworks.controller';
 import {
   UploadImageErrorCode,
   UploadImageException,
@@ -22,6 +23,9 @@ export class UploadImageExceptionFilter implements ExceptionFilter {
     const uploadImageException = new UploadImageException(
       UploadImageErrorCode.IMAGE_SIZE_TOO_LARGE,
       'File size exceeds the limit of 100MB.',
+      {
+        maxSize: [`${MAX_IMAGE_SIZE / 1024 / 1024}MB`],
+      },
     );
 
     return response

@@ -1,3 +1,5 @@
+import { ConfigService } from '@nestjs/config';
+
 import {
   ArtworkListResponse,
   ArtworkResponse,
@@ -6,11 +8,17 @@ import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { GenreResponse } from '@/src/modules/genres/dtos/genre-response.dto';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
+import { StorageService } from '@/src/modules/storage/storage.service';
 import { ArtworkTranslationsFactory } from '@/test/factories/artwork-translations.factory';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
 
 describeWithoutDeps('ArtworkResponse', () => {
+  const domain = 'https://test-cdn.example.com/';
+  const mockStorageService = {
+    getImageUrl: vi.fn((imageKey: string) => `${domain}/${imageKey}`),
+  } as unknown as StorageService;
+
   const genres = [GenresFactory.createTestData({ id: 'some-nanoid' }) as Genre];
   const artwork = ArtworksFactory.createTestData(
     {
@@ -32,15 +40,14 @@ describeWithoutDeps('ArtworkResponse', () => {
   ) as Artwork;
 
   describe('ArtworkResponse', () => {
-    const response = new ArtworkResponse(artwork);
+    const response = new ArtworkResponse(mockStorageService, artwork);
 
     it('엔티티의 속성 값대로 id 가 반환됨', () => {
       expect(response.id).toBe(artwork.id);
     });
 
-    // TODO: 액세스 가능한 URL 로 변환하는 처리 구현 후 수정할 것.
     it('엔티티의 속성 값대로 imageUrl 이 반환됨', () => {
-      expect(response.imageUrl).toBe('https://example.com/img.png');
+      expect(response.imageUrl).toBe(`${domain}/${artwork.imageKey}`);
     });
 
     describe('createdAt', () => {
@@ -54,6 +61,7 @@ describeWithoutDeps('ArtworkResponse', () => {
         }) as Artwork;
 
         const responseWithNullCreatedAt = new ArtworkResponse(
+          mockStorageService,
           artworkWithNullCreatedAt,
         );
 
@@ -72,6 +80,7 @@ describeWithoutDeps('ArtworkResponse', () => {
         }) as Artwork;
 
         const responseWithNullPlayedOn = new ArtworkResponse(
+          mockStorageService,
           artworkWithNullPlayedOn,
         );
 
@@ -90,6 +99,7 @@ describeWithoutDeps('ArtworkResponse', () => {
         }) as Artwork;
 
         const responseWithNullRating = new ArtworkResponse(
+          mockStorageService,
           artworkWithNullRating,
         );
 
@@ -113,6 +123,7 @@ describeWithoutDeps('ArtworkResponse', () => {
         ) as Artwork;
 
         const responseWithNullTranslations = new ArtworkResponse(
+          mockStorageService,
           artworkWithNullTranslations,
         );
 
@@ -133,6 +144,7 @@ describeWithoutDeps('ArtworkResponse', () => {
         }) as Artwork;
 
         const responseWithUndefinedGenres = new ArtworkResponse(
+          mockStorageService,
           artworkWithUndefinedGenres,
         );
 
@@ -145,6 +157,7 @@ describeWithoutDeps('ArtworkResponse', () => {
         }) as Artwork;
 
         const responseWithEmptyGenres = new ArtworkResponse(
+          mockStorageService,
           artworkWithEmptyGenres,
         );
 
@@ -155,11 +168,19 @@ describeWithoutDeps('ArtworkResponse', () => {
 
   describe('ArtworkListResponse', () => {
     const artworks = [artwork];
-    const response = new ArtworkListResponse(artworks, 1, 1, 10);
+    const response = new ArtworkListResponse(
+      mockStorageService,
+      artworks,
+      1,
+      1,
+      10,
+    );
 
     it('엔티티의 속성 값대로 items 가 반환됨', () => {
       for (const a of artworks) {
-        expect(response.items).toEqual([new ArtworkResponse(a)]);
+        expect(response.items).toEqual([
+          new ArtworkResponse(mockStorageService, a),
+        ]);
       }
     });
 

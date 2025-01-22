@@ -32,6 +32,8 @@ import { OptionalBearerAuthGuard } from '@/src/modules/auth/guards/token.auth.gu
 import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 import { StorageService } from '@/src/modules/storage/storage.service';
 
+export const MAX_IMAGE_SIZE = 100 * 1024 * 1024; // 100MB
+
 @Controller('artworks')
 export class ArtworksController {
   constructor(
@@ -41,7 +43,7 @@ export class ArtworksController {
 
   private static UPLOAD_OPTIONS = {
     limits: {
-      fileSize: 100 * 1024 * 1024, // 100MB
+      fileSize: MAX_IMAGE_SIZE,
       files: 1,
     },
     fileFilter: (_: any, file: Express.Multer.File, callback: Function) => {
@@ -55,8 +57,10 @@ export class ArtworksController {
             `\
               Not supported image extensions. \ 
               Provided type: ${file.mimetype}, \
-              Allowed Type: ${allowed_types.join(', ')}\
             `,
+            {
+              supportedTypes: allowed_types,
+            },
           ),
           false,
         );
@@ -82,6 +86,7 @@ export class ArtworksController {
     );
 
     return new ArtworkListResponse(
+      this.storageService,
       result.items,
       result.totalCount,
       query.page ?? 1,
@@ -95,7 +100,7 @@ export class ArtworksController {
     @Body() createArtworkDto: CreateArtworkDto,
   ): Promise<ArtworkResponse> {
     const artwork = await this.artworksService.createArtwork(createArtworkDto);
-    return new ArtworkResponse(artwork);
+    return new ArtworkResponse(this.storageService, artwork);
   }
 
   @Post('images')

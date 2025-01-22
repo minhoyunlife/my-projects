@@ -15,6 +15,7 @@ export const TEST_S3_CONFIG = {
     accessKeyId: 'test',
     secretAccessKey: 'test',
   },
+  cloudfrontDomain: 'test.example.com',
   bucket: 'test-bucket',
   forcePathStyle: true,
 };
