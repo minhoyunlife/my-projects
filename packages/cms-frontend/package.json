@@ -18,7 +18,7 @@
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@icons-pack/react-simple-icons": "^10.2.0",
-    "@minhoyunlife/my-ts-client": "1.4.0",
+    "@minhoyunlife/my-ts-client": "1.5.0",
     "@radix-ui/react-alert-dialog": "^1.1.4",
     "@radix-ui/react-avatar": "^1.1.2",
     "@radix-ui/react-checkbox": "^1.1.3",

@@ -16,7 +16,7 @@ export interface GenreUpdateParams {
 }
 
 export interface GenreDeleteParams {
-  ids: string[];
+  ids: Set<string>;
 }
 
 export function useGenres() {
@@ -71,7 +71,7 @@ export function useGenres() {
   const useDelete = () =>
     useMutation({
       mutationFn: ({ ids }: GenreDeleteParams) =>
-        genresApi.deleteGenres(new Set(ids)),
+        genresApi.deleteGenres({ ids }),
       onSuccess: async () => {
         await queryClient.invalidateQueries({ queryKey: ["genres"] });
       },

@@ -11,6 +11,7 @@ import { Administrator } from '@/src/modules/auth/entities/administrator.entity'
 import { TokenErrorCode } from '@/src/modules/auth/exceptions/token.exception';
 import { INVALID_INPUT_DATA } from '@/src/modules/config/settings/validation-pipe.config';
 import { CreateGenreDto } from '@/src/modules/genres/dtos/create-genre.dto';
+import { DeleteGenresDto } from '@/src/modules/genres/dtos/delete-genres.dto';
 import { UpdateGenreDto } from '@/src/modules/genres/dtos/update-genre.dto';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
@@ -467,12 +468,16 @@ describeWithDeps('GenresController', () => {
     });
 
     it('유효한 ID 목록으로 장르 삭제 시 성공적으로 처리됨', async () => {
+      const deleteDto: DeleteGenresDto = {
+        ids: [genres[0].id, genres[1].id],
+      };
+
       const token = await createTestAccessToken(authService, administrator);
 
       const response = await request(app.getHttpServer())
         .delete('/genres')
         .set('Authorization', `Bearer ${token}`)
-        .query({ ids: [genres[0].id, genres[1].id] })
+        .send(deleteDto)
         .expect(204);
 
       await expect(response).toMatchOpenAPISpec();
@@ -483,23 +488,27 @@ describeWithDeps('GenresController', () => {
       expect(saved).toEqual([]);
     });
 
-    it('쿼리 파라미터가 부적절할 경우, 400 에러가 반환됨', async () => {
+    it('리퀘스트 바디가 부적절할 경우, 400 에러가 반환됨', async () => {
       const token = await createTestAccessToken(authService, administrator);
 
       const response = await request(app.getHttpServer())
         .delete('/genres')
         .set('Authorization', `Bearer ${token}`)
-        .query({ ids: [] })
+        .send({ ids: [] })
         .expect(400);
 
       await expect(response).toMatchOpenAPISpec();
     });
 
     it('인증에 실패한 경우, 401 에러가 반환됨', async () => {
+      const deleteDto: DeleteGenresDto = {
+        ids: [genres[0].id, genres[1].id],
+      };
+
       const response = await request(app.getHttpServer())
         .delete('/genres')
         .set('Authorization', 'Bearer invalid-token')
-        .query({ ids: [genres[0].id, genres[1].id] })
+        .send(deleteDto)
         .expect(401);
 
       await expect(response).toMatchOpenAPISpec();
@@ -511,7 +520,7 @@ describeWithDeps('GenresController', () => {
       const response = await request(app.getHttpServer())
         .delete('/genres')
         .set('Authorization', `Bearer ${token}`)
-        .query({ ids: ['invalid-id'] })
+        .send({ ids: ['invalid-id'] })
         .expect(404);
 
       await expect(response).toMatchOpenAPISpec();
@@ -523,7 +532,7 @@ describeWithDeps('GenresController', () => {
       const response = await request(app.getHttpServer())
         .delete('/genres')
         .set('Authorization', `Bearer ${token}`)
-        .query({ ids: [genres[2].id] })
+        .send({ ids: [genres[2].id] })
         .expect(409);
 
       await expect(response).toMatchOpenAPISpec();
