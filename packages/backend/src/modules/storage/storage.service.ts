@@ -6,6 +6,7 @@ import { nanoid } from 'nanoid';
 import Sharp from 'sharp';
 
 import { ImageFileType } from '@/src/modules/artworks/enums/file-type.enum';
+import { ImageStatus } from '@/src/modules/storage/enums/status.enum';
 
 type UploadResult = {
   imageKey: string;
@@ -48,6 +49,7 @@ export class StorageService {
         Key: imageKey,
         Body: optimizedBuffer,
         ContentType: ImageFileType.WEBP,
+        Tagging: `status=${ImageStatus.ACTIVE}`,
       }),
     );
 
