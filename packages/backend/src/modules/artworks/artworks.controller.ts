@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -21,6 +22,7 @@ import {
   ArtworkResponse,
 } from '@/src/modules/artworks/dtos/artwork-response.dto';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
+import { DeleteArtworksDto } from '@/src/modules/artworks/dtos/delete-artworks.dto';
 import { GetArtworksQueryDto } from '@/src/modules/artworks/dtos/get-artworks-query.dto';
 import { ImageFileType } from '@/src/modules/artworks/enums/file-type.enum';
 import {
@@ -28,7 +30,10 @@ import {
   UploadImageException,
 } from '@/src/modules/artworks/exceptions/upload-image.exception';
 import { UploadImageExceptionFilter } from '@/src/modules/artworks/filters/upload-image.filter';
-import { OptionalBearerAuthGuard } from '@/src/modules/auth/guards/token.auth.guard';
+import {
+  BearerAuthGuard,
+  OptionalBearerAuthGuard,
+} from '@/src/modules/auth/guards/token.auth.guard';
 import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 import { StorageService } from '@/src/modules/storage/storage.service';
 
@@ -95,6 +100,7 @@ export class ArtworksController {
   }
 
   @Post()
+  @UseGuards(BearerAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createArtworkDto: CreateArtworkDto,
@@ -104,6 +110,7 @@ export class ArtworksController {
   }
 
   @Post('images')
+  @UseGuards(BearerAuthGuard)
   @UseFilters(UploadImageExceptionFilter)
   @UseInterceptors(FileInterceptor('image', ArtworksController.UPLOAD_OPTIONS))
   @HttpCode(HttpStatus.CREATED)
@@ -115,5 +122,12 @@ export class ArtworksController {
       );
     }
     return this.storageService.uploadImage(image);
+  }
+
+  @Delete()
+  @UseGuards(BearerAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteArtworks(@Body() dto: DeleteArtworksDto): Promise<void> {
+    return this.artworksService.deleteArtworks(dto.ids);
   }
 }

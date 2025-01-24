@@ -151,27 +151,34 @@ export class ArtworksService {
   async deleteArtworks(ids: string[]): Promise<void> {
     return this.entityManager.transaction(async (manager) => {
       const artworksTxRepo = this.artworksRepository.forTransaction(manager);
-
       const deletedArtworks = await artworksTxRepo.deleteMany(ids);
 
       await Promise.all(
-        deletedArtworks.map((artwork) =>
-          withRetry(
-            () =>
-              this.storageService.changeImageTag(
-                artwork.imageKey,
-                ImageStatus.TO_DELETE,
-              ),
-            {
-              onError: (error, attempt) => {
-                console.error(
-                  `Failed to change image tag of artwork ${artwork.id} (attempt: ${attempt})`,
-                  error,
-                );
+        deletedArtworks.map(async (artwork) => {
+          try {
+            await withRetry(
+              () =>
+                this.storageService.changeImageTag(
+                  artwork.imageKey,
+                  ImageStatus.TO_DELETE,
+                ),
+              {
+                onError: (error, attempt) => {
+                  console.error(
+                    `Failed to change image tag of artwork ${artwork.id} (attempt: ${attempt})`,
+                    error,
+                  );
+                },
               },
-            },
-          ),
-        ),
+            );
+          } catch (error) {
+            // 이미지 태그 변경 실패는 로그만 남기고 무시
+            console.error(
+              `Failed to change image tag of artwork ${artwork.id} after all retries`,
+              error,
+            );
+          }
+        }),
       );
     });
   }
