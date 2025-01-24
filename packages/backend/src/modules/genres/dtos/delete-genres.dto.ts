@@ -1,7 +1,7 @@
 import { Transform } from 'class-transformer';
 import { ArrayNotEmpty, IsArray, IsString } from 'class-validator';
 
-export class DeleteGenresQueryDto {
+export class DeleteGenresDto {
   @IsArray()
   @ArrayNotEmpty()
   @IsString({ each: true })

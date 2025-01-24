@@ -1,12 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, In, Repository } from 'typeorm';
 
 import { TransactionalRepository } from '@/src/common/repositories/transactional.repository';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
+import {
+  ArtworkErrorCode,
+  ArtworkException,
+} from '@/src/modules/artworks/exceptions/artworks.exception';
 
 @Injectable()
 export class ArtworksRepository extends TransactionalRepository<Artwork> {
@@ -106,5 +110,40 @@ export class ArtworksRepository extends TransactionalRepository<Artwork> {
   async createOne(artworkData: Partial<Artwork>): Promise<Artwork> {
     const artwork = this.create(artworkData);
     return this.save(artwork);
+  }
+
+  /**
+   * 복수의 작품 데이터를 삭제
+   * @param {string[]} ids - 삭제할 작품 ID 배열
+   */
+  async deleteMany(ids: string[]): Promise<Artwork[]> {
+    const artworks = await this.findBy({ id: In(ids) });
+
+    if (artworks.length !== ids.length) {
+      const foundIds = new Set(artworks.map((a) => a.id));
+      const notFoundIds = ids.filter((id) => !foundIds.has(id));
+
+      throw new ArtworkException(
+        ArtworkErrorCode.NOT_FOUND,
+        'Some of the provided artworks do not exist',
+        {
+          ids: notFoundIds,
+        },
+      );
+    }
+
+    const publishedArtworks = artworks.filter((artwork) => !artwork.isDraft);
+    if (publishedArtworks.length > 0) {
+      throw new ArtworkException(
+        ArtworkErrorCode.ALREADY_PUBLISHED,
+        'Cannot delete published artworks',
+        {
+          ids: publishedArtworks.map((a) => a.id),
+        },
+      );
+    }
+
+    const deletedArtworks = await this.remove(artworks);
+    return deletedArtworks;
   }
 }

@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 
 import Sharp from 'sharp';
 import request from 'supertest';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { ArtworksController } from '@/src/modules/artworks/artworks.controller';
@@ -32,6 +32,13 @@ describeWithDeps('ArtworksController', () => {
   let app: INestApplication;
   let dataSource: DataSource;
 
+  let authService: AuthService;
+  let artworkRepository: Repository<Artwork>;
+  let genreRepository: Repository<Genre>;
+  let administratorRepository: Repository<Administrator>;
+
+  let administrator: Administrator;
+
   beforeAll(async () => {
     app = await createTestingApp({
       entities: [
@@ -50,13 +57,24 @@ describeWithDeps('ArtworksController', () => {
       ],
     });
 
+    authService = app.get(AuthService);
+
     dataSource = app.get<DataSource>(DataSource);
+    genreRepository = dataSource.getRepository(Genre);
+    artworkRepository = dataSource.getRepository(Artwork);
+    administratorRepository = dataSource.getRepository(Administrator);
 
     await app.init();
   });
 
   beforeEach(async () => {
     await clearTables(dataSource, [Artwork, Genre, Administrator]);
+
+    administrator = (
+      await saveEntities(administratorRepository, [
+        AdministratorsFactory.createTestData(),
+      ])
+    )[0];
   });
 
   afterAll(async () => {
@@ -65,26 +83,9 @@ describeWithDeps('ArtworksController', () => {
   });
 
   describe('GET /artworks', () => {
-    let authService: AuthService;
-    let artworkRepository: Repository<Artwork>;
-    let genreRepository: Repository<Genre>;
-
-    let administrator: Administrator;
     let genres: Genre[];
 
     beforeEach(async () => {
-      authService = app.get(AuthService);
-
-      artworkRepository = dataSource.getRepository(Artwork);
-      genreRepository = dataSource.getRepository(Genre);
-      const administratorRepository = dataSource.getRepository(Administrator);
-
-      administrator = (
-        await saveEntities(administratorRepository, [
-          AdministratorsFactory.createTestData(),
-        ])
-      )[0];
-
       genres = await saveEntities(genreRepository, [
         GenresFactory.createTestData({
           translations: [
@@ -287,8 +288,11 @@ describeWithDeps('ArtworksController', () => {
     };
 
     it('유효한 DTO로 작품 생성 시 DB에 정상적으로 저장됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
       const response = await request(app.getHttpServer())
         .post('/artworks')
+        .set('Authorization', `Bearer ${token}`)
         .send(createDto)
         .expect(201);
 
@@ -319,10 +323,13 @@ describeWithDeps('ArtworksController', () => {
     });
 
     it('필수 필드 누락 시 400 에러가 반환되어야 함', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
       const { koTitle, ...invalidDto } = createDto;
 
       const response = await request(app.getHttpServer())
         .post('/artworks')
+        .set('Authorization', `Bearer ${token}`)
         .send(invalidDto)
         .expect(400);
 
@@ -330,6 +337,8 @@ describeWithDeps('ArtworksController', () => {
     });
 
     it('존재하지 않는 장르 ID로 생성 시도 시 400 에러가 반환되어야 함', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
       const dtoWithInvalidGenreId = {
         ...createDto,
         genreIds: ['non-existing-genre-id'],
@@ -337,8 +346,19 @@ describeWithDeps('ArtworksController', () => {
 
       const response = await request(app.getHttpServer())
         .post('/artworks')
+        .set('Authorization', `Bearer ${token}`)
         .send(dtoWithInvalidGenreId)
         .expect(400);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+
+    it('인증에 실패한 경우, 401 에러가 반환됨', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/artworks')
+        .set('Authorization', 'Bearer invalid-token')
+        .send(createDto)
+        .expect(401);
 
       await expect(response).toMatchOpenAPISpec();
     });
@@ -346,6 +366,8 @@ describeWithDeps('ArtworksController', () => {
 
   describe('POST /artworks/images', () => {
     it('유효한 이미지로 업로드할 경우, 처리가 성공함', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
       const imageData = await Sharp({
         create: {
           width: 2000,
@@ -359,6 +381,7 @@ describeWithDeps('ArtworksController', () => {
 
       const response = await request(app.getHttpServer())
         .post('/artworks/images')
+        .set('Authorization', `Bearer ${token}`)
         .attach('image', imageData, {
           filename: 'test.png',
           contentType: ImageFileType.PNG,
@@ -376,14 +399,19 @@ describeWithDeps('ArtworksController', () => {
     });
 
     it('이미지 파일이 누락될 경우, 400 에러가 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
       const response = await request(app.getHttpServer())
         .post('/artworks/images')
+        .set('Authorization', `Bearer ${token}`)
         .expect(400);
 
       await expect(response).toMatchOpenAPISpec();
     });
 
     it('이미지 파일 형식이 사양 외인 경우, 400 에러가 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
       const imageData = await Sharp({
         create: {
           width: 2000,
@@ -397,6 +425,7 @@ describeWithDeps('ArtworksController', () => {
 
       const response = await request(app.getHttpServer())
         .post('/artworks/images')
+        .set('Authorization', `Bearer ${token}`)
         .attach('image', imageData, {
           filename: 'test.gif',
           contentType: 'image/gif',
@@ -406,16 +435,149 @@ describeWithDeps('ArtworksController', () => {
       await expect(response).toMatchOpenAPISpec();
     });
 
+    it('인증에 실패한 경우, 401 에러가 반환됨', async () => {
+      const imageData = await Sharp({
+        create: {
+          width: 100,
+          height: 100,
+          channels: 3,
+          background: 'green',
+        },
+      })
+        .png()
+        .toBuffer();
+
+      const response = await request(app.getHttpServer())
+        .post('/artworks/images')
+        .set('Authorization', 'Bearer invalid-token')
+        .attach('image', imageData, {
+          filename: 'test.png',
+          contentType: ImageFileType.PNG,
+        })
+        .expect(401);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+
     it('이미지 파일 용량이 제한치를 초과할 경우, 413 에러가 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
       const largeBuffer = Buffer.alloc(101 * 1024 * 1024); // 101MB
 
       const response = await request(app.getHttpServer())
         .post('/artworks/images')
+        .set('Authorization', `Bearer ${token}`)
         .attach('image', largeBuffer, {
           filename: 'larger.jpg',
           contentType: ImageFileType.JPEG,
         })
         .expect(413);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+  });
+
+  describe('DELETE /artworks', () => {
+    let artworks: Artwork[];
+    let genres: Genre[];
+
+    beforeEach(async () => {
+      genres = await saveEntities(genreRepository, [
+        GenresFactory.createTestData({
+          translations: [
+            { language: Language.KO, name: '액션' },
+            { language: Language.EN, name: 'Action' },
+            { language: Language.JA, name: 'アクション' },
+          ] as GenreTranslation[],
+        }),
+      ]);
+
+      artworks = await saveEntities(artworkRepository, [
+        // 비공개 작품
+        ArtworksFactory.createTestData({
+          isDraft: true,
+          genres: [genres[0]],
+        }),
+        // 다른 비공개 작품
+        ArtworksFactory.createTestData({
+          isDraft: true,
+          genres: [genres[0]],
+        }),
+        // 공개 작품
+        ArtworksFactory.createTestData({
+          isDraft: false,
+          genres: [genres[0]],
+        }),
+      ]);
+    });
+
+    it('유효한 ID 목록으로 비공개 작품 삭제 시 성공적으로 처리됨', async () => {
+      const deleteDto = {
+        ids: [artworks[0].id, artworks[1].id], // 비공개 작품들
+      };
+
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .delete('/artworks')
+        .set('Authorization', `Bearer ${token}`)
+        .send(deleteDto)
+        .expect(204);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      const saved = await artworkRepository.findBy({
+        id: In(deleteDto.ids),
+      });
+      expect(saved).toEqual([]);
+    });
+
+    it('리퀘스트 바디가 부적절할 경우, 400 에러가 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .delete('/artworks')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ids: [] })
+        .expect(400);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+
+    it('인증에 실패한 경우, 401 에러가 반환됨', async () => {
+      const deleteDto = {
+        ids: [artworks[0].id],
+      };
+
+      const response = await request(app.getHttpServer())
+        .delete('/artworks')
+        .set('Authorization', 'Bearer invalid-token')
+        .send(deleteDto)
+        .expect(401);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+
+    it('존재하지 않는 ID로 작품 삭제 시 404 에러가 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .delete('/artworks')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ids: ['invalid-id'] })
+        .expect(404);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+
+    it('공개 상태인 작품을 포함하여 삭제 시도할 경우, 409 에러가 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .delete('/artworks')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ids: [artworks[0].id, artworks[2].id] }) // 비공개 + 공개 작품
+        .expect(409);
 
       await expect(response).toMatchOpenAPISpec();
     });

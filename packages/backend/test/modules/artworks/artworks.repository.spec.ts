@@ -1,10 +1,11 @@
-import { DataSource } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
+import { ArtworkException } from '@/src/modules/artworks/exceptions/artworks.exception';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
@@ -18,6 +19,7 @@ import { createTestingModuleWithDB } from '@/test/utils/module-builder.util';
 
 describeWithDeps('ArtworksRepository', () => {
   let artworkRepo: ArtworksRepository;
+  let artworkTranslationRepo: Repository<ArtworkTranslation>;
   let genreRepo: GenresRepository;
   let dataSource: DataSource;
 
@@ -27,9 +29,10 @@ describeWithDeps('ArtworksRepository', () => {
       providers: [ArtworksRepository, GenresRepository],
     });
 
+    dataSource = module.get<DataSource>(DataSource);
     artworkRepo = module.get<ArtworksRepository>(ArtworksRepository);
     genreRepo = module.get<GenresRepository>(GenresRepository);
-    dataSource = module.get<DataSource>(DataSource);
+    artworkTranslationRepo = dataSource.getRepository(ArtworkTranslation);
   });
 
   afterAll(async () => {
@@ -680,6 +683,107 @@ describeWithDeps('ArtworksRepository', () => {
           expect.arrayContaining(['Final Fantasy XVI']),
         );
       });
+    });
+  });
+
+  describe('deleteMany', () => {
+    let artworks: Artwork[];
+
+    beforeEach(async () => {
+      await clearTables(dataSource, [Artwork, Genre]);
+
+      const genre = await saveEntities(genreRepo, [
+        GenresFactory.createTestData({}, [
+          { language: Language.KO, name: '액션' },
+          { language: Language.EN, name: 'Action' },
+          { language: Language.JA, name: 'アクション' },
+        ]),
+      ]);
+
+      artworks = await saveEntities(artworkRepo, [
+        ArtworksFactory.createTestData(
+          {
+            isDraft: true,
+          },
+          [
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.KO,
+              title: '다크소울',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.EN,
+              title: 'Dark Souls',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.JA,
+              title: 'ダークソウル',
+            }),
+          ],
+          genre,
+        ),
+        ArtworksFactory.createTestData(
+          {
+            isDraft: false,
+          },
+          [
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.KO,
+              title: '젤다',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.EN,
+              title: 'Zelda',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.JA,
+              title: 'ゼルダ',
+            }),
+          ],
+          genre,
+        ),
+      ]);
+    });
+
+    it('비공개 작품을 성공적으로 삭제함', async () => {
+      const targetIds = [artworks[0].id];
+      const deletedArtworks = await artworkRepo.deleteMany(targetIds);
+
+      expect(deletedArtworks).toHaveLength(1);
+
+      const saved = await artworkRepo.findBy({ id: In(targetIds) });
+      expect(saved).toHaveLength(0);
+    });
+
+    it('삭제된 작품의 번역 데이터도 함께 삭제됨', async () => {
+      const targetIds = [artworks[0].id];
+      await artworkRepo.deleteMany(targetIds);
+
+      const savedTranslations = await artworkTranslationRepo.findBy({
+        artworkId: In(targetIds),
+      });
+      expect(savedTranslations).toHaveLength(0);
+    });
+
+    it('존재하지 않는 작품이 포함된 경우 에러가 발생함', async () => {
+      const targetIds = [artworks[0].id, 'non-existent-id'];
+
+      await expect(artworkRepo.deleteMany(targetIds)).rejects.toThrow(
+        ArtworkException,
+      );
+
+      const saved = await artworkRepo.findBy({ id: artworks[0].id });
+      expect(saved).toHaveLength(1);
+    });
+
+    it('공개된 작품이 포함된 경우 에러가 발생함', async () => {
+      const targetIds = [artworks[0].id, artworks[1].id];
+
+      await expect(artworkRepo.deleteMany(targetIds)).rejects.toThrow(
+        ArtworkException,
+      );
+
+      const saved = await artworkRepo.findBy({ id: In(targetIds) });
+      expect(saved).toHaveLength(2);
     });
   });
 });

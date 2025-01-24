@@ -4,6 +4,7 @@ import { EntityManager, In } from 'typeorm';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { EntityList } from '@/src/common/interfaces/entity-list.interface';
+import { withRetry } from '@/src/common/utils/retry.util';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { GetArtworksQueryDto } from '@/src/modules/artworks/dtos/get-artworks-query.dto';
@@ -17,12 +18,15 @@ import {
 } from '@/src/modules/artworks/exceptions/artworks.exception';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
+import { ImageStatus } from '@/src/modules/storage/enums/status.enum';
+import { StorageService } from '@/src/modules/storage/storage.service';
 
 @Injectable()
 export class ArtworksService {
   constructor(
     private readonly artworksRepository: ArtworksRepository,
     private readonly genresRepository: GenresRepository,
+    private readonly storageService: StorageService,
     private readonly entityManager: EntityManager,
   ) {}
 
@@ -137,6 +141,45 @@ export class ArtworksService {
       };
 
       return await this.artworksRepository.createOne(artwork);
+    });
+  }
+
+  /**
+   * 복수의 기존 작품을 삭제
+   * @param id - 삭제할 작품의 ID
+   */
+  async deleteArtworks(ids: string[]): Promise<void> {
+    return this.entityManager.transaction(async (manager) => {
+      const artworksTxRepo = this.artworksRepository.forTransaction(manager);
+      const deletedArtworks = await artworksTxRepo.deleteMany(ids);
+
+      await Promise.all(
+        deletedArtworks.map(async (artwork) => {
+          try {
+            await withRetry(
+              () =>
+                this.storageService.changeImageTag(
+                  artwork.imageKey,
+                  ImageStatus.TO_DELETE,
+                ),
+              {
+                onError: (error, attempt) => {
+                  console.error(
+                    `Failed to change image tag of artwork ${artwork.id} (attempt: ${attempt})`,
+                    error,
+                  );
+                },
+              },
+            );
+          } catch (error) {
+            // 이미지 태그 변경 실패는 로그만 남기고 무시
+            console.error(
+              `Failed to change image tag of artwork ${artwork.id} after all retries`,
+              error,
+            );
+          }
+        }),
+      );
     });
   }
 }

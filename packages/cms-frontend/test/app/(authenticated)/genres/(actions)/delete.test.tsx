@@ -46,7 +46,7 @@ describe("DeleteGenresDialog", () => {
 
     await waitFor(() => {
       expect(mockMutateAsync).toHaveBeenCalledWith({
-        ids: defaultProps.selectedIds,
+        ids: new Set(defaultProps.selectedIds),
       });
       expect(defaultProps.onOpenChange).toHaveBeenCalledWith(false);
       expect(defaultProps.onSuccess).toHaveBeenCalled();

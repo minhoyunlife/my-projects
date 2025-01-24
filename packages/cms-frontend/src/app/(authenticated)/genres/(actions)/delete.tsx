@@ -23,7 +23,7 @@ export function DeleteGenresDialog({
 
   const handleDelete = async () => {
     try {
-      await deleteGenresMutation.mutateAsync({ ids: selectedIds });
+      await deleteGenresMutation.mutateAsync({ ids: new Set(selectedIds) });
       toast({
         title: "장르가 삭제되었습니다",
         variant: "success",

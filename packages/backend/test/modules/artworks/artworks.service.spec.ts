@@ -9,15 +9,21 @@ import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
 import { Status } from '@/src/modules/artworks/enums/status.enum';
-import { ArtworkException } from '@/src/modules/artworks/exceptions/artworks.exception';
+import {
+  ArtworkErrorCode,
+  ArtworkException,
+} from '@/src/modules/artworks/exceptions/artworks.exception';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
+import { ImageStatus } from '@/src/modules/storage/enums/status.enum';
+import { StorageService } from '@/src/modules/storage/storage.service';
 import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
 
 describeWithoutDeps('ArtworksService', () => {
   let service: ArtworksService;
   let artworksRepository: Partial<ArtworksRepository>;
   let genresRepository: Partial<GenresRepository>;
+  let storageService: Partial<StorageService>;
   let entityManager: EntityManager;
 
   beforeEach(async () => {
@@ -33,6 +39,10 @@ describeWithoutDeps('ArtworksService', () => {
           useValue: { forTransaction: vi.fn() },
         },
         {
+          provide: StorageService,
+          useValue: { changeImageTag: vi.fn() },
+        },
+        {
           provide: EntityManager,
           useValue: {
             transaction: vi.fn((cb) => cb(entityManager)),
@@ -44,6 +54,7 @@ describeWithoutDeps('ArtworksService', () => {
     service = module.get<ArtworksService>(ArtworksService);
     artworksRepository = module.get<ArtworksRepository>(ArtworksRepository);
     genresRepository = module.get<GenresRepository>(GenresRepository);
+    storageService = module.get<StorageService>(StorageService);
     entityManager = module.get<EntityManager>(EntityManager);
   });
 
@@ -302,6 +313,58 @@ describeWithoutDeps('ArtworksService', () => {
       createOneMock.mockRejectedValue(new Error());
 
       await expect(service.createArtwork(dto)).rejects.toThrowError();
+    });
+  });
+
+  describe('deleteArtworks', () => {
+    const deleteManyMock = vi.fn();
+    const changeImageTagMock = vi.fn();
+
+    beforeEach(() => {
+      deleteManyMock.mockClear();
+      changeImageTagMock.mockClear();
+
+      artworksRepository.forTransaction = vi.fn().mockReturnValue({
+        deleteMany: deleteManyMock,
+      });
+      storageService.changeImageTag = changeImageTagMock;
+    });
+
+    it('작품 삭제 및 이미지 태그 변경이 성공적으로 수행됨', async () => {
+      const mockDeletedArtworks = [
+        { id: 'artwork-1', imageKey: 'key1' },
+        { id: 'artwork-2', imageKey: 'key2' },
+      ];
+      deleteManyMock.mockResolvedValue(mockDeletedArtworks);
+      changeImageTagMock.mockResolvedValue(undefined);
+
+      await service.deleteArtworks(['artwork-1', 'artwork-2']);
+
+      expect(deleteManyMock).toHaveBeenCalledWith(['artwork-1', 'artwork-2']);
+      expect(changeImageTagMock).toHaveBeenCalledTimes(2);
+      expect(changeImageTagMock).toHaveBeenCalledWith(
+        'key1',
+        ImageStatus.TO_DELETE,
+      );
+      expect(changeImageTagMock).toHaveBeenCalledWith(
+        'key2',
+        ImageStatus.TO_DELETE,
+      );
+    });
+
+    it('작품 삭제 실패 시 에러가 발생함', async () => {
+      deleteManyMock.mockRejectedValue(
+        new ArtworkException(
+          ArtworkErrorCode.NOT_FOUND,
+          'Some artworks not found',
+        ),
+      );
+
+      await expect(service.deleteArtworks(['artwork-1'])).rejects.toThrow(
+        ArtworkException,
+      );
+
+      expect(changeImageTagMock).not.toHaveBeenCalled();
     });
   });
 });

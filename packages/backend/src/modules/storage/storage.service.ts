@@ -1,11 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  PutObjectCommand,
+  PutObjectTaggingCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { nanoid } from 'nanoid';
 import Sharp from 'sharp';
 
 import { ImageFileType } from '@/src/modules/artworks/enums/file-type.enum';
+import { ImageStatus } from '@/src/modules/storage/enums/status.enum';
 
 type UploadResult = {
   imageKey: string;
@@ -38,6 +43,11 @@ export class StorageService {
     this.bucket = this.configService.get('s3.bucket');
   }
 
+  getImageUrl(imageKey: string): string {
+    const cloudfrontDomain = this.configService.get('s3.cloudfrontDomain');
+    return `https://${cloudfrontDomain}/${imageKey}`;
+  }
+
   async uploadImage(file: Express.Multer.File): Promise<UploadResult> {
     const optimizedBuffer = await this.optimizeImage(file.buffer);
     const imageKey = this.generateImageKey();
@@ -48,15 +58,33 @@ export class StorageService {
         Key: imageKey,
         Body: optimizedBuffer,
         ContentType: ImageFileType.WEBP,
+        Tagging: `status=${ImageStatus.ACTIVE}`,
       }),
     );
 
     return { imageKey };
   }
 
-  getImageUrl(imageKey: string): string {
-    const cloudfrontDomain = this.configService.get('s3.cloudfrontDomain');
-    return `https://${cloudfrontDomain}/${imageKey}`;
+  /**
+   * S3 이미지 오브젝트의 status 태그 값을 변경
+   * @param imageKey - 변경할 이미지의 키
+   * @param status - 변경할 상태 값
+   */
+  async changeImageTag(imageKey: string, status: ImageStatus): Promise<void> {
+    await this.client.send(
+      new PutObjectTaggingCommand({
+        Bucket: this.bucket,
+        Key: imageKey,
+        Tagging: {
+          TagSet: [
+            {
+              Key: 'status',
+              Value: status,
+            },
+          ],
+        },
+      }),
+    );
   }
 
   private async optimizeImage(buffer: Buffer): Promise<Buffer> {
