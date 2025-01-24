@@ -250,7 +250,7 @@ describe("useGenres", () => {
   });
 
   describe("useDelete", () => {
-    const mockIds = ["genre-1", "genre-2"];
+    const mockIds = new Set(["genre-1", "genre-2"]);
 
     beforeEach(() => {
       vi.clearAllMocks();
@@ -266,7 +266,7 @@ describe("useGenres", () => {
 
         await result.current.mutateAsync({ ids: mockIds });
 
-        expect(genresApi.deleteGenres).toHaveBeenCalledWith(new Set(mockIds));
+        expect(genresApi.deleteGenres).toHaveBeenCalledWith({ ids: mockIds });
       });
     });
 
