@@ -71,7 +71,7 @@ export function useGenres() {
   const useDelete = () =>
     useMutation({
       mutationFn: ({ ids }: GenreDeleteParams) =>
-        genresApi.deleteGenres({ ids }),
+        genresApi.deleteGenres({ ids: Array.from(ids) }),
       onSuccess: async () => {
         await queryClient.invalidateQueries({ queryKey: ["genres"] });
       },
