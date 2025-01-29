@@ -1,9 +1,9 @@
-import { DeleteGenresDialog } from "@/src/app/(authenticated)/genres/(actions)/delete";
+import { DeleteArtworkDialog } from "@/src/app/(authenticated)/fanarts/(actions)/delete";
 import { wrapper } from "@/test/utils/test-query-client";
 
 const mockMutateAsync = vi.fn();
-vi.mock("@/src/hooks/genres/use-genres", () => ({
-  useGenres: () => ({
+vi.mock("@/src/hooks/artworks/use-artworks", () => ({
+  useArtworks: () => ({
     useDelete: () => ({
       mutateAsync: mockMutateAsync,
       isPending: false,
@@ -16,11 +16,11 @@ vi.mock("@/src/hooks/use-toast", () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
-describe("DeleteGenresDialog", () => {
+describe("DeleteArtworkDialog", () => {
   const defaultProps = {
     open: true,
     onOpenChange: vi.fn(),
-    selectedIds: ["genre-1", "genre-2"],
+    selectedIds: ["artwork-1", "artwork-2"],
     onSuccess: vi.fn(),
   };
 
@@ -28,16 +28,16 @@ describe("DeleteGenresDialog", () => {
     vi.clearAllMocks();
   });
 
-  it("선택된 장르 수가 다이얼로그 설명에 표시됨", () => {
-    render(<DeleteGenresDialog {...defaultProps} />, { wrapper });
+  it("선택된 작품 수가 다이얼로그 설명에 표시됨", () => {
+    render(<DeleteArtworkDialog {...defaultProps} />, { wrapper });
 
     expect(reactScreen.getByText(/2/)).toBeInTheDocument();
   });
 
-  it("삭제 확인 시 장르가 삭제됨", async () => {
+  it("삭제 확인 시 작품이 삭제됨", async () => {
     mockMutateAsync.mockResolvedValueOnce({});
 
-    render(<DeleteGenresDialog {...defaultProps} />, { wrapper });
+    render(<DeleteArtworkDialog {...defaultProps} />, { wrapper });
 
     await userEvent.click(reactScreen.getByRole("button", { name: "삭제" }));
 
@@ -56,16 +56,16 @@ describe("DeleteGenresDialog", () => {
       isAxiosError: true,
       response: {
         data: {
-          code: "IN_USE",
+          code: "ALREADY_PUBLISHED",
           errors: {
-            koNames: ["액션"],
+            titles: ["다크 소울3"],
           },
         },
       },
     };
     mockMutateAsync.mockRejectedValueOnce(mockError);
 
-    render(<DeleteGenresDialog {...defaultProps} />, { wrapper });
+    render(<DeleteArtworkDialog {...defaultProps} />, { wrapper });
 
     await userEvent.click(reactScreen.getByRole("button", { name: "삭제" }));
 
@@ -79,7 +79,7 @@ describe("DeleteGenresDialog", () => {
   });
 
   it("취소 버튼 클릭 시 다이얼로그가 닫힘", async () => {
-    render(<DeleteGenresDialog {...defaultProps} />, { wrapper });
+    render(<DeleteArtworkDialog {...defaultProps} />, { wrapper });
 
     await userEvent.click(reactScreen.getByRole("button", { name: "취소" }));
 

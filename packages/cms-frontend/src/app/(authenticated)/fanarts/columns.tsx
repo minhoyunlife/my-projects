@@ -32,7 +32,13 @@ const formatDate = (dateString: string) => {
   }).format(date);
 };
 
-export const columns: ColumnDef<GetArtworks200ResponseItemsInner>[] = [
+interface GenreColumnProps {
+  onDeleteClick: (id: string) => void;
+}
+
+export const artworkColumns = ({
+  onDeleteClick,
+}: GenreColumnProps): ColumnDef<GetArtworks200ResponseItemsInner>[] => [
   {
     id: "image",
     header: "이미지",
@@ -183,7 +189,10 @@ export const columns: ColumnDef<GetArtworks200ResponseItemsInner>[] = [
                   </>
                 )}
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={() => onDeleteClick(row.original.id)}
+              >
                 <Trash2 className="mr-2 h-4 w-4" />
                 <span>삭제</span>
               </DropdownMenuItem>

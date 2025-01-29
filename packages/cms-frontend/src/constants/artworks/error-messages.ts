@@ -34,6 +34,20 @@ export const ARTWORK_ERROR_MESSAGES = {
       return `해당 장르 ID: ${errors.genreIds.join(", ")}`;
     },
   },
+  [ArtworkErrorCode.NOT_FOUND]: {
+    title: "해당 작품을 찾을 수 없습니다",
+    formatDescription: (errors?: ArtworkErrorDetail) => {
+      if (!errors?.ids?.length) return "";
+      return `해당 ID: ${errors.ids.join(", ")}`;
+    },
+  },
+  [ArtworkErrorCode.ALREADY_PUBLISHED]: {
+    title: "공개된 작품은 삭제할 수 없습니다",
+    formatDescription: (errors?: ArtworkErrorDetail) => {
+      if (!errors?.titles?.length) return "";
+      return `공개된 작품: ${errors.titles.join(", ")}`;
+    },
+  },
   [ArtworkErrorCode.INVALID_INPUT_DATA]: {
     title: "입력값이 올바르지 않습니다",
     formatDescription: (errors?: Record<string, string[]>) => {

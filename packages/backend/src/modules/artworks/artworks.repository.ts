@@ -11,6 +11,7 @@ import {
   ArtworkErrorCode,
   ArtworkException,
 } from '@/src/modules/artworks/exceptions/artworks.exception';
+import { Language } from '@/src/modules/genres/enums/language.enum';
 
 @Injectable()
 export class ArtworksRepository extends TransactionalRepository<Artwork> {
@@ -138,7 +139,10 @@ export class ArtworksRepository extends TransactionalRepository<Artwork> {
         ArtworkErrorCode.ALREADY_PUBLISHED,
         'Cannot delete published artworks',
         {
-          ids: publishedArtworks.map((a) => a.id),
+          titles: publishedArtworks.map(
+            (a) =>
+              a.translations.find((t) => t.language === Language.KO)?.title,
+          ),
         },
       );
     }
