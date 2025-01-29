@@ -22,6 +22,7 @@ import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { StorageService } from '@/src/modules/storage/storage.service';
 import { AdministratorsFactory } from '@/test/factories/administrator.factory';
+import { ArtworkTranslationsFactory } from '@/test/factories/artwork-translations.factory';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
 import { createTestAccessToken } from '@/test/utils/auth.util';
@@ -494,20 +495,29 @@ describeWithDeps('ArtworksController', () => {
 
       artworks = await saveEntities(artworkRepository, [
         // 비공개 작품
-        ArtworksFactory.createTestData({
-          isDraft: true,
-          genres: [genres[0]],
-        }),
+        ArtworksFactory.createTestData(
+          {
+            isDraft: true,
+            genres: [genres[0]],
+          },
+          [ArtworkTranslationsFactory.createTestData()],
+        ),
         // 다른 비공개 작품
-        ArtworksFactory.createTestData({
-          isDraft: true,
-          genres: [genres[0]],
-        }),
+        ArtworksFactory.createTestData(
+          {
+            isDraft: true,
+            genres: [genres[0]],
+          },
+          [ArtworkTranslationsFactory.createTestData()],
+        ),
         // 공개 작품
-        ArtworksFactory.createTestData({
-          isDraft: false,
-          genres: [genres[0]],
-        }),
+        ArtworksFactory.createTestData(
+          {
+            isDraft: false,
+            genres: [genres[0]],
+          },
+          [ArtworkTranslationsFactory.createTestData()],
+        ),
       ]);
     });
 
@@ -578,6 +588,8 @@ describeWithDeps('ArtworksController', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({ ids: [artworks[0].id, artworks[2].id] }) // 비공개 + 공개 작품
         .expect(409);
+
+      console.log(response.body);
 
       await expect(response).toMatchOpenAPISpec();
     });
