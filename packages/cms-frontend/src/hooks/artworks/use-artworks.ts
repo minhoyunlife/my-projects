@@ -28,6 +28,10 @@ interface CreateArtworkParams {
   data: CreateArtworkFormData;
 }
 
+interface DeleteArtworkParams {
+  ids: Set<string>;
+}
+
 export function useArtworks() {
   const queryClient = useQueryClient();
 
@@ -74,9 +78,20 @@ export function useArtworks() {
       },
     });
 
+  // 삭제
+  const useDelete = () =>
+    useMutation({
+      mutationFn: ({ ids }: DeleteArtworkParams) =>
+        artworksApi.deleteArtworks({ ids: Array.from(ids) }),
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({ queryKey: ["artworks"] });
+      },
+    });
+
   return {
     useList,
     useCreate,
+    useDelete,
   };
 }
 

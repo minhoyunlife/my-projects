@@ -7,14 +7,17 @@ import {
   GetArtworksSortEnum,
   GetArtworksStatusEnum,
 } from "@minhoyunlife/my-ts-client";
+import { Trash2 } from "lucide-react";
 
 import { CreateArtworkForm } from "@/src/app/(authenticated)/fanarts/(actions)/(create)/create";
-import { columns } from "@/src/app/(authenticated)/fanarts/columns";
+import { DeleteArtworkDialog } from "@/src/app/(authenticated)/fanarts/(actions)/delete";
+import { artworkColumns } from "@/src/app/(authenticated)/fanarts/columns";
 import { ActionButton } from "@/src/components/(authenticated)/action-button";
 import { artworkSkeletonColumns } from "@/src/components/(authenticated)/data-table/skeleton";
 import { DataTable } from "@/src/components/(authenticated)/data-table/table";
 import { FilterContainer } from "@/src/components/(authenticated)/filter/filter-container";
 import { PageWrapper } from "@/src/components/(authenticated)/page-wrapper";
+import { SelectionActionBar } from "@/src/components/(authenticated)/selected-action-bar";
 import { SlideOver } from "@/src/components/(authenticated)/slide-over";
 import { useArtworks } from "@/src/hooks/artworks/use-artworks";
 import { useGenres } from "@/src/hooks/genres/use-genres";
@@ -23,7 +26,9 @@ import { useToast } from "@/src/hooks/use-toast";
 export default function FanartsListPage() {
   const { toast } = useToast();
   const { useList } = useArtworks();
+  const { useSearch } = useGenres();
 
+  // 페이징 및 필터 관련
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState<string>("");
   const [platforms, setPlatforms] = useState<GetArtworksPlatformsEnum[]>([]);
@@ -41,6 +46,10 @@ export default function FanartsListPage() {
   // 작품 추가 슬라이드오버 관련
   const [isAddOpen, setIsAddOpen] = useState(false);
 
+  // 행 선택 및 삭제 관련
+  const [selectedArtworkIds, setSelectedArtworkIds] = useState<string[]>([]);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
   const {
     data: artworksResult,
     isLoading: isArtworksLoading,
@@ -54,8 +63,6 @@ export default function FanartsListPage() {
     status,
   });
 
-  const { useSearch } = useGenres();
-
   const { data: genreSearchResult, isLoading: isGenreSearchLoading } =
     useSearch(genreSearch);
 
@@ -67,6 +74,11 @@ export default function FanartsListPage() {
       })) ?? [],
     [genreSearchResult],
   );
+
+  const handleSingleDelete = (id: string) => {
+    setSelectedArtworkIds([id]);
+    setIsDeleteDialogOpen(true);
+  };
 
   useEffect(() => {
     if (error) {
@@ -117,7 +129,32 @@ export default function FanartsListPage() {
 
   return (
     <PageWrapper title="팬아트 작품 목록">
+      {/* 행 선택 후 상단에 표시할 액션 바 */}
+      {selectedArtworkIds.length > 0 && (
+        <SelectionActionBar
+          selectedCount={selectedArtworkIds.length}
+          itemLabel="작품"
+          actions={[
+            {
+              label: "삭제",
+              icon: Trash2,
+              variant: "destructive",
+              onClick: () => setIsDeleteDialogOpen(true),
+            },
+          ]}
+        />
+      )}
+
+      {/* 작품 삭제 확인 다이얼로그 */}
+      <DeleteArtworkDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        selectedIds={selectedArtworkIds}
+        onSuccess={() => setSelectedArtworkIds([])}
+      />
+
       <div className="flex justify-between items-center mb-6">
+        {/* 검색 등 필터 컨테이너 */}
         <FilterContainer
           searchProps={{
             placeholder: "작품 제목 검색...",
@@ -188,14 +225,20 @@ export default function FanartsListPage() {
         </SlideOver>
       </div>
 
+      {/* 작품 목록 테이블 */}
       <DataTable
-        columns={columns}
+        columns={artworkColumns({
+          onDeleteClick: handleSingleDelete,
+        })}
         data={artworksResult?.data.items ?? []}
         isLoading={isArtworksLoading}
         pageCount={artworksResult?.data.metadata.totalPages}
         currentPage={artworksResult?.data.metadata.currentPage}
         onPageChange={setPage}
         skeletonColumns={artworkSkeletonColumns}
+        enableRowSelection={true}
+        selectedIds={selectedArtworkIds}
+        onSelectedIdsChange={setSelectedArtworkIds}
       />
     </PageWrapper>
   );

@@ -3,10 +3,11 @@ import { GetArtworksSortEnum } from "@minhoyunlife/my-ts-client";
 import FanartsListPage from "@/src/app/(authenticated)/fanarts/page";
 import { wrapper } from "@/test/utils/test-query-client";
 
-const mockUseArtworkQuery = vi.fn();
+const mockUseArtworkListQuery = vi.fn();
 vi.mock("@/src/hooks/artworks/use-artworks", () => ({
   useArtworks: () => ({
-    useList: (params: any) => mockUseArtworkQuery(params),
+    useList: (params: any) => mockUseArtworkListQuery(params),
+    useDelete: () => vi.fn(),
   }),
 }));
 
@@ -41,7 +42,7 @@ describe("FanartsListPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockUseArtworkQuery.mockReturnValue({
+    mockUseArtworkListQuery.mockReturnValue({
       data: {
         data: {
           items: [],
@@ -98,7 +99,7 @@ describe("FanartsListPage", () => {
 
     describe("로딩 상태", () => {
       it("데이터 로딩 중에는 로딩 상태가 표시됨", () => {
-        mockUseArtworkQuery.mockReturnValue({
+        mockUseArtworkListQuery.mockReturnValue({
           data: null,
           isLoading: true,
           error: null,
@@ -113,6 +114,95 @@ describe("FanartsListPage", () => {
     });
   });
 
+  describe("UI 상호작용 검증", () => {
+    describe("작품 삭제", () => {
+      it("삭제 메뉴 클릭 시 확인 다이얼로그가 열림", async () => {
+        mockUseArtworkListQuery.mockReturnValue({
+          data: {
+            data: {
+              items: [
+                {
+                  id: "1",
+                  translations: [
+                    {
+                      language: "ko",
+                      title: "다크 소울3",
+                    },
+                  ],
+                  genres: [
+                    {
+                      id: "1",
+                      translations: [{ language: "ko", name: "액션" }],
+                    },
+                  ],
+                },
+              ],
+              metadata: { totalPages: 1, currentPage: 1 },
+            },
+          },
+          isLoading: false,
+          error: null,
+        });
+
+        render(<FanartsListPage />, { wrapper });
+
+        const menuButton = reactScreen.getByLabelText("more");
+        await userEvent.click(menuButton);
+
+        const deleteButton = reactScreen.getByRole("menuitem", {
+          name: /삭제/i,
+        });
+        await userEvent.click(deleteButton);
+
+        expect(reactScreen.getByRole("alertdialog")).toBeInTheDocument();
+      });
+
+      it("여러 행 선택 후 삭제 버튼 클릭 시 확인 다이얼로그가 열림", async () => {
+        mockUseArtworkListQuery.mockReturnValue({
+          data: {
+            data: {
+              items: [
+                {
+                  id: "1",
+                  translations: [{ language: "ko", title: "엘든 링" }],
+                  genres: [
+                    {
+                      id: "1",
+                      translations: [{ language: "ko", name: "액션" }],
+                    },
+                  ],
+                },
+                {
+                  id: "2",
+                  translations: [{ language: "ko", title: "다크 소울3" }],
+                  genres: [
+                    {
+                      id: "1",
+                      translations: [{ language: "ko", name: "액션" }],
+                    },
+                  ],
+                },
+              ],
+              metadata: { totalPages: 1, currentPage: 1 },
+            },
+          },
+          isLoading: false,
+          error: null,
+        });
+
+        render(<FanartsListPage />, { wrapper });
+
+        const checkboxes = reactScreen.getAllByRole("checkbox");
+        await userEvent.click(checkboxes[1]!); // 첫 번째 행 선택
+
+        const deleteButton = reactScreen.getByRole("button", { name: /삭제/i });
+        await userEvent.click(deleteButton);
+
+        expect(reactScreen.getByRole("alertdialog")).toBeInTheDocument();
+      });
+    });
+  });
+
   describe("동작 검증", () => {
     describe("필터링 동작", () => {
       it("검색어 입력 시 API 파라미터가 갱신됨", () => {
@@ -122,7 +212,7 @@ describe("FanartsListPage", () => {
           reactScreen.getByPlaceholderText("작품 제목 검색...");
         fireEvent.change(searchInput, { target: { value: "테스트" } });
 
-        expect(mockUseArtworkQuery).toHaveBeenCalledWith(
+        expect(mockUseArtworkListQuery).toHaveBeenCalledWith(
           expect.objectContaining({
             search: "테스트",
             page: 1,
@@ -140,7 +230,7 @@ describe("FanartsListPage", () => {
         const steamOption = reactScreen.getByText("Steam");
         fireEvent.click(steamOption);
 
-        expect(mockUseArtworkQuery).toHaveBeenCalledWith(
+        expect(mockUseArtworkListQuery).toHaveBeenCalledWith(
           expect.objectContaining({
             platforms: ["Steam"],
             page: 1,
@@ -175,7 +265,7 @@ describe("FanartsListPage", () => {
         const genreOption = await reactScreen.findByText("RPG");
         await userEvent.click(genreOption);
 
-        expect(mockUseArtworkQuery).toHaveBeenCalledWith(
+        expect(mockUseArtworkListQuery).toHaveBeenCalledWith(
           expect.objectContaining({
             genres: ["genre1"],
             page: 1,
@@ -191,7 +281,7 @@ describe("FanartsListPage", () => {
         );
         fireEvent.click(reactScreen.getByText("공개"));
 
-        expect(mockUseArtworkQuery).toHaveBeenCalledWith(
+        expect(mockUseArtworkListQuery).toHaveBeenCalledWith(
           expect.objectContaining({
             status: ["published"],
             page: 1,
@@ -213,7 +303,7 @@ describe("FanartsListPage", () => {
         await userEvent.click(createdDescOption);
 
         await waitFor(() => {
-          expect(mockUseArtworkQuery).toHaveBeenCalledWith(
+          expect(mockUseArtworkListQuery).toHaveBeenCalledWith(
             expect.objectContaining({
               sort: GetArtworksSortEnum.CreatedDesc,
               page: 1,
@@ -226,7 +316,7 @@ describe("FanartsListPage", () => {
 
   describe("에러 처리 검증", () => {
     it("API 에러 발생 시 토스트 메시지가 표시됨", () => {
-      mockUseArtworkQuery.mockReturnValue({
+      mockUseArtworkListQuery.mockReturnValue({
         data: null,
         isLoading: false,
         error: new Error("API Error"),

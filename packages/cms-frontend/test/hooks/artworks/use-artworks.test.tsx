@@ -14,6 +14,7 @@ vi.mock("@/src/lib/api/client", () => ({
     getArtworks: vi.fn(),
     uploadArtworkImage: vi.fn(),
     createArtwork: vi.fn(),
+    deleteArtworks: vi.fn(),
   },
 }));
 
@@ -191,6 +192,45 @@ describe("useArtworks", () => {
       ).rejects.toThrow(mockError);
 
       expect(artworksApi.createArtwork).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("useDelete", () => {
+    const mockIds = ["artwork-1", "artwork-2"];
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    describe("기본 동작", () => {
+      it("작품 삭제 API를 호출함", async () => {
+        vi.mocked(artworksApi.deleteArtworks).mockResolvedValueOnce({} as any);
+
+        const { result } = renderHook(() => useArtworks().useDelete(), {
+          wrapper,
+        });
+
+        await result.current.mutateAsync({ ids: new Set(mockIds) });
+
+        expect(artworksApi.deleteArtworks).toHaveBeenCalledWith({
+          ids: mockIds,
+        });
+      });
+    });
+
+    describe("에러 처리", () => {
+      it("API 호출에 실패할 경우, 에러를 반환함", async () => {
+        const mockError = new Error("API Error");
+        vi.mocked(artworksApi.deleteArtworks).mockRejectedValueOnce(mockError);
+
+        const { result } = renderHook(() => useArtworks().useDelete(), {
+          wrapper,
+        });
+
+        await expect(
+          result.current.mutateAsync({ ids: new Set(mockIds) }),
+        ).rejects.toThrow(mockError);
+      });
     });
   });
 });
