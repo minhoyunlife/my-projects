@@ -167,6 +167,7 @@ export const artworkColumns = ({
               <Button
                 variant="ghost"
                 className="h-8 w-8 p-0"
+                aria-label="more"
               >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>

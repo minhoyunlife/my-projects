@@ -118,7 +118,10 @@ export class ArtworksRepository extends TransactionalRepository<Artwork> {
    * @param {string[]} ids - 삭제할 작품 ID 배열
    */
   async deleteMany(ids: string[]): Promise<Artwork[]> {
-    const artworks = await this.findBy({ id: In(ids) });
+    const artworks = await this.find({
+      where: { id: In(ids) },
+      relations: ['translations'],
+    });
 
     if (artworks.length !== ids.length) {
       const foundIds = new Set(artworks.map((a) => a.id));
