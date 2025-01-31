@@ -19,3 +19,14 @@ export abstract class BaseException extends HttpException {
     return (this.getResponse() as ErrorResponse).errors;
   }
 }
+
+export function addErrorMessages(
+  errors: Record<string, string[]>,
+  key: string,
+  messages: string[],
+): void {
+  if (!errors[key]) {
+    errors[key] = [];
+  }
+  errors[key].push(...messages);
+}
