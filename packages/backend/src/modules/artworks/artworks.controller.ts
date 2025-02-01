@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   Query,
   Req,
@@ -24,6 +25,7 @@ import {
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { DeleteArtworksDto } from '@/src/modules/artworks/dtos/delete-artworks.dto';
 import { GetArtworksQueryDto } from '@/src/modules/artworks/dtos/get-artworks-query.dto';
+import { UpdateArtworkStatusesDto } from '@/src/modules/artworks/dtos/update-artwork-statuses.dto';
 import { ImageFileType } from '@/src/modules/artworks/enums/file-type.enum';
 import {
   UploadImageErrorCode,
@@ -102,7 +104,7 @@ export class ArtworksController {
   @Post()
   @UseGuards(BearerAuthGuard)
   @HttpCode(HttpStatus.CREATED)
-  async create(
+  async createArtwork(
     @Body() createArtworkDto: CreateArtworkDto,
   ): Promise<ArtworkResponse> {
     const artwork = await this.artworksService.createArtwork(createArtworkDto);
@@ -122,6 +124,16 @@ export class ArtworksController {
       );
     }
     return this.storageService.uploadImage(image);
+  }
+
+  @Patch('statuses')
+  @UseGuards(BearerAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async updateArtworksStatuses(
+    @Body() dto: UpdateArtworkStatusesDto,
+  ): Promise<void> {
+    const { ids, setPublished } = dto;
+    await this.artworksService.updateStatuses(ids, setPublished);
   }
 
   @Delete()

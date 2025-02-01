@@ -14,6 +14,7 @@ import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { ImageFileType } from '@/src/modules/artworks/enums/file-type.enum';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
+import { StatusValidator } from '@/src/modules/artworks/validators/artwork-status.validator';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
@@ -52,6 +53,7 @@ describeWithDeps('ArtworksController', () => {
       controllers: [ArtworksController],
       providers: [
         ArtworksService,
+        StatusValidator,
         StorageService,
         ArtworksRepository,
         GenresRepository,
@@ -387,12 +389,6 @@ describeWithDeps('ArtworksController', () => {
           filename: 'test.png',
           contentType: ImageFileType.PNG,
         })
-        .expect((res) => {
-          if (res.status === 500) {
-            console.error('Server Error Response:', res.body);
-          }
-          return res;
-        })
         .expect(201);
 
       await expect(response).toMatchOpenAPISpec();
@@ -473,6 +469,147 @@ describeWithDeps('ArtworksController', () => {
           contentType: ImageFileType.JPEG,
         })
         .expect(413);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+  });
+
+  describe('PATCH /artworks/statuses', () => {
+    let artworks: Artwork[];
+    let genres: Genre[];
+
+    beforeEach(async () => {
+      genres = await saveEntities(genreRepository, [
+        GenresFactory.createTestData({
+          translations: [
+            { language: Language.KO, name: '액션' },
+            { language: Language.EN, name: 'Action' },
+            { language: Language.JA, name: 'アクション' },
+          ] as GenreTranslation[],
+        }),
+      ]);
+
+      artworks = await saveEntities(artworkRepository, [
+        ArtworksFactory.createTestData(
+          {
+            isDraft: true,
+            genres: [genres[0]],
+            createdAt: new Date(),
+            playedOn: Platform.STEAM,
+            rating: 15,
+          },
+          [
+            ArtworkTranslationsFactory.createTestData({
+              shortReview: '리뷰 작성 완료',
+            }),
+          ],
+        ), // 검증 통과할 비공개인 작품
+        ArtworksFactory.createTestData(
+          {
+            isDraft: true,
+            createdAt: null,
+            genres: [genres[0]],
+          },
+          [ArtworkTranslationsFactory.createTestData()],
+        ), // 검증 실패할 비공개인 작품
+        ArtworksFactory.createTestData(
+          {
+            isDraft: false,
+            genres: [genres[0]],
+          },
+          [ArtworkTranslationsFactory.createTestData()],
+        ), // 공개인 작품
+      ]);
+    });
+
+    it('모든 작품의 상태 변경이 성공할 경우, 204가 반환됨', async () => {
+      const updateDto = {
+        ids: [artworks[0].id],
+        setPublished: true,
+      };
+
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .patch('/artworks/statuses')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateDto)
+        .expect(204);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      const updated = await artworkRepository.findOneBy({ id: artworks[0].id });
+      expect(updated.isDraft).toBe(false);
+    });
+
+    it('일부 작품만 상태 변경이 성공할 경우, 207이 반환됨', async () => {
+      const updateDto = {
+        ids: [artworks[0].id, artworks[1].id], // 검증 통과 작품 + 검증 실패 작품
+        setPublished: true,
+      };
+
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .patch('/artworks/statuses')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateDto)
+        .expect(207);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      const success = await artworkRepository.findOneBy({ id: artworks[0].id });
+      expect(success.isDraft).toBe(false);
+
+      const failed = await artworkRepository.findOneBy({ id: artworks[1].id });
+      expect(failed.isDraft).toBe(true);
+    });
+
+    it('모든 작품이 상태 변경에 실패한 경우, 207이 반환됨', async () => {
+      const updateDto = {
+        ids: [artworks[1].id, 'non-existent-id'], // 검증 실패 작품 + 존재하지 않는 ID
+        setPublished: true,
+      };
+
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .patch('/artworks/statuses')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateDto)
+        .expect(207);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      const unchanged = await artworkRepository.findOneBy({
+        id: artworks[1].id,
+      });
+      expect(unchanged.isDraft).toBe(true);
+    });
+
+    it('리퀘스트 바디가 부적절할 경우, 400 에러가 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .patch('/artworks/statuses')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ids: [] })
+        .expect(400);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+
+    it('인증에 실패한 경우, 401 에러가 반환됨', async () => {
+      const updateDto = {
+        ids: [artworks[0].id],
+        setPublished: true,
+      };
+
+      const response = await request(app.getHttpServer())
+        .patch('/artworks/statuses')
+        .set('Authorization', 'Bearer invalid-token')
+        .send(updateDto)
+        .expect(401);
 
       await expect(response).toMatchOpenAPISpec();
     });
@@ -588,8 +725,6 @@ describeWithDeps('ArtworksController', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({ ids: [artworks[0].id, artworks[2].id] }) // 비공개 + 공개 작품
         .expect(409);
-
-      console.log(response.body);
 
       await expect(response).toMatchOpenAPISpec();
     });
