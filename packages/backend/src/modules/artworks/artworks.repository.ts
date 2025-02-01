@@ -104,6 +104,23 @@ export class ArtworksRepository extends TransactionalRepository<Artwork> {
   }
 
   /**
+   * ID 목록으로 작품 상세 정보를 조회
+   * @param {string[]} ids - 조회할 작품 ID 배열
+   * @returns {Promise<Artwork[]>} 작품 상세 정보 배열
+   */
+  async findManyWithDetails(ids: string[]): Promise<Artwork[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    return this.createQueryBuilder('artwork')
+      .leftJoinAndSelect('artwork.translations', 'translation')
+      .leftJoinAndSelect('artwork.genres', 'genre')
+      .where('artwork.id IN (:...ids)', { ids })
+      .getMany();
+  }
+
+  /**
    * 작품 데이터를 생성
    * @param {Partial<Artwork>} artworkData - 생성할 작품 데이터
    * @returns {Promise<Artwork>} 생성된 작품
@@ -111,6 +128,27 @@ export class ArtworksRepository extends TransactionalRepository<Artwork> {
   async createOne(artworkData: Partial<Artwork>): Promise<Artwork> {
     const artwork = this.create(artworkData);
     return this.save(artwork);
+  }
+
+  /**
+   * 작품들의 상태(isDraft)를 업데이트
+   * @param {string[]} ids - 상태를 변경할 작품 ID들
+   * @param {boolean} setPublished - 변경할 상태 값
+   */
+  async updateManyStatuses(
+    ids: string[],
+    setPublished: boolean,
+  ): Promise<void> {
+    if (ids.length === 0) {
+      return;
+    }
+
+    await this.repository
+      .createQueryBuilder()
+      .update(Artwork)
+      .set({ isDraft: !setPublished })
+      .where('id IN (:...ids)', { ids })
+      .execute();
   }
 
   /**
