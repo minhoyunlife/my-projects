@@ -8,11 +8,13 @@ import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
+import { StatusError } from '@/src/modules/artworks/enums/status-error.enum';
 import { Status } from '@/src/modules/artworks/enums/status.enum';
 import {
   ArtworkErrorCode,
   ArtworkException,
 } from '@/src/modules/artworks/exceptions/artworks.exception';
+import { StatusValidator } from '@/src/modules/artworks/validators/artwork-status.validator';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { ImageStatus } from '@/src/modules/storage/enums/status.enum';
@@ -24,6 +26,7 @@ describeWithoutDeps('ArtworksService', () => {
   let artworksRepository: Partial<ArtworksRepository>;
   let genresRepository: Partial<GenresRepository>;
   let storageService: Partial<StorageService>;
+  let statusValidator: Partial<StatusValidator>;
   let entityManager: EntityManager;
 
   beforeEach(async () => {
@@ -43,6 +46,13 @@ describeWithoutDeps('ArtworksService', () => {
           useValue: { changeImageTag: vi.fn() },
         },
         {
+          provide: StatusValidator,
+          useValue: {
+            validate: vi.fn(),
+            formatErrors: vi.fn(),
+          },
+        },
+        {
           provide: EntityManager,
           useValue: {
             transaction: vi.fn((cb) => cb(entityManager)),
@@ -55,6 +65,7 @@ describeWithoutDeps('ArtworksService', () => {
     artworksRepository = module.get<ArtworksRepository>(ArtworksRepository);
     genresRepository = module.get<GenresRepository>(GenresRepository);
     storageService = module.get<StorageService>(StorageService);
+    statusValidator = module.get<StatusValidator>(StatusValidator);
     entityManager = module.get<EntityManager>(EntityManager);
   });
 
@@ -313,6 +324,131 @@ describeWithoutDeps('ArtworksService', () => {
       createOneMock.mockRejectedValue(new Error());
 
       await expect(service.createArtwork(dto)).rejects.toThrowError();
+    });
+  });
+
+  describe('updateStatuses', () => {
+    const findManyWithDetailsMock = vi.fn();
+    const updateManyStatusesMock = vi.fn();
+    const validateMock = vi.fn();
+    const formatErrorsMock = vi.fn();
+
+    beforeEach(() => {
+      findManyWithDetailsMock.mockClear();
+      updateManyStatusesMock.mockClear();
+      validateMock.mockClear();
+      formatErrorsMock.mockClear();
+
+      artworksRepository.findManyWithDetails = findManyWithDetailsMock;
+      artworksRepository.updateManyStatuses = updateManyStatusesMock;
+      statusValidator.validate = validateMock;
+      statusValidator.formatErrors = formatErrorsMock;
+    });
+
+    describe('비공개에서 공개로 상태 변경', () => {
+      it('모든 검증을 통과한 경우 성공적으로 상태가 변경됨', async () => {
+        const artworks = [
+          { id: 'artwork-1', isDraft: true },
+          { id: 'artwork-2', isDraft: true },
+        ];
+        findManyWithDetailsMock.mockResolvedValue(artworks);
+        validateMock.mockReturnValue([]);
+
+        await service.updateStatuses(['artwork-1', 'artwork-2'], true);
+
+        expect(updateManyStatusesMock).toHaveBeenCalledWith(
+          ['artwork-1', 'artwork-2'],
+          true,
+        );
+      });
+
+      it('일부 작품이 검증에 실패한 경우, 검증 통과한 작품만 상태가 변경됨', async () => {
+        const artworks = [
+          { id: 'artwork-1', isDraft: true },
+          { id: 'artwork-2', isDraft: true },
+        ];
+        findManyWithDetailsMock.mockResolvedValue(artworks);
+        validateMock
+          .mockReturnValueOnce([])
+          .mockReturnValueOnce([
+            { code: StatusError.FIELD_REQUIRED, field: 'createdAt' },
+          ]);
+
+        formatErrorsMock.mockReturnValue({
+          [StatusError.FIELD_REQUIRED]: ['artwork-2|createdAt'],
+        });
+
+        await expect(
+          service.updateStatuses(['artwork-1', 'artwork-2'], true),
+        ).rejects.toThrow(ArtworkException);
+
+        expect(updateManyStatusesMock).toHaveBeenCalledWith(
+          ['artwork-1'],
+          true,
+        );
+      });
+    });
+
+    describe('공개에서 비공개로 상태 변경', () => {
+      it('검증 없이 성공적으로 상태가 변경됨', async () => {
+        const artworks = [
+          { id: 'artwork-1', isDraft: false },
+          { id: 'artwork-2', isDraft: false },
+        ];
+        findManyWithDetailsMock.mockResolvedValue(artworks);
+
+        await service.updateStatuses(['artwork-1', 'artwork-2'], false);
+
+        expect(validateMock).not.toHaveBeenCalled();
+        expect(updateManyStatusesMock).toHaveBeenCalledWith(
+          ['artwork-1', 'artwork-2'],
+          false,
+        );
+      });
+    });
+
+    describe('에러 케이스', () => {
+      it('존재하지 않는 작품이 포함된 경우, 해당 작품은 에러가 발생하고 나머지는 성공함', async () => {
+        findManyWithDetailsMock.mockResolvedValue([
+          { id: 'artwork-1', isDraft: true },
+        ]);
+
+        await expect(
+          service.updateStatuses(['artwork-1', 'non-existent'], true),
+        ).rejects.toThrow(ArtworkException);
+
+        expect(updateManyStatusesMock).toHaveBeenCalledWith(
+          ['artwork-1'],
+          true,
+        );
+      });
+
+      it('이미 원하는 상태인 작품은 업데이트되지 않음', async () => {
+        const artworks = [
+          { id: 'artwork-1', isDraft: false }, // 이미 공개 상태
+          { id: 'artwork-2', isDraft: true }, // 비공개 상태
+        ];
+        findManyWithDetailsMock.mockResolvedValue(artworks);
+        validateMock.mockReturnValue([]);
+
+        await service.updateStatuses(['artwork-1', 'artwork-2'], true);
+
+        expect(updateManyStatusesMock).toHaveBeenCalledWith(
+          ['artwork-2'],
+          true,
+        );
+      });
+
+      it('DB 업데이트 실패 시 에러가 발생함', async () => {
+        const artworks = [{ id: 'artwork-1', isDraft: true }];
+        findManyWithDetailsMock.mockResolvedValue(artworks);
+        validateMock.mockReturnValue([]);
+        updateManyStatusesMock.mockRejectedValue(new Error());
+
+        await expect(
+          service.updateStatuses(['artwork-1'], true),
+        ).rejects.toThrow(ArtworkException);
+      });
     });
   });
 

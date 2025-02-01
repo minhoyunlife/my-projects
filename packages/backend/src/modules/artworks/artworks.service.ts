@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 
 import { EntityManager, In } from 'typeorm';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
+import { addErrorMessages } from '@/src/common/exceptions/base.exception';
 import { EntityList } from '@/src/common/interfaces/entity-list.interface';
 import { withRetry } from '@/src/common/utils/retry.util';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
@@ -11,11 +12,13 @@ import { GetArtworksQueryDto } from '@/src/modules/artworks/dtos/get-artworks-qu
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
+import { StatusError } from '@/src/modules/artworks/enums/status-error.enum';
 import { Status } from '@/src/modules/artworks/enums/status.enum';
 import {
   ArtworkErrorCode,
   ArtworkException,
 } from '@/src/modules/artworks/exceptions/artworks.exception';
+import { StatusValidator } from '@/src/modules/artworks/validators/artwork-status.validator';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { ImageStatus } from '@/src/modules/storage/enums/status.enum';
@@ -27,6 +30,7 @@ export class ArtworksService {
     private readonly artworksRepository: ArtworksRepository,
     private readonly genresRepository: GenresRepository,
     private readonly storageService: StorageService,
+    private readonly statusValidator: StatusValidator,
     private readonly entityManager: EntityManager,
   ) {}
 
@@ -142,6 +146,76 @@ export class ArtworksService {
 
       return await this.artworksRepository.createOne(artwork);
     });
+  }
+
+  /**
+   * 작품의 상태를 변경
+   * @param ids 상태를 변경할 작품의 ID
+   * @param setPublished 변경할 상태 값
+   */
+  async updateStatuses(ids: string[], setPublished: boolean): Promise<void> {
+    const errorsByCode: Record<string, string[]> = {};
+    const validationFailedIds = new Set<string>();
+
+    const artworks = await this.artworksRepository.findManyWithDetails(ids);
+
+    const foundIds = new Set(artworks.map((artwork) => artwork.id));
+    ids.forEach((id) => {
+      if (!foundIds.has(id)) {
+        validationFailedIds.add(id);
+        addErrorMessages(errorsByCode, StatusError.NOT_FOUND, [`${id}|id`]);
+      }
+    });
+
+    const artworksToUpdate = artworks.filter(
+      (artwork) => artwork.isDraft === setPublished,
+    );
+
+    if (setPublished) {
+      for (const artwork of artworksToUpdate) {
+        const validationErrors = this.statusValidator.validate(artwork);
+
+        if (validationErrors.length > 0) {
+          validationFailedIds.add(artwork.id);
+
+          const formattedErrors = this.statusValidator.formatErrors(
+            artwork,
+            validationErrors,
+          );
+          Object.entries(formattedErrors).forEach(([code, messages]) => {
+            addErrorMessages(errorsByCode, code, messages);
+          });
+        }
+      }
+    }
+
+    const idsToUpdate = artworksToUpdate
+      .filter((artwork) => !validationFailedIds.has(artwork.id))
+      .map((artwork) => artwork.id);
+
+    if (idsToUpdate.length > 0) {
+      try {
+        await this.artworksRepository.updateManyStatuses(
+          idsToUpdate,
+          setPublished,
+        );
+      } catch (error) {
+        idsToUpdate.forEach((id) => {
+          validationFailedIds.add(id);
+          addErrorMessages(errorsByCode, StatusError.UNKNOWN_FAILURE, [
+            `${id}|status`,
+          ]);
+        });
+      }
+    }
+
+    if (Object.keys(errorsByCode).length > 0) {
+      throw new ArtworkException(
+        ArtworkErrorCode.SOME_FAILED,
+        'Some status changes failed',
+        errorsByCode,
+      );
+    }
   }
 
   /**

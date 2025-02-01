@@ -686,6 +686,192 @@ describeWithDeps('ArtworksRepository', () => {
     });
   });
 
+  describe('findManyWithDetails', () => {
+    let savedArtworks: Artwork[];
+
+    beforeEach(async () => {
+      await clearTables(dataSource, [Artwork, Genre]);
+
+      const genre = await saveEntities(genreRepo, [
+        GenresFactory.createTestData({}, [
+          { language: Language.KO, name: '액션' },
+          { language: Language.EN, name: 'Action' },
+          { language: Language.JA, name: 'アクション' },
+        ]),
+      ]);
+
+      savedArtworks = await saveEntities(artworkRepo, [
+        ArtworksFactory.createTestData(
+          { isDraft: true },
+          [
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.KO,
+              title: '다크소울',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.EN,
+              title: 'Dark Souls',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.JA,
+              title: 'ダークソウル',
+            }),
+          ],
+          genre,
+        ),
+        ArtworksFactory.createTestData(
+          { isDraft: false },
+          [
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.KO,
+              title: '젤다',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.EN,
+              title: 'Zelda',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.JA,
+              title: 'ゼルダ',
+            }),
+          ],
+          genre,
+        ),
+      ]);
+    });
+
+    it('ID 목록으로 작품들을 성공적으로 조회함', async () => {
+      const targetIds = savedArtworks.map((artwork) => artwork.id);
+      const result = await artworkRepo.findManyWithDetails(targetIds);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].translations).toBeDefined();
+      expect(result[0].genres).toBeDefined();
+      expect(result[1].translations).toBeDefined();
+      expect(result[1].genres).toBeDefined();
+    });
+
+    it('존재하지 않는 ID가 포함된 경우, 존재하는 작품만 조회됨', async () => {
+      const targetIds = [
+        ...savedArtworks.map((artwork) => artwork.id),
+        'non-existent-id',
+      ];
+      const result = await artworkRepo.findManyWithDetails(targetIds);
+
+      expect(result).toHaveLength(2);
+    });
+
+    it('빈 ID 목록이 주어진 경우, 빈 배열이 반환됨', async () => {
+      const result = await artworkRepo.findManyWithDetails([]);
+      expect(result).toHaveLength(0);
+    });
+
+    it('조회된 작품의 번역 데이터가 모든 언어를 포함함', async () => {
+      const [result] = await artworkRepo.findManyWithDetails([
+        savedArtworks[0].id,
+      ]);
+
+      expect(result.translations).toHaveLength(3);
+      expect(result.translations.map((t) => t.language)).toEqual(
+        expect.arrayContaining([Language.KO, Language.EN, Language.JA]),
+      );
+    });
+  });
+
+  describe('updateManyStatuses', () => {
+    let savedArtworks: Artwork[];
+
+    beforeEach(async () => {
+      await clearTables(dataSource, [Artwork, Genre]);
+
+      const genre = await saveEntities(genreRepo, [
+        GenresFactory.createTestData({}, [
+          { language: Language.KO, name: '액션' },
+          { language: Language.EN, name: 'Action' },
+          { language: Language.JA, name: 'アクション' },
+        ]),
+      ]);
+
+      savedArtworks = await saveEntities(artworkRepo, [
+        ArtworksFactory.createTestData(
+          { isDraft: true },
+          [
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.KO,
+              title: '다크소울',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.EN,
+              title: 'Dark Souls',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.JA,
+              title: 'ダークソウル',
+            }),
+          ],
+          genre,
+        ),
+        ArtworksFactory.createTestData(
+          { isDraft: true },
+          [
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.KO,
+              title: '젤다',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.EN,
+              title: 'Zelda',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.JA,
+              title: 'ゼルダ',
+            }),
+          ],
+          genre,
+        ),
+      ]);
+    });
+
+    it('비공개 작품을 공개 상태로 변경할 수 있음', async () => {
+      const targetIds = savedArtworks.map((artwork) => artwork.id);
+      await artworkRepo.updateManyStatuses(targetIds, true);
+
+      const updatedArtworks = await artworkRepo.findBy({ id: In(targetIds) });
+      expect(updatedArtworks.every((artwork) => !artwork.isDraft)).toBe(true);
+    });
+
+    it('공개 작품을 비공개 상태로 변경할 수 있음', async () => {
+      // 먼저 공개 상태로 변경
+      const targetIds = savedArtworks.map((artwork) => artwork.id);
+      await artworkRepo.updateManyStatuses(targetIds, true);
+
+      // 다시 비공개로 변경
+      await artworkRepo.updateManyStatuses(targetIds, false);
+
+      const updatedArtworks = await artworkRepo.findBy({ id: In(targetIds) });
+      expect(updatedArtworks.every((artwork) => artwork.isDraft)).toBe(true);
+    });
+
+    it('빈 ID 목록이 주어진 경우 에러가 발생하지 않음', async () => {
+      await expect(
+        artworkRepo.updateManyStatuses([], true),
+      ).resolves.not.toThrow();
+    });
+
+    it('일부 작품만 상태 변경이 가능함', async () => {
+      const targetId = savedArtworks[0].id;
+      await artworkRepo.updateManyStatuses([targetId], true);
+
+      const [updated, notUpdated] = await Promise.all([
+        artworkRepo.findOneBy({ id: targetId }),
+        artworkRepo.findOneBy({ id: savedArtworks[1].id }),
+      ]);
+
+      expect(updated.isDraft).toBe(false);
+      expect(notUpdated.isDraft).toBe(true);
+    });
+  });
+
   describe('deleteMany', () => {
     let artworks: Artwork[];
 

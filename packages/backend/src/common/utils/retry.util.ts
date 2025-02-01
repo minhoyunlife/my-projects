@@ -17,7 +17,6 @@ export async function withRetry<T>(
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      console.log('attempt', attempt);
       return await operation();
     } catch (error) {
       lastError = error;
