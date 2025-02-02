@@ -14,6 +14,7 @@ vi.mock("@/src/lib/api/client", () => ({
     getArtworks: vi.fn(),
     uploadArtworkImage: vi.fn(),
     createArtwork: vi.fn(),
+    updateArtworksStatus: vi.fn(),
     deleteArtworks: vi.fn(),
   },
 }));
@@ -192,6 +193,90 @@ describe("useArtworks", () => {
       ).rejects.toThrow(mockError);
 
       expect(artworksApi.createArtwork).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("useChangeStatus", () => {
+    const mockIds = ["artwork-1", "artwork-2"];
+    const mockSetPublished = true;
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    describe("기본 동작", () => {
+      it("작품 상태 변경 API를 호출함", async () => {
+        const mockResponse = {
+          status: 200,
+          data: { success: true },
+        } as AxiosResponse;
+
+        vi.mocked(artworksApi.updateArtworksStatus).mockResolvedValueOnce(
+          mockResponse,
+        );
+
+        const { result } = renderHook(() => useArtworks().useChangeStatus(), {
+          wrapper,
+        });
+
+        await result.current.mutateAsync({
+          ids: new Set(mockIds),
+          setPublished: mockSetPublished,
+        });
+
+        expect(artworksApi.updateArtworksStatus).toHaveBeenCalledWith({
+          ids: mockIds,
+          setPublished: mockSetPublished,
+        });
+      });
+
+      it("207 응답을 받으면 에러로 처리함", async () => {
+        const mock207Response = {
+          status: 207,
+          data: {
+            message: "Some status changes failed",
+            code: "SOME_FAILED",
+            errors: {
+              FIELD_REQUIRED: ["artwork-1|createdAt", "artwork-1|playedOn"],
+            },
+          },
+        } as AxiosResponse;
+
+        vi.mocked(artworksApi.updateArtworksStatus).mockResolvedValueOnce(
+          mock207Response,
+        );
+
+        const { result } = renderHook(() => useArtworks().useChangeStatus(), {
+          wrapper,
+        });
+
+        await expect(
+          result.current.mutateAsync({
+            ids: new Set(mockIds),
+            setPublished: mockSetPublished,
+          }),
+        ).rejects.toEqual(mock207Response);
+      });
+    });
+
+    describe("에러 처리", () => {
+      it("API 호출에 실패할 경우, 에러를 반환함", async () => {
+        const mockError = new Error("API Error");
+        vi.mocked(artworksApi.updateArtworksStatus).mockRejectedValueOnce(
+          mockError,
+        );
+
+        const { result } = renderHook(() => useArtworks().useChangeStatus(), {
+          wrapper,
+        });
+
+        await expect(
+          result.current.mutateAsync({
+            ids: new Set(mockIds),
+            setPublished: mockSetPublished,
+          }),
+        ).rejects.toThrow(mockError);
+      });
     });
   });
 
