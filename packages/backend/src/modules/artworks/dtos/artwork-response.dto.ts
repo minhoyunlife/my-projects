@@ -21,7 +21,7 @@ export class ArtworkResponse {
     this.imageUrl = storageService.getImageUrl(artwork.imageKey);
     this.createdAt = artwork.createdAt?.toISOString() ?? '';
     this.playedOn = artwork.playedOn ?? '';
-    this.rating = artwork.rating ?? -1; // 0 이하는 무효한 값이므로, null 일 경우엔 일부러 무효한 값을 지정
+    this.rating = artwork.rating;
     this.isDraft = artwork.isDraft;
     this.translations = artwork.translations ?? [];
     this.genres =

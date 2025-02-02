@@ -40,7 +40,7 @@ export class PlayedOnMustBeSetRule implements StatusChangeRule {
 
 export class RatingMustBeSetRule implements StatusChangeRule {
   validate(artwork: Artwork): ValidationResult {
-    if (!artwork.rating) {
+    if (artwork.rating === null || artwork.rating === undefined) {
       return {
         isValid: false,
         error: {
