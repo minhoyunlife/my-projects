@@ -93,7 +93,7 @@ describeWithoutDeps('ArtworkResponse', () => {
         expect(response.rating).toBe(artwork.rating);
       });
 
-      it('엔티티의 속성 값이 존재하지 않는 경우, -1 이 반환됨', () => {
+      it('엔티티의 속성 값이 존재하지 않는 경우, null 이 반환됨', () => {
         const artworkWithNullRating = ArtworksFactory.createTestData({
           rating: null,
         }) as Artwork;
@@ -103,7 +103,7 @@ describeWithoutDeps('ArtworkResponse', () => {
           artworkWithNullRating,
         );
 
-        expect(responseWithNullRating.rating).toBe(-1);
+        expect(responseWithNullRating.rating).toBe(null);
       });
     });
 

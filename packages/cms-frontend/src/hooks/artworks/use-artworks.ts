@@ -28,6 +28,11 @@ interface CreateArtworkParams {
   data: CreateArtworkFormData;
 }
 
+interface UpdateArtworkStatusParams {
+  ids: Set<string>;
+  setPublished: boolean;
+}
+
 interface DeleteArtworkParams {
   ids: Set<string>;
 }
@@ -78,6 +83,25 @@ export function useArtworks() {
       },
     });
 
+  // 작품 공개/비공개 상태 변환
+  const useChangeStatus = () =>
+    useMutation({
+      mutationFn: async ({ ids, setPublished }: UpdateArtworkStatusParams) => {
+        const response = await artworksApi.updateArtworksStatus({
+          ids: Array.from(ids),
+          setPublished,
+        });
+
+        if (response.status === 207) {
+          throw response;
+        }
+        return response.data;
+      },
+      onSettled: async () => {
+        await queryClient.invalidateQueries({ queryKey: ["artworks"] });
+      },
+    });
+
   // 삭제
   const useDelete = () =>
     useMutation({
@@ -91,6 +115,7 @@ export function useArtworks() {
   return {
     useList,
     useCreate,
+    useChangeStatus,
     useDelete,
   };
 }

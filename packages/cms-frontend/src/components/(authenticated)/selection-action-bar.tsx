@@ -19,7 +19,10 @@ export function SelectionActionBar({
   actions,
 }: SelectionActionBarProps) {
   return (
-    <div className="absolute border-b inset-x-0 top-0 z-50 bg-sidebar backdrop-blur-sm flex justify-center p-4">
+    <div
+      className="absolute border-b inset-x-0 top-0 z-50 bg-sidebar backdrop-blur-sm flex justify-center p-4"
+      data-testid="selection-action-bar"
+    >
       <div className="container flex h-16 items-center justify-between">
         <p className="text-sm font-medium">
           {selectedCount} 개의 {itemLabel} 선택됨

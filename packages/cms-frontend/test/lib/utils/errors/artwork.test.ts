@@ -1,6 +1,5 @@
 import { ArtworkErrorCode } from "@/src/constants/artworks/error-codes";
 import { handleArtworkError } from "@/src/lib/utils/errors/artwork";
-import { handleGenreError } from "@/src/lib/utils/errors/genre";
 
 describe("handleArtworkError", () => {
   const mockToast = vi.fn();

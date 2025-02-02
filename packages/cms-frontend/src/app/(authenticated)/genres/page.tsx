@@ -14,7 +14,7 @@ import { genreSkeletonColumns } from "@/src/components/(authenticated)/data-tabl
 import { DataTable } from "@/src/components/(authenticated)/data-table/table";
 import { FilterContainer } from "@/src/components/(authenticated)/filter/filter-container";
 import { PageWrapper } from "@/src/components/(authenticated)/page-wrapper";
-import { SelectionActionBar } from "@/src/components/(authenticated)/selected-action-bar";
+import { SelectionActionBar } from "@/src/components/(authenticated)/selection-action-bar";
 import { SlideOver } from "@/src/components/(authenticated)/slide-over";
 import { useGenres } from "@/src/hooks/genres/use-genres";
 import { useToast } from "@/src/hooks/use-toast";

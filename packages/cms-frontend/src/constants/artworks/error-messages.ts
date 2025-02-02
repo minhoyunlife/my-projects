@@ -1,4 +1,7 @@
-import { ArtworkErrorCode } from "@/src/constants/artworks/error-codes";
+import {
+  ArtworkErrorCode,
+  ArtworkStatusErrorCode,
+} from "@/src/constants/artworks/error-codes";
 
 interface ArtworkErrorDetail {
   [key: string]: string[];
@@ -55,6 +58,13 @@ export const ARTWORK_ERROR_MESSAGES = {
       return Object.values(errors).flat().join("\n");
     },
   },
+  [ArtworkErrorCode.SOME_FAILED]: {
+    title: "일부 작품의 상태 변경에 실패했습니다",
+    formatDescription: (errors?: Record<string, string[]>) => {
+      if (!errors) return "";
+      return formatMultiStatusError(errors);
+    },
+  },
 } as const;
 
 export function formatArtworkErrorMessage(
@@ -68,4 +78,53 @@ export function formatArtworkErrorMessage(
     title: errorConfig.title,
     description: description || undefined,
   };
+}
+
+const STATUS_ERROR_MESSAGES: Record<ArtworkStatusErrorCode, string> = {
+  [ArtworkStatusErrorCode.FIELD_REQUIRED]: "필수 필드 누락",
+  [ArtworkStatusErrorCode.OUT_OF_RANGE]: "유효 범위 초과",
+  [ArtworkStatusErrorCode.NOT_EXIST]: "존재하지 않는 데이터",
+  [ArtworkStatusErrorCode.NOT_FOUND]: "찾을 수 없는 작품",
+  [ArtworkStatusErrorCode.UNKNOWN_FAILURE]: "알 수 없는 오류",
+} as const;
+
+function formatMultiStatusError(errors: Record<string, string[]>) {
+  if (!errors) return "";
+
+  const groupedErrors: Record<string, Record<string, string[]>> = {};
+
+  Object.entries(errors).forEach(([errorType, fields]) => {
+    fields.forEach((field) => {
+      const [artworkId, fieldPath] = field.split("|");
+      if (!artworkId || !fieldPath) return;
+
+      if (!groupedErrors[artworkId]) {
+        groupedErrors[artworkId] = {};
+      }
+
+      if (!groupedErrors[artworkId][errorType]) {
+        groupedErrors[artworkId][errorType] = [];
+      }
+
+      groupedErrors[artworkId][errorType].push(fieldPath);
+    });
+  });
+
+  // 작품별로 에러 메시지 포맷팅
+  return Object.entries(groupedErrors)
+    .map(([artworkId, artworkErrors]) => {
+      const errorMessages = Object.entries(artworkErrors)
+        .map(([errorType, fields]) => {
+          const errorCode = errorType as ArtworkStatusErrorCode;
+          const messageTitle = STATUS_ERROR_MESSAGES[errorCode];
+          if (!messageTitle) return "";
+
+          return `${messageTitle}:\n${fields.join("\n")}`;
+        })
+        .filter(Boolean)
+        .join("\n");
+
+      return `작품 ${artworkId}:\n${errorMessages}`;
+    })
+    .join("\n\n");
 }

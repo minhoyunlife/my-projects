@@ -7,9 +7,10 @@ import {
   GetArtworksSortEnum,
   GetArtworksStatusEnum,
 } from "@minhoyunlife/my-ts-client";
-import { Trash2 } from "lucide-react";
+import { Eye, EyeOff, Trash2 } from "lucide-react";
 
 import { CreateArtworkForm } from "@/src/app/(authenticated)/fanarts/(actions)/(create)/create";
+import { ChangeArtworkStatusesDialog } from "@/src/app/(authenticated)/fanarts/(actions)/change-status";
 import { DeleteArtworkDialog } from "@/src/app/(authenticated)/fanarts/(actions)/delete";
 import { artworkColumns } from "@/src/app/(authenticated)/fanarts/columns";
 import { ActionButton } from "@/src/components/(authenticated)/action-button";
@@ -17,7 +18,7 @@ import { artworkSkeletonColumns } from "@/src/components/(authenticated)/data-ta
 import { DataTable } from "@/src/components/(authenticated)/data-table/table";
 import { FilterContainer } from "@/src/components/(authenticated)/filter/filter-container";
 import { PageWrapper } from "@/src/components/(authenticated)/page-wrapper";
-import { SelectionActionBar } from "@/src/components/(authenticated)/selected-action-bar";
+import { SelectionActionBar } from "@/src/components/(authenticated)/selection-action-bar";
 import { SlideOver } from "@/src/components/(authenticated)/slide-over";
 import { useArtworks } from "@/src/hooks/artworks/use-artworks";
 import { useGenres } from "@/src/hooks/genres/use-genres";
@@ -46,8 +47,15 @@ export default function FanartsListPage() {
   // 작품 추가 슬라이드오버 관련
   const [isAddOpen, setIsAddOpen] = useState(false);
 
-  // 행 선택 및 삭제 관련
+  // 행 선택 관련
   const [selectedArtworkIds, setSelectedArtworkIds] = useState<string[]>([]);
+
+  // 상태 변경 관련
+  const [toBePublished, setToBePublished] = useState(false);
+  const [isChangeStatusDialogOpen, setIsChangeStatusDialogOpen] =
+    useState(false);
+
+  // 삭제 관련
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const {
@@ -74,6 +82,12 @@ export default function FanartsListPage() {
       })) ?? [],
     [genreSearchResult],
   );
+
+  const handleSingeStatusChange = (id: string, setPublished: boolean) => {
+    setSelectedArtworkIds([id]);
+    setToBePublished(setPublished);
+    setIsChangeStatusDialogOpen(true);
+  };
 
   const handleSingleDelete = (id: string) => {
     setSelectedArtworkIds([id]);
@@ -136,6 +150,24 @@ export default function FanartsListPage() {
           itemLabel="작품"
           actions={[
             {
+              label: "공개",
+              icon: Eye,
+              variant: "default",
+              onClick: () => {
+                setToBePublished(true);
+                setIsChangeStatusDialogOpen(true);
+              },
+            },
+            {
+              label: "비공개",
+              icon: EyeOff,
+              variant: "outline",
+              onClick: () => {
+                setToBePublished(false);
+                setIsChangeStatusDialogOpen(true);
+              },
+            },
+            {
               label: "삭제",
               icon: Trash2,
               variant: "destructive",
@@ -144,6 +176,18 @@ export default function FanartsListPage() {
           ]}
         />
       )}
+
+      {/* 작품 상태 변경 확인 다이얼로그 */}
+      <ChangeArtworkStatusesDialog
+        open={isChangeStatusDialogOpen}
+        onOpenChange={setIsChangeStatusDialogOpen}
+        selectedIds={selectedArtworkIds}
+        setPublished={toBePublished}
+        onSuccess={() => {
+          setToBePublished(false);
+          setSelectedArtworkIds([]);
+        }}
+      />
 
       {/* 작품 삭제 확인 다이얼로그 */}
       <DeleteArtworkDialog
@@ -228,6 +272,7 @@ export default function FanartsListPage() {
       {/* 작품 목록 테이블 */}
       <DataTable
         columns={artworkColumns({
+          onChangeStatusClick: handleSingeStatusChange,
           onDeleteClick: handleSingleDelete,
         })}
         data={artworksResult?.data.items ?? []}
