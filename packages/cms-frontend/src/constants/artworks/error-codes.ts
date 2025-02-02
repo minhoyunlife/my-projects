@@ -1,3 +1,6 @@
+/**
+ * 작품 처리에 관한 최상위 에러 코드
+ */
 export enum ArtworkErrorCode {
   // 이미지 업로드 관련
   IMAGE_NOT_PROVIDED = "UPLOAD_SIZE_EXCEEDED",
@@ -10,4 +13,18 @@ export enum ArtworkErrorCode {
   INVALID_INPUT_DATA = "INVALID_INPUT_DATA",
   NOT_FOUND = "NOT_FOUND",
   ALREADY_PUBLISHED = "ALREADY_PUBLISHED",
+
+  // 작품 공개로의 상태 전환 검증 관련
+  SOME_FAILED = "SOME_FAILED",
+}
+
+/**
+ * 작품 공개 전환 시의 검증 관련 하위 에러 코드
+ */
+export enum ArtworkStatusErrorCode {
+  FIELD_REQUIRED = "FIELD_REQUIRED",
+  OUT_OF_RANGE = "OUT_OF_RANGE",
+  NOT_EXIST = "NOT_EXIST",
+  NOT_FOUND = "NOT_FOUND",
+  UNKNOWN_FAILURE = "UNKNOWN_FAILURE",
 }
