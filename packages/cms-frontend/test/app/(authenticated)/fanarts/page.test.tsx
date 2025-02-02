@@ -7,6 +7,7 @@ const mockUseArtworkListQuery = vi.fn();
 vi.mock("@/src/hooks/artworks/use-artworks", () => ({
   useArtworks: () => ({
     useList: (params: any) => mockUseArtworkListQuery(params),
+    useChangeStatus: () => vi.fn(),
     useDelete: () => vi.fn(),
   }),
 }));
@@ -115,6 +116,137 @@ describe("FanartsListPage", () => {
   });
 
   describe("UI 상호작용 검증", () => {
+    describe("작품 상태 변경", () => {
+      it("상태 변경 메뉴 클릭 시 확인 다이얼로그가 열림", async () => {
+        mockUseArtworkListQuery.mockReturnValue({
+          data: {
+            data: {
+              items: [
+                {
+                  id: "1",
+                  translations: [
+                    {
+                      language: "ko",
+                      title: "다크 소울3",
+                    },
+                  ],
+                  genres: [
+                    {
+                      id: "1",
+                      translations: [{ language: "ko", name: "액션" }],
+                    },
+                  ],
+                  isDraft: true,
+                },
+              ],
+              metadata: { totalPages: 1, currentPage: 1 },
+            },
+          },
+          isLoading: false,
+          error: null,
+        });
+
+        render(<FanartsListPage />, { wrapper });
+
+        const menuButton = reactScreen.getByLabelText("more");
+        await userEvent.click(menuButton);
+
+        const publishButton = reactScreen.getByRole("menuitem", {
+          name: /공개/i,
+        });
+        await userEvent.click(publishButton);
+
+        expect(reactScreen.getByRole("alertdialog")).toBeInTheDocument();
+      });
+
+      it("여러 행 선택 후 상태 변경 버튼 클릭 시 확인 다이얼로그가 열림", async () => {
+        mockUseArtworkListQuery.mockReturnValue({
+          data: {
+            data: {
+              items: [
+                {
+                  id: "1",
+                  translations: [{ language: "ko", title: "엘든 링" }],
+                  genres: [
+                    {
+                      id: "1",
+                      translations: [{ language: "ko", name: "액션" }],
+                    },
+                  ],
+                  isDraft: true,
+                },
+                {
+                  id: "2",
+                  translations: [{ language: "ko", title: "다크 소울3" }],
+                  genres: [
+                    {
+                      id: "1",
+                      translations: [{ language: "ko", name: "액션" }],
+                    },
+                  ],
+                  isDraft: true,
+                },
+              ],
+              metadata: { totalPages: 1, currentPage: 1 },
+            },
+          },
+          isLoading: false,
+          error: null,
+        });
+
+        render(<FanartsListPage />, { wrapper });
+
+        const checkboxes = reactScreen.getAllByRole("checkbox");
+        await userEvent.click(checkboxes[1]!); // 첫 번째 행 선택
+
+        const actionBar = reactScreen.getByTestId("selection-action-bar");
+        const publishButton = within(actionBar).getByRole("button", {
+          name: "공개",
+        });
+        await userEvent.click(publishButton);
+
+        expect(reactScreen.getByRole("alertdialog")).toBeInTheDocument();
+        expect(reactScreen.getByText(/1개의 작품/)).toBeInTheDocument();
+      });
+
+      it("작품 상태에 따라 적절한 상태 변경 메뉴가 표시됨", async () => {
+        mockUseArtworkListQuery.mockReturnValue({
+          data: {
+            data: {
+              items: [
+                {
+                  id: "1",
+                  translations: [{ language: "ko", title: "엘든 링" }],
+                  genres: [
+                    {
+                      id: "1",
+                      translations: [{ language: "ko", name: "액션" }],
+                    },
+                  ],
+                  isDraft: true,
+                },
+              ],
+              metadata: { totalPages: 1, currentPage: 1 },
+            },
+          },
+          isLoading: false,
+          error: null,
+        });
+
+        render(<FanartsListPage />, { wrapper });
+
+        const menuButton = reactScreen.getByLabelText("more");
+        await userEvent.click(menuButton);
+
+        expect(
+          reactScreen.getByRole("menuitem", { name: /공개/i }),
+        ).toBeInTheDocument();
+        expect(
+          reactScreen.queryByRole("menuitem", { name: /비공개/i }),
+        ).not.toBeInTheDocument();
+      });
+    });
+
     describe("작품 삭제", () => {
       it("삭제 메뉴 클릭 시 확인 다이얼로그가 열림", async () => {
         mockUseArtworkListQuery.mockReturnValue({

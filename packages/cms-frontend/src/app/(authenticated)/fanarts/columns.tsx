@@ -33,10 +33,12 @@ const formatDate = (dateString: string) => {
 };
 
 interface GenreColumnProps {
+  onChangeStatusClick: (id: string, setPublished: boolean) => void;
   onDeleteClick: (id: string) => void;
 }
 
 export const artworkColumns = ({
+  onChangeStatusClick,
   onDeleteClick,
 }: GenreColumnProps): ColumnDef<GetArtworks200ResponseItemsInner>[] => [
   {
@@ -120,9 +122,7 @@ export const artworkColumns = ({
     accessorKey: "rating",
     header: "평점",
     cell: ({ row }) => (
-      <span className="block text-center">
-        {row.original.rating >= 0 ? row.original.rating : "-"}
-      </span>
+      <span className="block text-center">{row.original.rating ?? "-"}</span>
     ),
   },
   {
@@ -177,7 +177,11 @@ export const artworkColumns = ({
                 <Pencil className="mr-2 h-4 w-4" />
                 <span>수정</span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  onChangeStatusClick(row.original.id, row.original.isDraft)
+                }
+              >
                 {row.original.isDraft ? (
                   <>
                     <Eye className="mr-2 h-4 w-4" />
