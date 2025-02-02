@@ -18,7 +18,7 @@ import { artworkSkeletonColumns } from "@/src/components/(authenticated)/data-ta
 import { DataTable } from "@/src/components/(authenticated)/data-table/table";
 import { FilterContainer } from "@/src/components/(authenticated)/filter/filter-container";
 import { PageWrapper } from "@/src/components/(authenticated)/page-wrapper";
-import { SelectionActionBar } from "@/src/components/(authenticated)/selected-action-bar";
+import { SelectionActionBar } from "@/src/components/(authenticated)/selection-action-bar";
 import { SlideOver } from "@/src/components/(authenticated)/slide-over";
 import { useArtworks } from "@/src/hooks/artworks/use-artworks";
 import { useGenres } from "@/src/hooks/genres/use-genres";
