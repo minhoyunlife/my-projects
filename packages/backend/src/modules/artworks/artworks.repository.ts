@@ -131,6 +131,54 @@ export class ArtworksRepository extends TransactionalRepository<Artwork> {
   }
 
   /**
+   * 작품 데이터를 수정
+   * @param
+   * @returns {Promise<Artwork>} 수정된 작품
+   */
+  async updateOne(artworkData: Partial<Artwork>): Promise<Artwork> {
+    const artwork = await this.findOne({
+      where: { id: artworkData.id },
+      relations: ['translations', 'genres'],
+    });
+
+    if (!artwork) {
+      throw new ArtworkException(
+        ArtworkErrorCode.NOT_FOUND,
+        'The artwork with the provided ID does not exist',
+      );
+    }
+
+    if (artwork.isDraft === false) {
+      throw new ArtworkException(
+        ArtworkErrorCode.ALREADY_PUBLISHED,
+        'Cannot update published artwork',
+      );
+    }
+
+    const fieldsToUpdate = ['createdAt', 'playedOn', 'rating', 'genres'];
+    fieldsToUpdate.forEach((field) => {
+      if (artworkData[field] !== undefined) {
+        artwork[field] = artworkData[field];
+      }
+    });
+
+    if (artworkData.translations) {
+      artworkData.translations.forEach((newTranslation) => {
+        const existingTranslation = artwork.translations.find(
+          (t) => t.language === newTranslation.language,
+        );
+
+        existingTranslation.title =
+          newTranslation.title ?? existingTranslation.title;
+        existingTranslation.shortReview =
+          newTranslation.shortReview ?? existingTranslation.shortReview;
+      });
+    }
+
+    return this.save(artwork);
+  }
+
+  /**
    * 작품들의 상태(isDraft)를 업데이트
    * @param {string[]} ids - 상태를 변경할 작품 ID들
    * @param {boolean} setPublished - 변경할 상태 값
