@@ -14,7 +14,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import cookieParser from 'cookie-parser';
 
 import { AuthModule } from '@/src/modules/auth/auth.module';
-import { GithubStrategy } from '@/src/modules/auth/strategies/github.strategy';
 import validationPipeConfig from '@/src/modules/config/settings/validation-pipe.config';
 import { TEST_DB_CONFIG, TEST_S3_CONFIG } from '@/test/test.config';
 

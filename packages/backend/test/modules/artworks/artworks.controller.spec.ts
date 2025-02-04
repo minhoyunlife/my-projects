@@ -9,6 +9,7 @@ import { ArtworksController } from '@/src/modules/artworks/artworks.controller';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
+import { UpdateArtworkStatusesDto } from '@/src/modules/artworks/dtos/update-artwork-statuses.dto';
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { ImageFileType } from '@/src/modules/artworks/enums/file-type.enum';
@@ -523,7 +524,7 @@ describeWithDeps('ArtworksController', () => {
     });
 
     it('모든 작품의 상태 변경이 성공할 경우, 204가 반환됨', async () => {
-      const updateDto = {
+      const updateDto: UpdateArtworkStatusesDto = {
         ids: [artworks[0].id],
         setPublished: true,
       };
@@ -543,7 +544,7 @@ describeWithDeps('ArtworksController', () => {
     });
 
     it('일부 작품만 상태 변경이 성공할 경우, 207이 반환됨', async () => {
-      const updateDto = {
+      const updateDto: UpdateArtworkStatusesDto = {
         ids: [artworks[0].id, artworks[1].id], // 검증 통과 작품 + 검증 실패 작품
         setPublished: true,
       };
@@ -566,7 +567,7 @@ describeWithDeps('ArtworksController', () => {
     });
 
     it('모든 작품이 상태 변경에 실패한 경우, 207이 반환됨', async () => {
-      const updateDto = {
+      const updateDto: UpdateArtworkStatusesDto = {
         ids: [artworks[1].id, 'non-existent-id'], // 검증 실패 작품 + 존재하지 않는 ID
         setPublished: true,
       };
@@ -600,7 +601,7 @@ describeWithDeps('ArtworksController', () => {
     });
 
     it('인증에 실패한 경우, 401 에러가 반환됨', async () => {
-      const updateDto = {
+      const updateDto: UpdateArtworkStatusesDto = {
         ids: [artworks[0].id],
         setPublished: true,
       };
