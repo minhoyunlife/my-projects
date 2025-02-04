@@ -1,5 +1,6 @@
 FROM node:20.17.0-alpine AS base
 WORKDIR /app
+RUN npm install -g corepack@latest
 RUN corepack enable && corepack use pnpm@9.10.0
 
 # 의존성 설치 스테이지
