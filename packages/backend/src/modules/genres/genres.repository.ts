@@ -94,6 +94,18 @@ export class GenresRepository extends TransactionalRepository<Genre> {
   }
 
   /**
+   * 장르 데이터를 ID로 조회
+   * @param {string} ids - 조회할 장르 ID
+   * @returns {Promise<Genre[]>} - 장르 데이터
+   */
+  async findByIds(ids: string[]): Promise<Genre[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    return this.findBy({ id: In(ids) });
+  }
+
+  /**
    * 장르 데이터를 생성
    * @param {Partial<Genre>} genreData - 생성할 장르 데이터
    * @returns {Promise<Genre>} 생성된 장르

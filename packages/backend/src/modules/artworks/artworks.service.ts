@@ -9,6 +9,7 @@ import { withRetry } from '@/src/common/utils/retry.util';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { GetArtworksQueryDto } from '@/src/modules/artworks/dtos/get-artworks-query.dto';
+import { UpdateArtworkDto } from '@/src/modules/artworks/dtos/update-artwork.dto';
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
@@ -19,6 +20,7 @@ import {
   ArtworkException,
 } from '@/src/modules/artworks/exceptions/artworks.exception';
 import { StatusValidator } from '@/src/modules/artworks/validators/artwork-status.validator';
+import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { ImageStatus } from '@/src/modules/storage/enums/status.enum';
@@ -100,7 +102,10 @@ export class ArtworksService {
    */
   async createArtwork(dto: CreateArtworkDto): Promise<Artwork> {
     return this.entityManager.transaction(async (manager) => {
-      const genres = await this.genresRepository.findBy({
+      const artworksTxRepo = this.artworksRepository.forTransaction(manager);
+      const genresTxRepo = this.genresRepository.forTransaction(manager);
+
+      const genres = await genresTxRepo.findBy({
         id: In(dto.genreIds),
       });
       if (genres.length !== dto.genreIds.length) {
@@ -144,7 +149,87 @@ export class ArtworksService {
         ] as ArtworkTranslation[],
       };
 
-      return await this.artworksRepository.createOne(artwork);
+      return await artworksTxRepo.createOne(artwork);
+    });
+  }
+
+  /**
+   * 작품을 수정
+   * @param id 수정할 작품의 ID
+   * @param dto 수정할 작품의 정보를 포함하는 DTO
+   * @returns 수정된 작품
+   */
+  async updateArtwork(id: string, dto: UpdateArtworkDto): Promise<Artwork> {
+    if (Object.keys(dto).length === 0) {
+      throw new ArtworkException(
+        ArtworkErrorCode.NO_DATA_PROVIDED,
+        'At least one field must be provided to update artwork',
+        {
+          fields: ['At least one field is required to update artwork'],
+        },
+      );
+    }
+
+    return this.entityManager.transaction(async (manager) => {
+      const artworksTxRepo = this.artworksRepository.forTransaction(manager);
+      const genresTxRepo = this.genresRepository.forTransaction(manager);
+
+      let genres: Genre[];
+      if (dto.genreIds) {
+        genres =
+          dto.genreIds.length > 0
+            ? await genresTxRepo.findByIds(dto.genreIds)
+            : [];
+
+        if (genres.length !== dto.genreIds.length) {
+          const existingGenreIds = new Set(genres.map((genre) => genre.id));
+          const notExistingIds = dto.genreIds.filter(
+            (id) => !existingGenreIds.has(id),
+          );
+
+          throw new ArtworkException(
+            ArtworkErrorCode.NOT_EXISTING_GENRES_INCLUDED,
+            "Some of the provided genres don't exist in DB",
+            {
+              genreIds: notExistingIds,
+            },
+          );
+        }
+      }
+
+      let translations: ArtworkTranslation[] = [];
+      if (dto.koTitle || dto.koShortReview) {
+        translations.push({
+          language: Language.KO,
+          ...(dto.koTitle && { title: dto.koTitle }),
+          ...(dto.koShortReview && { shortReview: dto.koShortReview }),
+        } as ArtworkTranslation); // 부분 수정이므로, 불가피하게 타입 단언을 수행. 리포지토리 층에서 갱신 대상과 원본을 머지하기 때문에 괜찮다고 판단함.
+      }
+      if (dto.enTitle || dto.enShortReview) {
+        translations.push({
+          language: Language.EN,
+          ...(dto.enTitle && { title: dto.enTitle }),
+          ...(dto.enShortReview && { shortReview: dto.enShortReview }),
+        } as ArtworkTranslation);
+      }
+      if (dto.jaTitle || dto.jaShortReview) {
+        translations.push({
+          language: Language.JA,
+          ...(dto.jaTitle && { title: dto.jaTitle }),
+          ...(dto.jaShortReview && { shortReview: dto.jaShortReview }),
+        } as ArtworkTranslation);
+      }
+
+      const artworkData: Partial<Artwork> = {
+        id,
+        ...(translations.length > 0 && { translations }),
+        ...(dto.genreIds && { genres }),
+        ...(dto.createdAt && { createdAt: new Date(dto.createdAt) }),
+        ...(dto.playedOn && { playedOn: dto.playedOn }),
+        ...(dto.rating !== undefined && { rating: dto.rating }),
+      };
+
+      return artworksTxRepo.updateOne(artworkData);
     });
   }
 

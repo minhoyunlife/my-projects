@@ -248,6 +248,55 @@ describeWithDeps('GenresRepository', () => {
     });
   });
 
+  describe('findByIds', () => {
+    let genres: Genre[];
+
+    beforeEach(async () => {
+      await clearTables(dataSource, [Genre]);
+
+      genres = await saveEntities(genreRepo, [
+        GenresFactory.createTestData({}, [
+          { language: Language.KO, name: '액션' },
+          { language: Language.EN, name: 'Action' },
+          { language: Language.JA, name: 'アクション' },
+        ]),
+        GenresFactory.createTestData({}, [
+          { language: Language.KO, name: '롤플레잉' },
+          { language: Language.EN, name: 'RPG' },
+          { language: Language.JA, name: 'ロールプレイング' },
+        ]),
+        GenresFactory.createTestData({}, [
+          { language: Language.KO, name: '어드벤처' },
+          { language: Language.EN, name: 'Adventure' },
+          { language: Language.JA, name: 'アドベンチャー' },
+        ]),
+      ]);
+    });
+
+    it('ID 목록으로 장르들을 성공적으로 조회함', async () => {
+      const targetIds = [genres[0].id, genres[1].id];
+      const result = await genreRepo.findByIds(targetIds);
+
+      expect(result).toHaveLength(2);
+      expect(result.map((g) => g.id)).toEqual(
+        expect.arrayContaining(targetIds),
+      );
+    });
+
+    it('존재하지 않는 ID가 포함된 경우, 존재하는 장르만 조회됨', async () => {
+      const targetIds = [genres[0].id, 'non-existent-id'];
+      const result = await genreRepo.findByIds(targetIds);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe(genres[0].id);
+    });
+
+    it('빈 ID 목록이 주어진 경우, 빈 배열이 반환됨', async () => {
+      const result = await genreRepo.findByIds([]);
+      expect(result).toHaveLength(0);
+    });
+  });
+
   describe('createOne', () => {
     beforeEach(async () => {
       await clearTables(dataSource, [Genre]);
