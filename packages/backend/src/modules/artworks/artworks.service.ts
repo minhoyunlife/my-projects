@@ -160,7 +160,7 @@ export class ArtworksService {
    * @returns 수정된 작품
    */
   async updateArtwork(id: string, dto: UpdateArtworkDto): Promise<Artwork> {
-    if (Object.keys(dto).length === 0) {
+    if (Object.values(dto).every((value) => value === undefined)) {
       throw new ArtworkException(
         ArtworkErrorCode.NO_DATA_PROVIDED,
         'At least one field must be provided to update artwork',
