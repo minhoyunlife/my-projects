@@ -202,21 +202,27 @@ export class ArtworksService {
         translations.push({
           language: Language.KO,
           ...(dto.koTitle && { title: dto.koTitle }),
-          ...(dto.koShortReview && { shortReview: dto.koShortReview }),
+          ...((dto.koShortReview || dto.koShortReview === '') && {
+            shortReview: dto.koShortReview,
+          }),
         } as ArtworkTranslation); // 부분 수정이므로, 불가피하게 타입 단언을 수행. 리포지토리 층에서 갱신 대상과 원본을 머지하기 때문에 괜찮다고 판단함.
       }
       if (dto.enTitle || dto.enShortReview) {
         translations.push({
           language: Language.EN,
           ...(dto.enTitle && { title: dto.enTitle }),
-          ...(dto.enShortReview && { shortReview: dto.enShortReview }),
+          ...((dto.enShortReview || dto.enShortReview === '') && {
+            shortReview: dto.enShortReview,
+          }),
         } as ArtworkTranslation);
       }
       if (dto.jaTitle || dto.jaShortReview) {
         translations.push({
           language: Language.JA,
           ...(dto.jaTitle && { title: dto.jaTitle }),
-          ...(dto.jaShortReview && { shortReview: dto.jaShortReview }),
+          ...((dto.jaShortReview || dto.jaShortReview === '') && {
+            shortReview: dto.jaShortReview,
+          }),
         } as ArtworkTranslation);
       }
 

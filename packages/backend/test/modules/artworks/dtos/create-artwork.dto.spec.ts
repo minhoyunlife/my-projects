@@ -60,7 +60,7 @@ describeWithoutDeps('CreateArtworkDto', () => {
 
       expect(errors).toHaveLength(1);
       expect(errors[0].property).toBe('koTitle');
-      expect(errors[0].constraints).toHaveProperty('isNotEmpty');
+      expect(errors[0].constraints).toHaveProperty('minLength');
     });
 
     it('값이 null인 경우, 에러가 발생함', async () => {
@@ -69,7 +69,18 @@ describeWithoutDeps('CreateArtworkDto', () => {
 
       expect(errors).toHaveLength(1);
       expect(errors[0].property).toBe('koTitle');
-      expect(errors[0].constraints).toHaveProperty('isNotEmpty');
+      expect(errors[0].constraints).toHaveProperty('minLength');
+    });
+
+    it('값이 일정 길이를 초과한 경우, 에러가 발생함', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, {
+        koTitle: 'a'.repeat(101),
+      });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].property).toBe('koTitle');
+      expect(errors[0].constraints).toHaveProperty('maxLength');
     });
   });
 
@@ -87,7 +98,7 @@ describeWithoutDeps('CreateArtworkDto', () => {
 
       expect(errors).toHaveLength(1);
       expect(errors[0].property).toBe('enTitle');
-      expect(errors[0].constraints).toHaveProperty('isNotEmpty');
+      expect(errors[0].constraints).toHaveProperty('minLength');
     });
 
     it('값이 null인 경우, 에러가 발생함', async () => {
@@ -96,7 +107,18 @@ describeWithoutDeps('CreateArtworkDto', () => {
 
       expect(errors).toHaveLength(1);
       expect(errors[0].property).toBe('enTitle');
-      expect(errors[0].constraints).toHaveProperty('isNotEmpty');
+      expect(errors[0].constraints).toHaveProperty('minLength');
+    });
+
+    it('값이 일정 길이를 초과한 경우, 에러가 발생함', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, {
+        enTitle: 'a'.repeat(101),
+      });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].property).toBe('enTitle');
+      expect(errors[0].constraints).toHaveProperty('maxLength');
     });
   });
 
@@ -114,7 +136,7 @@ describeWithoutDeps('CreateArtworkDto', () => {
 
       expect(errors).toHaveLength(1);
       expect(errors[0].property).toBe('jaTitle');
-      expect(errors[0].constraints).toHaveProperty('isNotEmpty');
+      expect(errors[0].constraints).toHaveProperty('minLength');
     });
 
     it('값이 null인 경우, 에러가 발생함', async () => {
@@ -123,7 +145,18 @@ describeWithoutDeps('CreateArtworkDto', () => {
 
       expect(errors).toHaveLength(1);
       expect(errors[0].property).toBe('jaTitle');
-      expect(errors[0].constraints).toHaveProperty('isNotEmpty');
+      expect(errors[0].constraints).toHaveProperty('minLength');
+    });
+
+    it('값이 일정 길이를 초과한 경우, 에러가 발생함', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, {
+        jaTitle: 'a'.repeat(101),
+      });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].property).toBe('jaTitle');
+      expect(errors[0].constraints).toHaveProperty('maxLength');
     });
   });
 
@@ -253,6 +286,17 @@ describeWithoutDeps('CreateArtworkDto', () => {
 
       expect(errors).toHaveLength(0);
     });
+
+    it('값이 일정 길이를 초과한 경우, 에러가 발생함', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, {
+        koShortReview: 'a'.repeat(201),
+      });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].property).toBe('koShortReview');
+      expect(errors[0].constraints).toHaveProperty('maxLength');
+    });
   });
 
   describe('enShortReview', () => {
@@ -271,6 +315,17 @@ describeWithoutDeps('CreateArtworkDto', () => {
 
       expect(errors).toHaveLength(0);
     });
+
+    it('값이 일정 길이를 초과한 경우, 에러가 발생함', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, {
+        enShortReview: 'a'.repeat(201),
+      });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].property).toBe('enShortReview');
+      expect(errors[0].constraints).toHaveProperty('maxLength');
+    });
   });
 
   describe('jaShortReview', () => {
@@ -288,6 +343,17 @@ describeWithoutDeps('CreateArtworkDto', () => {
       const errors = await validate(dto);
 
       expect(errors).toHaveLength(0);
+    });
+
+    it('값이 일정 길이를 초과한 경우, 에러가 발생함', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData, {
+        jaShortReview: 'a'.repeat(201),
+      });
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].property).toBe('jaShortReview');
+      expect(errors[0].constraints).toHaveProperty('maxLength');
     });
   });
 
