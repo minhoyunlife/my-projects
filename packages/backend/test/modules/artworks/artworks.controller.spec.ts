@@ -9,6 +9,8 @@ import { ArtworksController } from '@/src/modules/artworks/artworks.controller';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
+import { UpdateArtworkStatusesDto } from '@/src/modules/artworks/dtos/update-artwork-statuses.dto';
+import { UpdateArtworkDto } from '@/src/modules/artworks/dtos/update-artwork.dto';
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { ImageFileType } from '@/src/modules/artworks/enums/file-type.enum';
@@ -523,7 +525,7 @@ describeWithDeps('ArtworksController', () => {
     });
 
     it('모든 작품의 상태 변경이 성공할 경우, 204가 반환됨', async () => {
-      const updateDto = {
+      const updateDto: UpdateArtworkStatusesDto = {
         ids: [artworks[0].id],
         setPublished: true,
       };
@@ -543,7 +545,7 @@ describeWithDeps('ArtworksController', () => {
     });
 
     it('일부 작품만 상태 변경이 성공할 경우, 207이 반환됨', async () => {
-      const updateDto = {
+      const updateDto: UpdateArtworkStatusesDto = {
         ids: [artworks[0].id, artworks[1].id], // 검증 통과 작품 + 검증 실패 작품
         setPublished: true,
       };
@@ -566,7 +568,7 @@ describeWithDeps('ArtworksController', () => {
     });
 
     it('모든 작품이 상태 변경에 실패한 경우, 207이 반환됨', async () => {
-      const updateDto = {
+      const updateDto: UpdateArtworkStatusesDto = {
         ids: [artworks[1].id, 'non-existent-id'], // 검증 실패 작품 + 존재하지 않는 ID
         setPublished: true,
       };
@@ -600,7 +602,7 @@ describeWithDeps('ArtworksController', () => {
     });
 
     it('인증에 실패한 경우, 401 에러가 반환됨', async () => {
-      const updateDto = {
+      const updateDto: UpdateArtworkStatusesDto = {
         ids: [artworks[0].id],
         setPublished: true,
       };
@@ -610,6 +612,127 @@ describeWithDeps('ArtworksController', () => {
         .set('Authorization', 'Bearer invalid-token')
         .send(updateDto)
         .expect(401);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+  });
+
+  describe('PATCH /artworks/:id', () => {
+    let genres: Genre[];
+    let artwork: Artwork;
+
+    beforeEach(async () => {
+      genres = await saveEntities(genreRepository, [
+        GenresFactory.createTestData({
+          translations: [
+            { language: Language.KO, name: '액션' },
+            { language: Language.EN, name: 'Action' },
+            { language: Language.JA, name: 'アクション' },
+          ] as GenreTranslation[],
+        }),
+      ]);
+
+      artwork = (
+        await saveEntities(artworkRepository, [
+          ArtworksFactory.createTestData(
+            {
+              isDraft: true, // 수정 가능한 상태
+              genres: [genres[0]],
+            },
+            [
+              ArtworkTranslationsFactory.createTestData({
+                language: Language.KO,
+                title: '원본 제목',
+                shortReview: '원본 리뷰',
+              }),
+            ],
+          ),
+        ])
+      )[0];
+    });
+
+    it('유효한 데이터로 작품 수정 시 성공적으로 처리됨', async () => {
+      const updateDto: UpdateArtworkDto = {
+        koTitle: '수정된 제목',
+        koShortReview: '수정된 리뷰',
+        rating: 15,
+      };
+
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .patch(`/artworks/${artwork.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateDto)
+        .expect(200);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      const updated = await artworkRepository.findOne({
+        where: { id: artwork.id },
+        relations: ['translations'],
+      });
+
+      const koTranslation = updated.translations.find(
+        (t) => t.language === Language.KO,
+      );
+      expect(koTranslation.title).toBe(updateDto.koTitle);
+      expect(koTranslation.shortReview).toBe(updateDto.koShortReview);
+      expect(updated.rating).toBe(updateDto.rating);
+    });
+
+    it('빈 DTO로 요청 시 400 에러가 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .patch(`/artworks/${artwork.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({})
+        .expect(400);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+
+    it('인증에 실패한 경우 401 에러가 반환됨', async () => {
+      const response = await request(app.getHttpServer())
+        .patch(`/artworks/${artwork.id}`)
+        .set('Authorization', 'Bearer invalid-token')
+        .send({ koTitle: '수정된 제목' })
+        .expect(401);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+
+    it('존재하지 않는 작품 ID로 요청 시 404 에러가 반환됨', async () => {
+      const updateDto: UpdateArtworkDto = { koTitle: '수정된 제목' };
+
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .patch('/artworks/non-exist')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateDto)
+        .expect(404);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+
+    it('공개된 작품 수정 시도 시 409 에러가 반환됨', async () => {
+      const publishedArtwork = await saveEntities(artworkRepository, [
+        ArtworksFactory.createTestData({
+          isDraft: false, // 공개 상태
+        }),
+      ]);
+
+      const updateDto: UpdateArtworkDto = { koTitle: '수정된 제목' };
+
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .patch(`/artworks/${publishedArtwork[0].id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateDto)
+        .expect(409);
 
       await expect(response).toMatchOpenAPISpec();
     });

@@ -6,6 +6,7 @@ import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
+import { UpdateArtworkDto } from '@/src/modules/artworks/dtos/update-artwork.dto';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
 import { StatusError } from '@/src/modules/artworks/enums/status-error.enum';
@@ -244,6 +245,12 @@ describeWithoutDeps('ArtworksService', () => {
   describe('createArtwork', () => {
     const createOneMock = vi.fn();
     const findByMock = vi.fn();
+    const txRepoMock = {
+      createOne: createOneMock,
+    };
+    const genresTxRepoMock = {
+      findBy: findByMock,
+    };
 
     const dto: CreateArtworkDto = {
       imageKey: 'artworks/2024/03/abc123def456',
@@ -261,8 +268,10 @@ describeWithoutDeps('ArtworksService', () => {
       createOneMock.mockClear();
       findByMock.mockClear();
 
-      artworksRepository.createOne = createOneMock;
-      genresRepository.findBy = findByMock;
+      artworksRepository.forTransaction = vi.fn().mockReturnValue(txRepoMock);
+      genresRepository.forTransaction = vi
+        .fn()
+        .mockReturnValue(genresTxRepoMock);
     });
 
     it('작품 데이터를 기반으로 새로운 작품을 생성함', async () => {
@@ -324,6 +333,132 @@ describeWithoutDeps('ArtworksService', () => {
       createOneMock.mockRejectedValue(new Error());
 
       await expect(service.createArtwork(dto)).rejects.toThrowError();
+    });
+  });
+
+  describe('updateArtwork', () => {
+    const updateOneMock = vi.fn();
+    const findByIdsMock = vi.fn();
+    const txRepoMock = {
+      updateOne: updateOneMock,
+    };
+    const genresTxRepoMock = {
+      findByIds: findByIdsMock,
+    };
+
+    const baseDto: UpdateArtworkDto = {
+      koTitle: '수정된 제목',
+      koShortReview: '수정된 리뷰',
+      playedOn: Platform.STEAM,
+      rating: 15,
+      genreIds: ['genre-1'],
+    };
+
+    beforeEach(() => {
+      updateOneMock.mockClear();
+      findByIdsMock.mockClear();
+
+      artworksRepository.forTransaction = vi.fn().mockReturnValue(txRepoMock);
+      genresRepository.forTransaction = vi
+        .fn()
+        .mockReturnValue(genresTxRepoMock);
+    });
+
+    it('작품 데이터가 성공적으로 수정됨', async () => {
+      const mockGenres = [
+        {
+          id: 'genre-1',
+          translations: [
+            { language: Language.KO, name: '액션' },
+            { language: Language.EN, name: 'Action' },
+            { language: Language.JA, name: 'アクション' },
+          ],
+        },
+      ];
+
+      const expectedArtwork = {
+        id: 'artwork-1',
+        playedOn: baseDto.playedOn,
+        rating: baseDto.rating,
+        genres: mockGenres,
+        translations: [
+          {
+            language: Language.KO,
+            title: baseDto.koTitle,
+            shortReview: baseDto.koShortReview,
+          },
+        ],
+      };
+
+      findByIdsMock.mockResolvedValue(mockGenres);
+      updateOneMock.mockResolvedValue(expectedArtwork);
+
+      const result = await service.updateArtwork('artwork-1', baseDto);
+
+      expect(findByIdsMock).toHaveBeenCalledWith(baseDto.genreIds);
+      expect(updateOneMock).toHaveBeenCalledWith({
+        id: 'artwork-1',
+        playedOn: baseDto.playedOn,
+        rating: baseDto.rating,
+        genres: mockGenres,
+        translations: expect.arrayContaining([
+          expect.objectContaining({
+            language: Language.KO,
+            title: baseDto.koTitle,
+            shortReview: baseDto.koShortReview,
+          }),
+        ]),
+      });
+      expect(result).toEqual(expectedArtwork);
+    });
+
+    it('빈 DTO로 요청 시 에러가 발생함', async () => {
+      await expect(service.updateArtwork('artwork-1', {})).rejects.toThrow(
+        ArtworkException,
+      );
+
+      expect(updateOneMock).not.toHaveBeenCalled();
+    });
+
+    it('존재하지 않는 장르 ID가 포함된 경우 에러가 발생함', async () => {
+      findByIdsMock.mockResolvedValue([]);
+
+      await expect(service.updateArtwork('artwork-1', baseDto)).rejects.toThrow(
+        ArtworkException,
+      );
+
+      expect(updateOneMock).not.toHaveBeenCalled();
+    });
+
+    it('일부 필드만 수정할 경우 해당 필드만 포함하여 요청함', async () => {
+      const partialDto: UpdateArtworkDto = {
+        koTitle: '수정된 제목',
+      };
+
+      const expectedArtwork = {
+        id: 'artwork-1',
+        translations: [
+          {
+            language: Language.KO,
+            title: partialDto.koTitle,
+          },
+        ],
+      };
+
+      updateOneMock.mockResolvedValue(expectedArtwork);
+
+      await service.updateArtwork('artwork-1', partialDto);
+
+      expect(findByIdsMock).not.toHaveBeenCalled();
+      expect(updateOneMock).toHaveBeenCalledWith({
+        id: 'artwork-1',
+        translations: expect.arrayContaining([
+          expect.objectContaining({
+            language: Language.KO,
+            title: partialDto.koTitle,
+          }),
+        ]),
+      });
     });
   });
 

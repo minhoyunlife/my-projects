@@ -1,7 +1,9 @@
 # 베이스 스테이지 정의
 FROM node:20.17.0-alpine AS base
 WORKDIR /app
-RUN corepack enable && corepack use pnpm@9.10.0
+# 최신 corepack 을 설치하여 pnpm 의 서명 검증을 가능하도록 함
+RUN npm install -g corepack@latest
+RUN corepack enable && corepack prepare pnpm@9.10.0 --activate
 
 # 의존성 설치 스테이지
 FROM base AS deps

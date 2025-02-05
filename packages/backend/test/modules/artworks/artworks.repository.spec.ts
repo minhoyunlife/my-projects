@@ -778,6 +778,148 @@ describeWithDeps('ArtworksRepository', () => {
     });
   });
 
+  describe('updateOne', () => {
+    let savedGenres: Genre[];
+    let savedArtwork: Artwork;
+
+    beforeEach(async () => {
+      await clearTables(dataSource, [Artwork, Genre]);
+
+      savedGenres = await saveEntities(genreRepo, [
+        GenresFactory.createTestData({}, [
+          GenreTranslationsFactory.createTestData({
+            language: Language.KO,
+            name: '액션',
+          }),
+          GenreTranslationsFactory.createTestData({
+            language: Language.EN,
+            name: 'Action',
+          }),
+          GenreTranslationsFactory.createTestData({
+            language: Language.JA,
+            name: 'アクション',
+          }),
+        ]),
+      ]);
+
+      savedArtwork = (
+        await saveEntities(artworkRepo, [
+          ArtworksFactory.createTestData(
+            { isDraft: true },
+            [
+              ArtworkTranslationsFactory.createTestData({
+                language: Language.KO,
+                title: '다크소울',
+                shortReview: '리뷰',
+              }),
+              ArtworkTranslationsFactory.createTestData({
+                language: Language.EN,
+                title: 'Dark Souls',
+                shortReview: 'Review',
+              }),
+              ArtworkTranslationsFactory.createTestData({
+                language: Language.JA,
+                title: 'ダークソウル',
+                shortReview: 'レビュー',
+              }),
+            ],
+            savedGenres,
+          ),
+        ])
+      )[0];
+    });
+
+    it('기본 정보가 성공적으로 수정됨', async () => {
+      const updateData = {
+        id: savedArtwork.id,
+        rating: 15,
+        playedOn: Platform.SWITCH,
+        createdAt: new Date('2024-02-01'),
+      };
+
+      const updated = await artworkRepo.updateOne(updateData);
+
+      expect(updated.rating).toBe(updateData.rating);
+      expect(updated.playedOn).toBe(updateData.playedOn);
+      expect(updated.createdAt).toEqual(updateData.createdAt);
+    });
+
+    it('번역 정보가 성공적으로 수정됨', async () => {
+      const updateData = {
+        id: savedArtwork.id,
+        translations: [
+          {
+            language: Language.KO,
+            title: '다크소울 수정',
+            shortReview: '리뷰 수정',
+          },
+          {
+            language: Language.EN,
+            title: 'Dark Souls Edit',
+          },
+        ] as ArtworkTranslation[],
+      };
+
+      const updated = await artworkRepo.updateOne(updateData);
+
+      const koTrans = updated.translations.find(
+        (t) => t.language === Language.KO,
+      );
+      const enTrans = updated.translations.find(
+        (t) => t.language === Language.EN,
+      );
+      const jaTrans = updated.translations.find(
+        (t) => t.language === Language.JA,
+      );
+
+      expect(koTrans.title).toBe('다크소울 수정');
+      expect(koTrans.shortReview).toBe('리뷰 수정');
+      expect(enTrans.title).toBe('Dark Souls Edit');
+      expect(enTrans.shortReview).toBe('Review'); // 원래 값 유지
+      expect(jaTrans.title).toBe('ダークソウル'); // 원래 값 유지
+    });
+
+    it('장르 정보가 성공적으로 수정됨', async () => {
+      const newGenre = (
+        await saveEntities(genreRepo, [GenresFactory.createTestData()])
+      )[0];
+
+      const updateData = {
+        id: savedArtwork.id,
+        genres: [newGenre],
+      };
+
+      const updated = await artworkRepo.updateOne(updateData);
+
+      expect(updated.genres).toHaveLength(1);
+      expect(updated.genres[0].id).toBe(newGenre.id);
+    });
+
+    it('존재하지 않는 작품 ID로 수정 시도 시 에러가 발생함', async () => {
+      const updateData = {
+        id: 'non-exist',
+        rating: 15,
+      };
+
+      await expect(artworkRepo.updateOne(updateData)).rejects.toThrow(
+        ArtworkException,
+      );
+    });
+
+    it('발행된 작품 수정 시도 시 에러가 발생함', async () => {
+      await artworkRepo.updateManyStatuses([savedArtwork.id], true);
+
+      const updateData = {
+        id: savedArtwork.id,
+        rating: 15,
+      };
+
+      await expect(artworkRepo.updateOne(updateData)).rejects.toThrow(
+        ArtworkException,
+      );
+    });
+  });
+
   describe('updateManyStatuses', () => {
     let savedArtworks: Artwork[];
 
