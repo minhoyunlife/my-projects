@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-export type CreateArtworkFormData = z.infer<typeof createArtworkSchema>;
+import { Platform } from "@/src/constants/artworks/platform";
 
-const Platform = z.enum(["Steam", "Switch", "GOG", "Epic Games", "Android"]);
+export type CreateArtworkFormData = z.infer<typeof createArtworkSchema>;
 
 /**
  * 작품 생성 시의 밸리데이션 스키마
@@ -22,7 +22,7 @@ export const createArtworkSchema = z.object({
       .transform((date) => new Date(date).toISOString())
       .optional(),
   ),
-  playedOn: Platform.optional(),
+  playedOn: z.enum(Platform).optional(),
   rating: z.preprocess((value) => {
     if (value === "" || value === undefined || isNaN(value as number)) {
       return undefined;
