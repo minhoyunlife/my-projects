@@ -1,3 +1,5 @@
+import { create } from "node_modules/axios/index.cjs";
+
 import { updateArtworkSchema } from "@/src/schemas/artworks/update";
 
 describe("updateArtworkSchema", () => {
@@ -28,6 +30,14 @@ describe("updateArtworkSchema", () => {
 
       expect(result.success).toBe(true);
     });
+
+    it("값이 최대 글자 제한수를 넘을 경우 유효성 검사에 실패함", () => {
+      const result = updateArtworkSchema.safeParse({
+        ...validData,
+        koTitle: "a".repeat(101),
+      });
+      expect(result.success).toBe(false);
+    });
   });
 
   describe("enTitle", () => {
@@ -44,6 +54,14 @@ describe("updateArtworkSchema", () => {
 
       expect(result.success).toBe(true);
     });
+
+    it("값이 최대 글자 제한수를 넘을 경우 유효성 검사에 실패함", () => {
+      const result = updateArtworkSchema.safeParse({
+        ...validData,
+        enTitle: "a".repeat(101),
+      });
+      expect(result.success).toBe(false);
+    });
   });
 
   describe("jaTitle", () => {
@@ -59,6 +77,14 @@ describe("updateArtworkSchema", () => {
       const result = updateArtworkSchema.safeParse(rest);
 
       expect(result.success).toBe(true);
+    });
+
+    it("값이 최대 글자 제한수를 넘을 경우 유효성 검사에 실패함", () => {
+      const result = updateArtworkSchema.safeParse({
+        ...validData,
+        jaTitle: "a".repeat(101),
+      });
+      expect(result.success).toBe(false);
     });
   });
 
@@ -80,6 +106,15 @@ describe("updateArtworkSchema", () => {
     it("값이 없는 경우에도 유효성 검사에 성공함", () => {
       const { createdAt: _, ...rest } = validData;
       const result = updateArtworkSchema.safeParse(rest);
+
+      expect(result.success).toBe(true);
+    });
+
+    it("값이 undefined 인 경우에도 유효성 검사에 성공함", () => {
+      const result = updateArtworkSchema.safeParse({
+        ...validData,
+        createdAt: undefined,
+      });
 
       expect(result.success).toBe(true);
     });
@@ -152,6 +187,14 @@ describe("updateArtworkSchema", () => {
 
       expect(result.success).toBe(true);
     });
+
+    it("값이 최대 글자 제한수를 넘을 경우 유효성 검사에 실패함", () => {
+      const result = updateArtworkSchema.safeParse({
+        ...validData,
+        koShortReview: "a".repeat(201),
+      });
+      expect(result.success).toBe(false);
+    });
   });
 
   describe("enShortReview", () => {
@@ -168,6 +211,14 @@ describe("updateArtworkSchema", () => {
 
       expect(result.success).toBe(true);
     });
+
+    it("값이 최대 글자 제한수를 넘을 경우 유효성 검사에 실패함", () => {
+      const result = updateArtworkSchema.safeParse({
+        ...validData,
+        enShortReview: "a".repeat(201),
+      });
+      expect(result.success).toBe(false);
+    });
   });
 
   describe("jaShortReview", () => {
@@ -183,6 +234,14 @@ describe("updateArtworkSchema", () => {
       const result = updateArtworkSchema.safeParse(rest);
 
       expect(result.success).toBe(true);
+    });
+
+    it("값이 최대 글자 제한수를 넘을 경우 유효성 검사에 실패함", () => {
+      const result = updateArtworkSchema.safeParse({
+        ...validData,
+        jaShortReview: "a".repeat(201),
+      });
+      expect(result.success).toBe(false);
     });
   });
 

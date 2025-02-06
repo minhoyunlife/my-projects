@@ -9,9 +9,18 @@ export type UpdateArtworkFormData = z.infer<typeof updateArtworkSchema>;
  */
 export const updateArtworkSchema = z
   .object({
-    koTitle: z.string().min(1, "한국어 제목은 필수입니다"),
-    enTitle: z.string().min(1, "영어 제목은 필수입니다"),
-    jaTitle: z.string().min(1, "일본어 제목은 필수입니다"),
+    koTitle: z
+      .string()
+      .min(1, "한국어 제목은 필수입니다")
+      .max(100, "100자 이하여야 합니다"),
+    enTitle: z
+      .string()
+      .min(1, "영어 제목은 필수입니다")
+      .max(100, "100자 이하여야 합니다"),
+    jaTitle: z
+      .string()
+      .min(1, "일본어 제목은 필수입니다")
+      .max(100, "100자 이하여야 합니다"),
     createdAt: z.preprocess(
       (value) => {
         if (value === "" || value === undefined) return undefined;
@@ -20,7 +29,8 @@ export const updateArtworkSchema = z
       z
         .string()
         .regex(/^\d{4}-\d{2}-\d{2}$/, "올바른 날짜 형식이 아닙니다")
-        .transform((date) => new Date(date).toISOString()),
+        .transform((date) => new Date(date).toISOString())
+        .optional(),
     ),
     playedOn: z.enum(Platform),
     rating: z.preprocess(
@@ -36,9 +46,9 @@ export const updateArtworkSchema = z
         .min(0, "0점 이상이어야 합니다")
         .max(20, "20점 이하여야 합니다"),
     ),
-    koShortReview: z.string(),
-    enShortReview: z.string(),
-    jaShortReview: z.string(),
+    koShortReview: z.string().max(200, "200자 이하여야 합니다"),
+    enShortReview: z.string().max(200, "200자 이하여야 합니다"),
+    jaShortReview: z.string().max(200, "200자 이하여야 합니다"),
     genreIds: z.array(z.string()),
   })
   .partial()

@@ -20,6 +20,14 @@ describe("createArtworkSchema", () => {
       expect(result.success).toBe(true);
     });
 
+    it("값이 최대 글자 제한수를 넘을 경우 유효성 검사에 실패함", () => {
+      const result = createArtworkSchema.safeParse({
+        ...validData,
+        koTitle: "a".repeat(101),
+      });
+      expect(result.success).toBe(false);
+    });
+
     it("값이 없는 경우 유효성 검사에 실패함", () => {
       const result = createArtworkSchema.safeParse({
         ...validData,
@@ -35,6 +43,14 @@ describe("createArtworkSchema", () => {
       expect(result.success).toBe(true);
     });
 
+    it("값이 최대 글자 제한수를 넘을 경우 유효성 검사에 실패함", () => {
+      const result = createArtworkSchema.safeParse({
+        ...validData,
+        enTitle: "a".repeat(101),
+      });
+      expect(result.success).toBe(false);
+    });
+
     it("값이 없는 경우 유효성 검사에 실패함", () => {
       const result = createArtworkSchema.safeParse({
         ...validData,
@@ -48,6 +64,14 @@ describe("createArtworkSchema", () => {
     it("값이 있는 경우 유효성 검사에 성공함", () => {
       const result = createArtworkSchema.safeParse(validData);
       expect(result.success).toBe(true);
+    });
+
+    it("값이 최대 글자 제한수를 넘을 경우 유효성 검사에 실패함", () => {
+      const result = createArtworkSchema.safeParse({
+        ...validData,
+        jaTitle: "a".repeat(101),
+      });
+      expect(result.success).toBe(false);
     });
 
     it("값이 없는 경우 유효성 검사에 실패함", () => {
@@ -142,6 +166,14 @@ describe("createArtworkSchema", () => {
       const result = createArtworkSchema.safeParse(rest);
       expect(result.success).toBe(true);
     });
+
+    it("값이 최대 글자 제한수를 넘을 경우 유효성 검사에 실패함", () => {
+      const result = createArtworkSchema.safeParse({
+        ...validData,
+        koShortReview: "a".repeat(201),
+      });
+      expect(result.success).toBe(false);
+    });
   });
 
   describe("enShortReview", () => {
@@ -155,6 +187,14 @@ describe("createArtworkSchema", () => {
       const result = createArtworkSchema.safeParse(rest);
       expect(result.success).toBe(true);
     });
+
+    it("값이 최대 글자 제한수를 넘을 경우 유효성 검사에 실패함", () => {
+      const result = createArtworkSchema.safeParse({
+        ...validData,
+        enShortReview: "a".repeat(201),
+      });
+      expect(result.success).toBe(false);
+    });
   });
 
   describe("jaShortReview", () => {
@@ -167,6 +207,14 @@ describe("createArtworkSchema", () => {
       const { jaShortReview: _, ...rest } = validData;
       const result = createArtworkSchema.safeParse(rest);
       expect(result.success).toBe(true);
+    });
+
+    it("값이 최대 글자 제한수를 넘을 경우 유효성 검사에 실패함", () => {
+      const result = createArtworkSchema.safeParse({
+        ...validData,
+        jaShortReview: "a".repeat(201),
+      });
+      expect(result.success).toBe(false);
     });
   });
 
