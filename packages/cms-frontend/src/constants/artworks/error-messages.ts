@@ -65,6 +65,10 @@ export const ARTWORK_ERROR_MESSAGES = {
       return formatMultiStatusError(errors);
     },
   },
+  [ArtworkErrorCode.NO_DATA_PROVIDED]: {
+    title: "수정할 데이터가 제공되지 않았습니다",
+    formatDescription: () => "",
+  },
 } as const;
 
 export function formatArtworkErrorMessage(
