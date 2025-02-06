@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ChevronDown, X } from "lucide-react";
 
@@ -18,14 +18,19 @@ import { useGenres } from "@/src/hooks/genres/use-genres";
 interface GenreSelectProps {
   value: string[];
   onChange: (value: string[]) => void;
+  defaultGenres?: Genre[];
+  disabled?: boolean;
   error?: string;
 }
 
-export function GenreSelect({ value, onChange, error }: GenreSelectProps) {
+export function GenreSelect({
+  value,
+  onChange,
+  defaultGenres = [],
+  disabled = false,
+  error,
+}: GenreSelectProps) {
   const [search, setSearch] = useState("");
-
-  const { useSearch } = useGenres();
-  const { data: searchResults, isLoading } = useSearch(search);
 
   const [selectedGenreDetails, setSelectedGenreDetails] = useState<
     Array<{
@@ -34,12 +39,25 @@ export function GenreSelect({ value, onChange, error }: GenreSelectProps) {
     }>
   >([]);
 
+  const { useSearch } = useGenres();
+  const { data: searchResults, isLoading } = useSearch(search);
+
+  useEffect(() => {
+    if (defaultGenres.length > 0) {
+      setSelectedGenreDetails(
+        defaultGenres.map((genre) => ({
+          id: genre.id,
+          name: genre.translations.find((t) => t.language === "ko")?.name || "",
+        })),
+      );
+    }
+  }, []);
+
   const handleGenreToggle = (genre: Genre) => {
     const newValue = value.includes(genre.id)
       ? value.filter((id) => id !== genre.id)
       : [...value, genre.id];
 
-    // value 업데이트
     onChange(newValue);
 
     if (!value.includes(genre.id)) {
@@ -67,15 +85,17 @@ export function GenreSelect({ value, onChange, error }: GenreSelectProps) {
               className="gap-1"
             >
               {genre.name}
-              <X
-                className="h-3 w-3 cursor-pointer"
-                onClick={() => {
-                  onChange(value.filter((id) => id !== genre.id));
-                  setSelectedGenreDetails((prev) =>
-                    prev.filter((g) => g.id !== genre.id),
-                  );
-                }}
-              />
+              {!disabled && (
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => {
+                    onChange(value.filter((id) => id !== genre.id));
+                    setSelectedGenreDetails((prev) =>
+                      prev.filter((g) => g.id !== genre.id),
+                    );
+                  }}
+                />
+              )}
             </Badge>
           ))}
         </div>
@@ -84,6 +104,7 @@ export function GenreSelect({ value, onChange, error }: GenreSelectProps) {
       <Popover>
         <PopoverTrigger asChild>
           <Button
+            disabled={disabled}
             variant="outline"
             className="w-full justify-between"
           >
