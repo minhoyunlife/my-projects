@@ -9,6 +9,7 @@ import type {
 import { useDebounce } from "@/src/hooks/use-debounce";
 import { artworksApi } from "@/src/lib/api/client";
 import type { CreateArtworkFormData } from "@/src/schemas/artworks/create";
+import type { UpdateArtworkFormData } from "@/src/schemas/artworks/update";
 
 interface ArtworkQueryParams {
   page?: number;
@@ -26,6 +27,11 @@ interface UploadProgressHandler {
 interface CreateArtworkParams {
   file: File;
   data: CreateArtworkFormData;
+}
+
+interface UpdateArtworkParams {
+  id: string;
+  data: UpdateArtworkFormData;
 }
 
 interface UpdateArtworkStatusParams {
@@ -83,6 +89,16 @@ export function useArtworks() {
       },
     });
 
+  // 작품 수정
+  const useUpdate = () =>
+    useMutation({
+      mutationFn: ({ id, data }: UpdateArtworkParams) =>
+        artworksApi.updateArtwork(id, data),
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({ queryKey: ["artworks"] });
+      },
+    });
+
   // 작품 공개/비공개 상태 변환
   const useChangeStatus = () =>
     useMutation({
@@ -115,6 +131,7 @@ export function useArtworks() {
   return {
     useList,
     useCreate,
+    useUpdate,
     useChangeStatus,
     useDelete,
   };

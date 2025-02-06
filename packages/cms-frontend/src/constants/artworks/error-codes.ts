@@ -13,9 +13,8 @@ export enum ArtworkErrorCode {
   INVALID_INPUT_DATA = "INVALID_INPUT_DATA",
   NOT_FOUND = "NOT_FOUND",
   ALREADY_PUBLISHED = "ALREADY_PUBLISHED",
-
-  // 작품 공개로의 상태 전환 검증 관련
   SOME_FAILED = "SOME_FAILED",
+  NO_DATA_PROVIDED = "NO_DATA_PROVIDED",
 }
 
 /**

@@ -54,21 +54,18 @@ export class UpdateArtworkDto {
   @NormalizeWhitespace()
   @IsOptional()
   @IsString()
-  @MinLength(1)
   @MaxLength(200)
   koShortReview?: string;
 
   @NormalizeWhitespace()
   @IsOptional()
   @IsString()
-  @MinLength(1)
   @MaxLength(200)
   enShortReview?: string;
 
   @NormalizeWhitespace()
   @IsOptional()
   @IsString()
-  @MinLength(1)
   @MaxLength(200)
   jaShortReview?: string;
 

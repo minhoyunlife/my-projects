@@ -14,7 +14,7 @@ import {
 export interface Genre {
   id: string;
   translations: Array<{
-    language: "ko" | "en" | "ja";
+    language: string;
     name: string;
   }>;
 }

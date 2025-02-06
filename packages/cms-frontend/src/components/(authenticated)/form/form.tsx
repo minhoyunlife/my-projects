@@ -20,6 +20,7 @@ export function Form({
 }: FormProps) {
   return (
     <form
+      role="form"
       onSubmit={onSubmit}
       className="space-y-4"
     >

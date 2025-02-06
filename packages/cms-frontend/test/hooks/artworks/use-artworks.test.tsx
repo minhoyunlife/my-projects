@@ -14,6 +14,7 @@ vi.mock("@/src/lib/api/client", () => ({
     getArtworks: vi.fn(),
     uploadArtworkImage: vi.fn(),
     createArtwork: vi.fn(),
+    updateArtwork: vi.fn(),
     updateArtworksStatus: vi.fn(),
     deleteArtworks: vi.fn(),
   },
@@ -193,6 +194,89 @@ describe("useArtworks", () => {
       ).rejects.toThrow(mockError);
 
       expect(artworksApi.createArtwork).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("useUpdate", () => {
+    const mockId = "artwork-1";
+    const mockUpdateData = {
+      koTitle: "수정된 제목",
+      enTitle: "Updated Title",
+      genreIds: ["genre-1"],
+    };
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    describe("기본 동작", () => {
+      it("작품 수정 API를 호출함", async () => {
+        const mockResponse = {
+          data: {
+            id: mockId,
+            ...mockUpdateData,
+          },
+        } as AxiosResponse;
+
+        vi.mocked(artworksApi.updateArtwork).mockResolvedValueOnce(
+          mockResponse,
+        );
+
+        const { result } = renderHook(() => useArtworks().useUpdate(), {
+          wrapper,
+        });
+
+        await result.current.mutateAsync({
+          id: mockId,
+          data: mockUpdateData,
+        });
+
+        expect(artworksApi.updateArtwork).toHaveBeenCalledWith(
+          mockId,
+          mockUpdateData,
+        );
+      });
+    });
+
+    describe("에러 처리", () => {
+      it("API 호출에 실패할 경우, 에러를 반환함", async () => {
+        const mockError = new Error("API Error");
+        vi.mocked(artworksApi.updateArtwork).mockRejectedValueOnce(mockError);
+
+        const { result } = renderHook(() => useArtworks().useUpdate(), {
+          wrapper,
+        });
+
+        await expect(
+          result.current.mutateAsync({
+            id: mockId,
+            data: mockUpdateData,
+          }),
+        ).rejects.toThrow(mockError);
+      });
+
+      it("이미 공개된 작품일 경우, 에러를 반환함", async () => {
+        const mockError = {
+          response: {
+            data: {
+              code: "ALREADY_PUBLISHED",
+              message: "Cannot update published artwork",
+            },
+          },
+        };
+        vi.mocked(artworksApi.updateArtwork).mockRejectedValueOnce(mockError);
+
+        const { result } = renderHook(() => useArtworks().useUpdate(), {
+          wrapper,
+        });
+
+        await expect(
+          result.current.mutateAsync({
+            id: mockId,
+            data: mockUpdateData,
+          }),
+        ).rejects.toEqual(mockError);
+      });
     });
   });
 

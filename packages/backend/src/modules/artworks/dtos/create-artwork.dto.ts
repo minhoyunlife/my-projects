@@ -1,5 +1,4 @@
 import {
-  ArrayNotEmpty,
   IsArray,
   IsDateString,
   IsEnum,
@@ -8,6 +7,7 @@ import {
   IsOptional,
   IsString,
   Max,
+  MaxLength,
   Min,
   MinLength,
 } from 'class-validator';
@@ -22,18 +22,21 @@ export class CreateArtworkDto {
   imageKey: string;
 
   @NormalizeWhitespace()
-  @IsNotEmpty()
   @IsString()
+  @MinLength(1)
+  @MaxLength(100)
   koTitle: string;
 
   @NormalizeWhitespace()
-  @IsNotEmpty()
   @IsString()
+  @MinLength(1)
+  @MaxLength(100)
   enTitle: string;
 
   @NormalizeWhitespace()
-  @IsNotEmpty()
   @IsString()
+  @MinLength(1)
+  @MaxLength(100)
   jaTitle: string;
 
   @NormalizeWhitespace()
@@ -54,16 +57,19 @@ export class CreateArtworkDto {
   @IsOptional()
   @NormalizeWhitespace()
   @IsString()
+  @MaxLength(200)
   koShortReview?: string;
 
   @IsOptional()
   @NormalizeWhitespace()
   @IsString()
+  @MaxLength(200)
   enShortReview?: string;
 
   @IsOptional()
   @NormalizeWhitespace()
   @IsString()
+  @MaxLength(200)
   jaShortReview?: string;
 
   @IsArray()

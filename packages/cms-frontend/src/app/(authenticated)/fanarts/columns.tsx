@@ -7,6 +7,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { GetArtworks200ResponseItemsInner } from "@minhoyunlife/my-ts-client";
 import { Eye, EyeOff, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
+import type { Artwork } from "@/src/app/(authenticated)/fanarts/(actions)/update";
 import { PlatformIcon } from "@/src/components/(authenticated)/platform-icon";
 import { Badge } from "@/src/components/base/badge";
 import { Button } from "@/src/components/base/button";
@@ -33,11 +34,13 @@ const formatDate = (dateString: string) => {
 };
 
 interface GenreColumnProps {
+  onEditClick: (artwork: Artwork) => void;
   onChangeStatusClick: (id: string, setPublished: boolean) => void;
   onDeleteClick: (id: string) => void;
 }
 
 export const artworkColumns = ({
+  onEditClick,
   onChangeStatusClick,
   onDeleteClick,
 }: GenreColumnProps): ColumnDef<GetArtworks200ResponseItemsInner>[] => [
@@ -173,7 +176,7 @@ export const artworkColumns = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEditClick(row.original)}>
                 <Pencil className="mr-2 h-4 w-4" />
                 <span>수정</span>
               </DropdownMenuItem>
