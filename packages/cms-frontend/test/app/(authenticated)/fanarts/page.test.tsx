@@ -7,6 +7,7 @@ const mockUseArtworkListQuery = vi.fn();
 vi.mock("@/src/hooks/artworks/use-artworks", () => ({
   useArtworks: () => ({
     useList: (params: any) => mockUseArtworkListQuery(params),
+    useUpdate: () => vi.fn(),
     useChangeStatus: () => vi.fn(),
     useDelete: () => vi.fn(),
   }),
@@ -244,6 +245,91 @@ describe("FanartsListPage", () => {
         expect(
           reactScreen.queryByRole("menuitem", { name: /비공개/i }),
         ).not.toBeInTheDocument();
+      });
+    });
+
+    describe("작품 수정", () => {
+      it("수정 메뉴 클릭 시 수정 슬라이드오버가 열림", async () => {
+        mockUseArtworkListQuery.mockReturnValue({
+          data: {
+            data: {
+              items: [
+                {
+                  id: "1",
+                  translations: [{ language: "ko", title: "다크 소울3" }],
+                  genres: [
+                    {
+                      id: "1",
+                      translations: [{ language: "ko", name: "액션" }],
+                    },
+                  ],
+                  isDraft: true,
+                },
+              ],
+              metadata: { totalPages: 1, currentPage: 1 },
+            },
+          },
+          isLoading: false,
+          error: null,
+        });
+
+        render(<FanartsListPage />, { wrapper });
+
+        const menuButton = reactScreen.getByLabelText("more");
+        await userEvent.click(menuButton);
+
+        const editButton = reactScreen.getByRole("menuitem", { name: /수정/i });
+        await userEvent.click(editButton);
+
+        expect(
+          reactScreen.getByRole("heading", { name: "작품 수정" }),
+        ).toBeInTheDocument();
+
+        expect(
+          reactScreen.getByPlaceholderText("작품 제목(한국어)"),
+        ).toHaveValue("다크 소울3");
+      });
+
+      it("공개된 작품은 수정이 불가능하다는 메시지가 표시됨", async () => {
+        mockUseArtworkListQuery.mockReturnValue({
+          data: {
+            data: {
+              items: [
+                {
+                  id: "1",
+                  translations: [{ language: "ko", title: "다크 소울3" }],
+                  genres: [
+                    {
+                      id: "1",
+                      translations: [{ language: "ko", name: "액션" }],
+                    },
+                  ],
+                  isDraft: false,
+                },
+              ],
+              metadata: { totalPages: 1, currentPage: 1 },
+            },
+          },
+          isLoading: false,
+          error: null,
+        });
+
+        render(<FanartsListPage />, { wrapper });
+
+        const menuButton = reactScreen.getByLabelText("more");
+        await userEvent.click(menuButton);
+
+        const editButton = reactScreen.getByRole("menuitem", { name: /수정/i });
+        await userEvent.click(editButton);
+
+        expect(
+          reactScreen.getByText("공개된 작품의 정보는 수정할 수 없습니다."),
+        ).toBeInTheDocument();
+
+        const inputs = reactScreen.getAllByRole("textbox");
+        inputs.forEach((input) => {
+          expect(input).toBeDisabled();
+        });
       });
     });
 

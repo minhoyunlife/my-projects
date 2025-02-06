@@ -12,6 +12,10 @@ import { Eye, EyeOff, Trash2 } from "lucide-react";
 import { CreateArtworkForm } from "@/src/app/(authenticated)/fanarts/(actions)/(create)/create";
 import { ChangeArtworkStatusesDialog } from "@/src/app/(authenticated)/fanarts/(actions)/change-status";
 import { DeleteArtworkDialog } from "@/src/app/(authenticated)/fanarts/(actions)/delete";
+import {
+  UpdateArtworkForm,
+  type Artwork,
+} from "@/src/app/(authenticated)/fanarts/(actions)/update";
 import { artworkColumns } from "@/src/app/(authenticated)/fanarts/columns";
 import { ActionButton } from "@/src/components/(authenticated)/action-button";
 import { artworkSkeletonColumns } from "@/src/components/(authenticated)/data-table/skeleton";
@@ -47,8 +51,12 @@ export default function FanartsListPage() {
   // 작품 추가 슬라이드오버 관련
   const [isAddOpen, setIsAddOpen] = useState(false);
 
+  // 장르 수정 슬라이드오버 관련
+  const [isEditOpen, setIsEditOpen] = useState(false);
+
   // 행 선택 관련
   const [selectedArtworkIds, setSelectedArtworkIds] = useState<string[]>([]);
+  const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
 
   // 상태 변경 관련
   const [toBePublished, setToBePublished] = useState(false);
@@ -129,6 +137,11 @@ export default function FanartsListPage() {
     });
 
     setSelectedGenreInfos(newInfos);
+  };
+
+  const handleSingleEdit = (artwork: Artwork) => {
+    setSelectedArtwork(artwork);
+    setIsEditOpen(true);
   };
 
   const handleStatusChange = (values: string[]) => {
@@ -269,9 +282,32 @@ export default function FanartsListPage() {
         </SlideOver>
       </div>
 
+      {/* 작품 수정을 위한 슬라이드오버 */}
+      <SlideOver
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        title="작품 수정"
+        description={
+          selectedArtwork?.isDraft
+            ? "작품의 정보를 수정합니다."
+            : "공개된 작품의 정보는 수정할 수 없습니다."
+        }
+      >
+        {selectedArtwork && (
+          <UpdateArtworkForm
+            artwork={selectedArtwork}
+            onSuccess={() => {
+              setIsEditOpen(false);
+              setSelectedArtwork(null);
+            }}
+          />
+        )}
+      </SlideOver>
+
       {/* 작품 목록 테이블 */}
       <DataTable
         columns={artworkColumns({
+          onEditClick: handleSingleEdit,
           onChangeStatusClick: handleSingeStatusChange,
           onDeleteClick: handleSingleDelete,
         })}
