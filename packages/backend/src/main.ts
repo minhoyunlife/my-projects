@@ -17,5 +17,7 @@ import { AppModule } from '@/src/app.module';
     credentials: true,
   });
 
+  app.enableShutdownHooks();
+
   await app.listen(configService.get('app').port);
 })();
