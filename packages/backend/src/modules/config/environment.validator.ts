@@ -4,6 +4,7 @@ import { validateSync } from 'class-validator';
 import { AppEnvironmentVariables } from '@/src/modules/config/environments/app.environment';
 import { AuthEnvironmentVariables } from '@/src/modules/config/environments/auth.environment';
 import { DatabaseEnvironmentVariables } from '@/src/modules/config/environments/database.environment';
+import { HealthEnvironmentVariables } from '@/src/modules/config/environments/health.environment';
 import { S3EnvironmentVariables } from '@/src/modules/config/environments/s3.environment';
 
 const environmentVariables: ClassConstructor<any>[] = [
@@ -12,6 +13,7 @@ const environmentVariables: ClassConstructor<any>[] = [
   DatabaseEnvironmentVariables,
   S3EnvironmentVariables,
   AuthEnvironmentVariables,
+  HealthEnvironmentVariables,
 ];
 
 export function validate(config: Record<string, unknown>) {
