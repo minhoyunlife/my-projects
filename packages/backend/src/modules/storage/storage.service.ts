@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import {
+  HeadBucketCommand,
   PutObjectCommand,
   PutObjectTaggingCommand,
   S3Client,
@@ -41,6 +42,14 @@ export class StorageService {
       forcePathStyle: true, // LocalStack 에서의 테스트 시 버킷을 경로 스타일로 사용하게 해야 함
     });
     this.bucket = this.configService.get('s3.bucket');
+  }
+
+  async checkBucketConnection(): Promise<void> {
+    await this.client.send(
+      new HeadBucketCommand({
+        Bucket: this.bucket,
+      }),
+    );
   }
 
   getImageUrl(imageKey: string): string {
