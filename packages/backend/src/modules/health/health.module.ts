@@ -1,4 +1,3 @@
-import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
 
@@ -8,7 +7,10 @@ import { S3HealthIndicator } from '@/src/modules/health/indicators/s3.health.ind
 import { StorageModule } from '@/src/modules/storage/storage.module';
 
 @Module({
-  imports: [TerminusModule, HttpModule, StorageModule],
+  imports: [
+    TerminusModule.forRoot({ gracefulShutdownTimeoutMs: 3000 }),
+    StorageModule,
+  ],
   controllers: [HealthController],
   providers: [S3HealthIndicator, GithubHealthIndicator],
 })
