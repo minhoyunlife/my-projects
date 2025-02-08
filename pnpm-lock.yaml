@@ -16,9 +16,6 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.738.0
         version: 3.738.0
-      '@nestjs/axios':
-        specifier: ^4.0.0
-        version: 4.0.0(@nestjs/common@11.0.6(class-transformer@0.5.1)(class-validator@0.14.1)(reflect-metadata@0.2.2)(rxjs@7.8.1))(axios@1.7.8)(rxjs@7.8.1)
       '@nestjs/common':
         specifier: ^11.0.6
         version: 11.0.6(class-transformer@0.5.1)(class-validator@0.14.1)(reflect-metadata@0.2.2)(rxjs@7.8.1)
@@ -46,9 +43,6 @@ importers:
       '@types/passport-github2':
         specifier: ^1.2.9
         version: 1.2.9
-      axios:
-        specifier: ^1.7.8
-        version: 1.7.8
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -7702,6 +7696,7 @@ snapshots:
       '@nestjs/common': 11.0.6(class-transformer@0.5.1)(class-validator@0.14.1)(reflect-metadata@0.2.2)(rxjs@7.8.1)
       axios: 1.7.8
       rxjs: 7.8.1
+    optional: true
 
   '@nestjs/cli@11.0.2(@swc/cli@0.6.0(@swc/core@1.10.12(@swc/helpers@0.5.13))(chokidar@4.0.3))(@swc/core@1.10.12(@swc/helpers@0.5.13))(@types/node@22.12.0)':
     dependencies:

@@ -1,7 +1,15 @@
-import { Module, ValidationPipe } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  OnApplicationShutdown,
+  OnModuleInit,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { APP_PIPE } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+
+import { DataSource } from 'typeorm';
 
 import { Environment } from '@/src/common/enums/environment.enum';
 import { ArtworksModule } from '@/src/modules/artworks/artworks.module';
@@ -12,6 +20,8 @@ import { GenresModule } from '@/src/modules/genres/genres.module';
 import { HealthModule } from '@/src/modules/health/health.module';
 import { SeedModule } from '@/src/modules/seed/seed.module';
 import { SeedService } from '@/src/modules/seed/seed.service';
+import { TerminationMiddleware } from '@/src/modules/termination/termination.middleware';
+import { TerminationService } from '@/src/modules/termination/termination.service';
 
 @Module({
   imports: [
@@ -25,6 +35,7 @@ import { SeedService } from '@/src/modules/seed/seed.service';
     GenresModule,
   ],
   providers: [
+    TerminationService,
     // 글로벌 밸리데이션 파이프는 모듈 외부에서 등록되면 의존성 주입이 불가능(예를 들어 main.ts)
     // main.ts 에서 주입 시, 일부 컨트롤러의 메소드에서 트랜스폼이 이뤄지지 않았으므로, 여기에 설정하여 앱 모듈이 임포트하는 전체 모듈에 적용되도록 함
     // https://docs.nestjs.com/pipes#global-scoped-pipes
@@ -36,10 +47,12 @@ import { SeedService } from '@/src/modules/seed/seed.service';
     },
   ],
 })
-export class AppModule {
+export class AppModule implements OnModuleInit, OnApplicationShutdown {
   constructor(
     private readonly configService: ConfigService,
     private readonly seedService: SeedService,
+    private readonly dataSource: DataSource,
+    private readonly terminationService: TerminationService,
   ) {}
 
   // 개발 환경용 시드 데이터 주입을 위해
@@ -54,5 +67,19 @@ export class AppModule {
         console.error('⛔️ Got errors while seeding data: ', error);
       }
     }
+  }
+
+  async onApplicationShutdown(signal?: string) {
+    console.log(`🛑 Application shutdown initiated by (${signal})`);
+
+    await this.terminationService.initiateShutdown();
+    console.log('✅ All pending requests completed');
+
+    await this.dataSource.destroy();
+    console.log('✅ Database connections closed');
+  }
+
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(TerminationMiddleware).forRoutes('*');
   }
 }

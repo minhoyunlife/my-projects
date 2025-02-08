@@ -1,4 +1,5 @@
-import { HttpService } from '@nestjs/axios';
+import * as net from 'net';
+
 import { Injectable } from '@nestjs/common';
 import { HealthIndicatorService } from '@nestjs/terminus';
 
@@ -6,15 +7,19 @@ import { HealthIndicatorService } from '@nestjs/terminus';
 export class GithubHealthIndicator {
   constructor(
     private readonly healthIndicatorService: HealthIndicatorService,
-    private readonly httpService: HttpService,
   ) {}
 
   async isHealthy(key: string) {
     const indicator = this.healthIndicatorService.check(key);
 
     try {
-      await this.httpService.axiosRef.get('https://api.github.com/meta', {
-        timeout: 5000,
+      const socket = net.createConnection(443, 'github.com');
+
+      socket.on('connect', () => {
+        socket.end();
+      });
+      socket.on('error', (error) => {
+        throw new Error(`GitHub OAuth port check failed: ${error.message}`);
       });
 
       return indicator.up();
