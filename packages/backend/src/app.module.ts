@@ -1,4 +1,5 @@
 import {
+  Inject,
   MiddlewareConsumer,
   Module,
   OnApplicationShutdown,
@@ -6,18 +7,22 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { APP_PIPE } from '@nestjs/core';
+import { APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { DataSource } from 'typeorm';
+import { Logger } from 'winston';
 
 import { Environment } from '@/src/common/enums/environment.enum';
 import { ArtworksModule } from '@/src/modules/artworks/artworks.module';
 import { AuthModule } from '@/src/modules/auth/auth.module';
 import { AppConfigModule } from '@/src/modules/config/config.module';
-import databaseConfig from '@/src/modules/config/settings/database.config';
+import { getTypeOrmConfig } from '@/src/modules/config/settings/database.config';
 import { GenresModule } from '@/src/modules/genres/genres.module';
 import { HealthModule } from '@/src/modules/health/health.module';
+import { AppLoggerModule } from '@/src/modules/logger/logger.module';
+import { LoggingInterceptor } from '@/src/modules/logger/logging.interceptor';
 import { SeedModule } from '@/src/modules/seed/seed.module';
 import { SeedService } from '@/src/modules/seed/seed.service';
 import { TerminationMiddleware } from '@/src/modules/termination/termination.middleware';
@@ -27,7 +32,8 @@ import { TerminationService } from '@/src/modules/termination/termination.servic
   imports: [
     AppConfigModule,
     HealthModule,
-    TypeOrmModule.forRootAsync(databaseConfig.asProvider()),
+    TypeOrmModule.forRootAsync(getTypeOrmConfig()),
+    AppLoggerModule,
     SeedModule,
     // 이 아래로 프로젝트의 구현과 관련된 모듈을 정의할 것
     AuthModule,
@@ -45,6 +51,10 @@ import { TerminationService } from '@/src/modules/termination/termination.servic
         new ValidationPipe(configService.get('validation')),
       inject: [ConfigService],
     },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
   ],
 })
 export class AppModule implements OnModuleInit, OnApplicationShutdown {
@@ -53,30 +63,65 @@ export class AppModule implements OnModuleInit, OnApplicationShutdown {
     private readonly seedService: SeedService,
     private readonly dataSource: DataSource,
     private readonly terminationService: TerminationService,
+    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {}
 
   // 개발 환경용 시드 데이터 주입을 위해
   async onModuleInit() {
     const isDevelopment = this.configService.get('app.env') === Environment.DEV;
 
+    this.logger.info('Application initialization started', {
+      context: 'AppModule',
+      metadata: {
+        environment: this.configService.get('app.env'),
+        port: this.configService.get('app.port'),
+      },
+    });
+
     if (isDevelopment) {
       try {
         await this.seedService.seed();
-        console.log('Seeding data for development has been completed! 👍');
+        this.logger.debug('Development seed data injection completed', {
+          context: 'AppModule',
+        });
       } catch (error) {
-        console.error('⛔️ Got errors while seeding data: ', error);
+        this.logger.error('Failed to seed development data', {
+          context: 'AppModule',
+          metadata: {
+            error: error.message,
+            stack: error.stack,
+          },
+        });
       }
     }
   }
 
   async onApplicationShutdown(signal?: string) {
-    console.log(`🛑 Application shutdown initiated by (${signal})`);
+    this.logger.warn('Application shutdown initiated', {
+      context: 'AppModule',
+      metadata: { signal },
+    });
 
-    await this.terminationService.initiateShutdown();
-    console.log('✅ All pending requests completed');
+    try {
+      await this.terminationService.initiateShutdown();
+      this.logger.info('All pending requests completed', {
+        context: 'AppModule',
+      });
 
-    await this.dataSource.destroy();
-    console.log('✅ Database connections closed');
+      await this.dataSource.destroy();
+      this.logger.info('Database connections closed', {
+        context: 'AppModule',
+      });
+    } catch (error) {
+      this.logger.error('Error during application shutdown', {
+        context: 'AppModule',
+        metadata: {
+          error: error.message,
+          stack: error.stack,
+        },
+      });
+      throw error;
+    }
   }
 
   configure(consumer: MiddlewareConsumer) {

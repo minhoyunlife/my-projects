@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Repository } from 'typeorm';
+import { Logger } from 'winston';
 
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
@@ -27,11 +29,16 @@ export class SeedService {
     @InjectRepository(GenreTranslation)
     private readonly genreTranslationRepository: Repository<GenreTranslation>,
     private readonly configService: ConfigService,
+    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {}
 
   async seed(): Promise<void> {
-    if (process.env.NODE_ENV === 'production') {
-      console.error('프로덕션 환경에서 시드를 실행할 수 없습니다.');
+    const environment = this.configService.get('app.env');
+    if (environment === 'production') {
+      this.logger.error('Seed execution blocked in production', {
+        context: 'SeedService',
+        metadata: { environment },
+      });
       return;
     }
 
@@ -45,6 +52,9 @@ export class SeedService {
   private async createAdministrator(): Promise<void> {
     const adminEmail = this.configService.get('auth.adminEmail');
     if (!adminEmail) {
+      this.logger.error('Admin email not configured', {
+        context: 'SeedService',
+      });
       throw new Error('관리자 이메일이 설정되지 않았습니다.');
     }
 
@@ -53,17 +63,27 @@ export class SeedService {
     });
 
     if (existingAdmin) {
-      console.log('Administrator data already exist. Pass seeding data.');
+      this.logger.info('Administrator already exists', {
+        context: 'SeedService',
+        metadata: { email: adminEmail },
+      });
       return;
     }
 
     await this.administratorRepository.save({ email: adminEmail });
+    this.logger.info('Administrator created', {
+      context: 'SeedService',
+      metadata: { email: adminEmail },
+    });
   }
 
   private async createGenres(): Promise<Genre[]> {
     const existingGenres = await this.genreRepository.count();
     if (existingGenres > 0) {
-      console.log('Genre data already exist. Pass seeding data.');
+      this.logger.info('Genres already exist', {
+        context: 'SeedService',
+        metadata: { count: existingGenres },
+      });
       return this.genreRepository.find({ relations: { translations: true } });
     }
 
@@ -93,7 +113,10 @@ export class SeedService {
   private async createArtworks(genres: Genre[]): Promise<void> {
     const existingArtworks = await this.artworkRepository.count();
     if (existingArtworks > 0) {
-      console.log('Artwork data already exist. Pass seeding data.');
+      this.logger.info('Artworks already exist', {
+        context: 'SeedService',
+        metadata: { count: existingArtworks },
+      });
       return;
     }
 
