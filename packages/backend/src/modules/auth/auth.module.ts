@@ -1,11 +1,13 @@
-import { Module, OnModuleInit } from '@nestjs/common';
+import { Inject, Module, OnModuleInit } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { InjectRepository, TypeOrmModule } from '@nestjs/typeorm';
 
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Repository } from 'typeorm';
+import { Logger } from 'winston';
 
 import { Environment } from '@/src/common/enums/environment.enum';
 import { AuthController } from '@/src/modules/auth/auth.controller';
@@ -51,6 +53,7 @@ export class AuthModule implements OnModuleInit {
 
     @InjectRepository(Administrator)
     private readonly administratorRepository: Repository<Administrator>,
+    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {}
 
   async onModuleInit() {
@@ -62,7 +65,10 @@ export class AuthModule implements OnModuleInit {
   }
 
   private async seedAdminUser(email: string) {
-    console.log('Seeding administrator user if it does not exist...');
+    this.logger.info('Checking administrator account', {
+      context: 'AuthModule',
+      metadata: { email },
+    });
 
     const existingAdmin = await this.administratorRepository.findOneBy({
       email,
@@ -70,9 +76,15 @@ export class AuthModule implements OnModuleInit {
 
     if (!existingAdmin) {
       this.administratorRepository.save({ email });
-      console.log('Admin account created.');
+      this.logger.info('Administrator account created', {
+        context: 'AuthModule',
+        metadata: { email },
+      });
     } else {
-      console.log('Admin account exists.');
+      this.logger.info('Administrator account already exists', {
+        context: 'AuthModule',
+        metadata: { email },
+      });
     }
   }
 }

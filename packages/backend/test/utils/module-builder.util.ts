@@ -12,6 +12,7 @@ import { Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import cookieParser from 'cookie-parser';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 
 import { AuthModule } from '@/src/modules/auth/auth.module';
 import validationPipeConfig from '@/src/modules/config/settings/validation-pipe.config';
@@ -23,6 +24,23 @@ type TestModuleOptions = {
   controllers?: Type<any>[];
   imports?: (DynamicModule | Type<any>)[];
 };
+
+const mockLoggerProvider = {
+  provide: WINSTON_MODULE_PROVIDER,
+  useValue: {
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  },
+};
+
+const MockLoggerModule = {
+  module: class MockLoggerModule {},
+  providers: [mockLoggerProvider],
+  exports: [WINSTON_MODULE_PROVIDER],
+  global: true,
+} as DynamicModule;
 
 /**
  * 실제 DB 연결이 필요한 테스트를 위한, DB 의존성이 포함된 테스트 모듈
@@ -56,7 +74,7 @@ export async function createTestingModuleWithoutDB({
 }: Omit<TestModuleOptions, 'entities' | 'controllers'>) {
   return Test.createTestingModule({
     imports: [testConfigModule, ...imports],
-    providers,
+    providers: [...providers, mockLoggerProvider],
   }).compile();
 }
 
@@ -73,6 +91,7 @@ export async function createTestingApp({
   const moduleRef = await Test.createTestingModule({
     imports: [
       testConfigModule,
+      MockLoggerModule,
       TypeOrmModule.forRoot({
         ...TEST_DB_CONFIG,
         entities,
@@ -118,6 +137,17 @@ const testConfigModule = ConfigModule.forRoot({
         bucket: TEST_S3_CONFIG.bucket,
         endpoint: TEST_S3_CONFIG.endpoint,
         cloudfrontDomain: TEST_S3_CONFIG.cloudfrontDomain,
+      },
+      logger: {
+        level: 'debug',
+        format: {
+          timestamp: true,
+          json: false,
+        },
+        transports: {
+          console: true,
+          file: false,
+        },
       },
     }),
   ],
