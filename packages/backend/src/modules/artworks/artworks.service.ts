@@ -1,6 +1,8 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { EntityManager, In } from 'typeorm';
+import { Logger } from 'winston';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { addErrorMessages } from '@/src/common/exceptions/base.exception';
@@ -34,6 +36,7 @@ export class ArtworksService {
     private readonly storageService: StorageService,
     private readonly statusValidator: StatusValidator,
     private readonly entityManager: EntityManager,
+    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {}
 
   /**
@@ -329,19 +332,28 @@ export class ArtworksService {
                 ),
               {
                 onError: (error, attempt) => {
-                  console.error(
-                    `Failed to change image tag of artwork ${artwork.id} (attempt: ${attempt})`,
-                    error,
-                  );
+                  this.logger.warn('Failed to change image tag', {
+                    context: 'ArtworksService',
+                    metadata: {
+                      artworkId: artwork.id,
+                      imageKey: artwork.imageKey,
+                      attempt,
+                      error: error.message,
+                    },
+                  });
                 },
               },
             );
           } catch (error) {
-            // 이미지 태그 변경 실패는 로그만 남기고 무시
-            console.error(
-              `Failed to change image tag of artwork ${artwork.id} after all retries`,
-              error,
-            );
+            this.logger.error('Failed to change image tag after all retries', {
+              context: 'ArtworksService',
+              metadata: {
+                artworkId: artwork.id,
+                imageKey: artwork.imageKey,
+                error: error.message,
+                stack: error.stack,
+              },
+            });
           }
         }),
       );

@@ -4,7 +4,7 @@ export class TypeOrmLoggerAdapter {
   constructor(private readonly logger: Logger) {}
 
   logQuery(query: string, parameters?: any[]) {
-    this.logger.debug('Database query', {
+    this.logger.info('Database query', {
       context: 'Database',
       metadata: {
         query: this.formatQuery(query),
