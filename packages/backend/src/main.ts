@@ -11,6 +11,7 @@ import { AppModule } from '@/src/app.module';
   });
   const configService = app.get(ConfigService);
 
+  // TEST
   app.use(cookieParser());
 
   app.enableCors({
