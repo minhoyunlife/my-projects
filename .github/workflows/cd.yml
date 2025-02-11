@@ -53,7 +53,7 @@ jobs:
           docker --version
       - name: Check2
         run: |
-          ls -al
+          cd docker && ls -al
       - name: Build and push image
         env:
           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
