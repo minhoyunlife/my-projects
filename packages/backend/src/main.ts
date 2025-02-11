@@ -6,7 +6,9 @@ import cookieParser from 'cookie-parser';
 import { AppModule } from '@/src/app.module';
 
 (async function () {
-  const app = await NestFactory.create(AppModule, { logger: false });
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn'],
+  });
   const configService = app.get(ConfigService);
 
   app.use(cookieParser());
