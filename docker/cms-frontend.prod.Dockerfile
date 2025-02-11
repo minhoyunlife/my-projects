@@ -25,7 +25,6 @@ WORKDIR /app
 ENV NODE_ENV=production
 ARG GITHUB_TOKEN
 COPY --from=build /app/packages/cms-frontend/.next ./.next
-COPY --from=build /app/packages/cms-frontend/public ./public
 COPY /.npmrc ./
 COPY packages/cms-frontend/package.json ./
 RUN pnpm install --prod
