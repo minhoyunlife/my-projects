@@ -96,6 +96,7 @@ export class AppModule implements OnModuleInit, OnApplicationShutdown {
     }
   }
 
+  // Graceful shutdown 을 위한 메소드
   async onApplicationShutdown(signal?: string) {
     this.logger.warn('Application shutdown initiated', {
       context: 'AppModule',
