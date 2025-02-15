@@ -1,5 +1,12 @@
 #!/bin/bash
 
+echo "GITHUB_BASE_SHA: $GITHUB_BASE_SHA"
+echo "Current HEAD: $(git rev-parse HEAD)"
+
+# 실제 변경된 파일 목록 확인
+echo "Changed files:"
+git diff --name-only $GITHUB_BASE_SHA..HEAD
+
 # 코드 변경사항이 발생한 패키지 이름만을 따로 추출해서 배열화
 function get_package_names_from_code_changes() {
   git diff --name-only $GITHUB_BASE_SHA..HEAD | \
