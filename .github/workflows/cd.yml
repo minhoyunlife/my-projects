@@ -4,8 +4,7 @@ on:
   workflow_dispatch: # 수동 트리거 가능하도록
   push:
     branches:
-      # - "main"
-      - "**"
+      - "main"
     paths-ignore:
       - "**/*.md"
       - ".vscode/**"
