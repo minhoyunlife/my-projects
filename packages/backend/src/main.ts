@@ -18,7 +18,6 @@ import { AppModule } from '@/src/app.module';
     credentials: true,
   });
 
-  // Graceful shutdown
   app.enableShutdownHooks();
 
   await app.listen(configService.get('app').port);
