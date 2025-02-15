@@ -9,9 +9,20 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Set base SHA
+      shell: bash
+      id: set-base-sha
+      run: |
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          echo "BASE_SHA=${{ github.event.pull_request.base.sha }}" >> $GITHUB_ENV
+        else
+          echo "BASE_SHA=${{ github.event.before }}" >> $GITHUB_ENV
+        fi
     - name: Extract package names which are changed
       id: check-changes
       shell: bash
+      env:
+        GITHUB_BASE_SHA: ${{ env.BASE_SHA }}
       run: |
         chmod +x .github/actions/detect-changes/script.sh
         .github/actions/detect-changes/script.sh
