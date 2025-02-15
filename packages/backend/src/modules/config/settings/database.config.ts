@@ -19,7 +19,7 @@ const databaseConfig = registerAs('database', () => ({
   database: process.env.DB_NAME,
   autoLoadEntities: true,
   synchronize: process.env.NODE_ENV !== Environment.PROD,
-  ssl: process.env.NODE_ENV === Environment.PROD,
+  ssl: false,
   encryptionKey: process.env.DB_ENCRYPTION_KEY,
 }));
 
