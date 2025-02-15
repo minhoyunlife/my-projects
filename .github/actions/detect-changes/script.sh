@@ -1,14 +1,8 @@
 #!/bin/bash
 
-base_branch="$1"
-if [[ -z "$base_branch" ]]; then
-  echo "Base branch argument is required."
-  exit 1
-fi
-
 # 코드 변경사항이 발생한 패키지 이름만을 따로 추출해서 배열화
 function get_package_names_from_code_changes() {
-  git diff --name-only origin/$base_branch..HEAD | \
+  git diff --name-only $GITHUB_BASE_SHA..HEAD | \
   grep "^packages/" | \
   cut -d'/' -f2 | \
   sort -u | \
@@ -17,7 +11,7 @@ function get_package_names_from_code_changes() {
 
 # 의존성 변경사항이 발생한 패키지 이름만을 따로 추출해서 배열화
 function get_package_names_from_deps_changes() {
-  pnpm list --filter="...[origin/$base_branch]" --json | \
+  pnpm list --filter="...[$GITHUB_BASE_SHA]" --json | \
   jq '[.[] | select(.name != "my-projects") | .name | sub("^@my-projects/"; "")]'
 }
 
