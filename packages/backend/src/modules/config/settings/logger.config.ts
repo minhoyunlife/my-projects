@@ -99,7 +99,7 @@ export default registerAs('logger', () => {
         : [
             new WinstonCloudwatch({
               logGroupName: process.env.AWS_CLOUDWATCH_LOG_GROUP_NAME,
-              logStreamName: `backend=${new Date().toISOString()}`,
+              logStreamName: `backend-${new Date().toISOString()}`,
               awsRegion: process.env.AWS_REGION,
               messageFormatter: ({ level, message, ...meta }) =>
                 JSON.stringify({ level, message, ...meta }),
