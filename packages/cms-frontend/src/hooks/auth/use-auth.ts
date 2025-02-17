@@ -1,3 +1,4 @@
+import getConfig from "next/config";
 import { useRouter } from "next/navigation";
 
 import { useMutation } from "@tanstack/react-query";
@@ -25,7 +26,9 @@ export function useAuth() {
   } = useAuthStore();
 
   const loginByGithub = () => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const { publicRuntimeConfig } = getConfig();
+    const baseUrl =
+      process.env.NEXT_PUBLIC_API_URL || publicRuntimeConfig.apiUrl;
     if (!baseUrl) {
       throw new Error("base url is not defined");
     }
