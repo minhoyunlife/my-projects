@@ -26,10 +26,11 @@ export function useAuth() {
 
   const loginByGithub = () => {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!baseUrl) {
-      throw new Error("base url is not defined");
+    if (baseUrl) {
+      router.replace(`${baseUrl}/auth/github`);
+    } else {
+      router.replace("/api/auth/github");
     }
-    router.replace(`${baseUrl}/auth/github`);
   };
 
   const setup2FAMutation = useMutation({
