@@ -20,5 +20,7 @@ import { AppModule } from '@/src/app.module';
 
   app.enableShutdownHooks();
 
+  app.setGlobalPrefix('api');
+
   await app.listen(configService.get('app').port);
 })();
