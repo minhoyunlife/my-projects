@@ -33,6 +33,8 @@ jobs:
       - name: Detect which packages are changed
         id: check-changes
         uses: ./.github/actions/detect-changes
+        with:
+          base-ref: ${{ github.event.before }}
 
   build-packages:
     needs: detect-changes
