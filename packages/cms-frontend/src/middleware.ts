@@ -62,7 +62,4 @@ export const config = {
     "/fanarts",
     "/genres",
   ],
-
-  // TEST
-  // TEST
 };

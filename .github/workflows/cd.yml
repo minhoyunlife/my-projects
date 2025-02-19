@@ -4,8 +4,7 @@ on:
   workflow_dispatch: # 수동 트리거 가능하도록
   push:
     branches:
-      # - "main"
-      - "**" # temp
+      - "main"
     paths-ignore:
       - "**/*.md"
       - ".vscode/**"
@@ -40,8 +39,7 @@ jobs:
         id: check-changes
         uses: ./.github/actions/detect-changes
         with:
-          # base-ref: ${{ github.event.before }}
-          base-ref: "origin/main" # temp
+          base-ref: ${{ github.event.before }}
 
   build-packages:
     needs: detect-changes
