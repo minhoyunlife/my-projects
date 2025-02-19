@@ -77,5 +77,6 @@ jobs:
           # 새 이미지 태그로 태스크 정의를 변경
           NEW_TASK_DEFINITION=$(echo $TASK_DEFINITION | jq --arg IMAGE "$ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7}" '.containerDefinitions[0].image = $IMAGE')
           echo "$NEW_TASK_DEFINITION" > task-definition.json
+          echo $NEW_TASK_DEFINITION
 
           # aws ecs register-task-definition --cli-input-json file://task-definition.json
