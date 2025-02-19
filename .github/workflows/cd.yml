@@ -4,7 +4,8 @@ on:
   workflow_dispatch: # 수동 트리거 가능하도록
   push:
     branches:
-      - "main"
+      # - "main"
+      - "**" # temp
     paths-ignore:
       - "**/*.md"
       - ".vscode/**"
@@ -54,14 +55,22 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-      - name: Build and push image
-        env:
-          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-          GITHUB_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+      # - name: Login to Amazon ECR
+      #   id: login-ecr
+      #   uses: aws-actions/amazon-ecr-login@v2
+      # - name: Build and push image
+      #   env:
+      #     ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+      #     GITHUB_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
+      #     NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+      #   run: |
+      #     docker build --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} -f docker/${{matrix.packages}}.prod.Dockerfile -t $ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7} .
+      #     docker push $ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7}
+      - name: Update ECS Task Definition
         run: |
-          docker build --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} -f docker/${{matrix.packages}}.prod.Dockerfile -t $ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7} .
-          docker push $ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7}
+          TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition my-project-${{ matrix.packages }} --query 'taskDefinition' --output json)
+          echo $TASK_DEFINITION
+          # NEW_TASK_DEFINITION=$(echo $TASK_DEFINITION | jq --arg IMAGE "$ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7}" \
+          #   '.containerDefinitions[0].image = $IMAGE')
+          # echo "$NEW_TASK_DEFINITION" > task-definition.json
+          # aws ecs register-task-definition --cli-input-json file://task-definition.json
