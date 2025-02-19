@@ -4,7 +4,6 @@ import { TypeOrmModuleAsyncOptions } from '@nestjs/typeorm';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 
-import { Environment } from '@/src/common/enums/environment.enum';
 import { TypeOrmLoggerAdapter } from '@/src/modules/logger/typeorm.logger.adapter';
 
 /**
@@ -18,7 +17,7 @@ const databaseConfig = registerAs('database', () => ({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   autoLoadEntities: true,
-  synchronize: process.env.NODE_ENV !== Environment.PROD,
+  synchronize: false,
   ssl: false,
   encryptionKey: process.env.DB_ENCRYPTION_KEY,
 }));
