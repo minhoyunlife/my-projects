@@ -66,6 +66,7 @@
     "eslint-import-resolver-typescript": "^3.6.3",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-react-hooks": "^5.0.0",
+    "is-odd": "^3.0.1",
     "jsdom": "^25.0.1",
     "postcss": "^8",
     "prettier": "^3.3.3",
