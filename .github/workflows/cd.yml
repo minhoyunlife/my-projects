@@ -35,7 +35,8 @@ jobs:
         id: check-changes
         uses: ./.github/actions/detect-changes
         with:
-          base-ref: ${{ github.event.before }}
+          # base-ref: ${{ github.event.before }}
+          base-ref: "origin/main" # temp
 
   build-packages:
     needs: detect-changes
