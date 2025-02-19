@@ -12,7 +12,7 @@ function get_package_names_from_code_changes() {
   grep "^packages/" | \
   cut -d'/' -f2 | \
   sort -u | \
-  jq -R -s 'split("\n")[:-1]'
+  jq -R -s -c 'split("\n")[:-1]'
 }
 
 # 의존성 변경사항이 발생한 패키지 이름만을 따로 추출해서 배열화
@@ -33,4 +33,4 @@ code_changes=$(get_package_names_from_code_changes)
 lock_changes=$(get_package_names_from_deps_changes)
 all_changes=$(merge "$code_changes" "$lock_changes")
 
-echo "packages=${all_changes}" >> $GITHUB_OUTPUT
+echo "packages=$(echo $all_changes | tr -d ' ')" >> $GITHUB_OUTPUT
