@@ -39,7 +39,7 @@ jobs:
         id: check-changes
         uses: ./.github/actions/detect-changes
         with:
-          base-ref: ${{ github.ref == 'refs/heads/main' && github.event.before || github.event.repository.default_branch }}
+          base-ref: ${{ github.ref == 'refs/heads/main' && github.event.before || github.base_ref }}
 
   verify-packages:
     needs: detect-changes
