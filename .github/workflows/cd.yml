@@ -56,18 +56,19 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
-      # - name: Login to Amazon ECR
-      #   id: login-ecr
-      #   uses: aws-actions/amazon-ecr-login@v2
-      # - name: Build and push image
-      #   env:
-      #     ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-      #     GITHUB_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
-      #     NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-      #   run: |
-      #     docker build --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} -f docker/${{matrix.packages}}.prod.Dockerfile -t $ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7} .
-      #     docker push $ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7}
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build and push image
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          GITHUB_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+        run: |
+          docker build --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} -f docker/${{matrix.packages}}.prod.Dockerfile -t $ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7} .
+          docker push $ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7}
       - name: Update ECS Task Definition
+        id: task-def
         env:
           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
         run: |
@@ -77,6 +78,21 @@ jobs:
           # 새 이미지 태그로 태스크 정의를 변경
           NEW_TASK_DEFINITION=$(echo $TASK_DEFINITION | jq --arg IMAGE "$ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7}" '.containerDefinitions[0].image = $IMAGE')
           echo "$NEW_TASK_DEFINITION" > task-definition.json
-          echo $NEW_TASK_DEFINITION
 
-          # aws ecs register-task-definition --cli-input-json file://task-definition.json
+          # 새 태스크 정의를 등록 후 ARN 취득
+          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://task-definition.json --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo $NEW_TASK_DEF_ARN
+          echo "arn=$NEW_TASK_DEF_ARN" >> $GITHUB_OUTPUT
+      - name: Update ECS Service
+        run: |
+          # 새 서비스 정의를 등록
+          aws ecs update-service \
+            --cluster my-projects-cluster \
+            --service ${{ matrix.packages }} \
+            --task-definition ${{ steps.task-def.outputs.arn }} \
+            --force-new-deployment
+      - name: Wait for service stability
+        run: |
+          aws ecs wait services-stable \
+            --cluster my-projects-cluster \
+            --services ${{ matrix.packages }}
