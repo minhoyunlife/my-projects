@@ -68,7 +68,7 @@ jobs:
       #     docker push $ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7}
       - name: Update ECS Task Definition
         run: |
-          TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition my-project-${{ matrix.packages }} --query 'taskDefinition' --output json)
+          TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition my-projects-${{ matrix.packages }} --query 'taskDefinition' --output json)
           echo $TASK_DEFINITION
           # NEW_TASK_DEFINITION=$(echo $TASK_DEFINITION | jq --arg IMAGE "$ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7}" \
           #   '.containerDefinitions[0].image = $IMAGE')
