@@ -68,10 +68,14 @@ jobs:
       #     docker build --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} -f docker/${{matrix.packages}}.prod.Dockerfile -t $ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7} .
       #     docker push $ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7}
       - name: Update ECS Task Definition
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
         run: |
+          # 태스크 정의를 취득
           TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition my-projects-${{ matrix.packages }} --query 'taskDefinition' --output json)
-          echo $TASK_DEFINITION
-          # NEW_TASK_DEFINITION=$(echo $TASK_DEFINITION | jq --arg IMAGE "$ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7}" \
-          #   '.containerDefinitions[0].image = $IMAGE')
-          # echo "$NEW_TASK_DEFINITION" > task-definition.json
+
+          # 새 이미지 태그로 태스크 정의를 변경
+          NEW_TASK_DEFINITION=$(echo $TASK_DEFINITION | jq --arg IMAGE "$ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7}" '.containerDefinitions[0].image = $IMAGE')
+          echo "$NEW_TASK_DEFINITION" > task-definition.json
+
           # aws ecs register-task-definition --cli-input-json file://task-definition.json
