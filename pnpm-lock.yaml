@@ -146,9 +146,6 @@ importers:
       eslint-plugin-prettier:
         specifier: ^5.2.3
         version: 5.2.3(@types/eslint@9.6.1)(eslint-config-prettier@10.0.1(eslint@9.19.0(jiti@1.21.6)))(eslint@9.19.0(jiti@1.21.6))(prettier@3.4.2)
-      is-odd:
-        specifier: ^3.0.1
-        version: 3.0.1
       prettier:
         specifier: ^3.4.2
         version: 3.4.2
@@ -333,9 +330,6 @@ importers:
       eslint-plugin-react-hooks:
         specifier: ^5.0.0
         version: 5.0.0(eslint@9.19.0(jiti@1.21.6))
-      is-odd:
-        specifier: ^3.0.1
-        version: 3.0.1
       jsdom:
         specifier: ^25.0.1
         version: 25.0.1
@@ -4604,17 +4598,9 @@ packages:
     resolution: {integrity: sha512-k1U0IRzLMo7ZlYIfzRu23Oh6MiIFasgpb9X76eqfFZAqwH44UI4KTBvBYIZ1dSL9ZzChTB9ShHfLkR4pdW5krQ==}
     engines: {node: '>= 0.4'}
 
-  is-number@6.0.0:
-    resolution: {integrity: sha512-Wu1VHeILBK8KAWJUAiSZQX94GmOE45Rg6/538fKwiloUu21KncEkYGPqob2oSZ5mUT73vLGrHQjKw3KMPwfDzg==}
-    engines: {node: '>=0.10.0'}
-
   is-number@7.0.0:
     resolution: {integrity: sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==}
     engines: {node: '>=0.12.0'}
-
-  is-odd@3.0.1:
-    resolution: {integrity: sha512-CQpnWPrDwmP1+SMHXZhtLtJv90yiyVfluGsX5iNCVkrhQtU3TQHsUWPG9wkdk9Lgd5yNpAg9jQEo90CBaXgWMA==}
-    engines: {node: '>=4'}
 
   is-plain-obj@1.1.0:
     resolution: {integrity: sha512-yvkRyxmFKEOQ4pNXCmJG5AEQNlXJS5LaONXo5/cLdTZdWvsZ1ioJEonLGAosKlMWE8lwUy/bJzMjcw8az73+Fg==}
@@ -11638,13 +11624,7 @@ snapshots:
     dependencies:
       has-tostringtag: 1.0.2
 
-  is-number@6.0.0: {}
-
   is-number@7.0.0: {}
-
-  is-odd@3.0.1:
-    dependencies:
-      is-number: 6.0.0
 
   is-plain-obj@1.1.0: {}
 
