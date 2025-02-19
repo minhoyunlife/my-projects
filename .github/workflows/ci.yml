@@ -39,7 +39,7 @@ jobs:
         id: check-changes
         uses: ./.github/actions/detect-changes
         with:
-          base-ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          base-ref: ${{ github.ref == 'refs/heads/main' && github.event.before || 'main' }}
 
   verify-packages:
     needs: detect-changes
