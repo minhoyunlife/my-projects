@@ -49,6 +49,15 @@ MY Project 의 백엔드를 담당하는 애플리케이션입니다.
 - `lint`: 코드 린팅
 - `format`: 코드 포맷팅
 
+## 마이그레이션
+
+로컬에서 개발할 때에는 도커 컴포즈를 이용하므로, 개발용 컨테이너를 기동 후 아래와 같이 실행
+
+- 신규 마이그레이션 파일 작성: `docker compose exec backend pnpm run migration:create src/migrations/{생성할 파일명}`
+- 현재 엔티티에서 마이그레이션 파일을 자동 생성: `docker compose exec backend pnpm run migration:generate src/migrations/{생성할 파일명}`
+- 마이그레이션 실행: `docker compose exec backend pnpm run migration:run`
+- 롤백 실행: `docker compose exec backend pnpm run migration:revert`
+
 ---
 
 # English
@@ -96,6 +105,15 @@ Backend application for MY Project.
 - `lint`: Code linting
 - `format`: Code formatting
 
+## Migration
+
+Since we use Docker Compose for local development, start the development container first and then execute the following commands:
+
+- Create new migration file: `docker compose exec backend pnpm run migration:create src/migrations/{filename}`
+- Auto-generate migration file from current entities: `docker compose exec backend pnpm run migration:generate src/migrations/{filename}`
+- Run migrations: `docker compose exec backend pnpm run migration:run`
+- Revert migration: `docker compose exec backend pnpm run migration:revert`
+
 ---
 
 # 日本語
@@ -142,3 +160,12 @@ MY Project のバックエンドアプリケーション。
 - `test:all`: 全テスト実行
 - `lint`: コードリント
 - `format`: コードフォーマット
+
+## マイグレーション
+
+ローカル開発ではDocker Composeを使用するため、開発用コンテナを起動後、以下のコマンドを実行します：
+
+- 新規マイグレーションファイル作成: `docker compose exec backend pnpm run migration:create src/migrations/{ファイル名}`
+- 現在のエンティティからマイグレーションファイルを自動生成: `docker compose exec backend pnpm run migration:generate src/migrations/{ファイル名}`
+- マイグレーション実行: `docker compose exec backend pnpm run migration:run`
+- ロールバック実行: `docker compose exec backend pnpm run migration:revert`

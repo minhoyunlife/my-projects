@@ -1,14 +1,16 @@
 import typescriptPlugin from '@typescript-eslint/eslint-plugin';
 import typescriptParser from '@typescript-eslint/parser';
+import prettierConfig from 'eslint-config-prettier';
 import importPlugin from 'eslint-plugin-import';
 import prettierPlugin from 'eslint-plugin-prettier';
-import prettierConfig from 'eslint-config-prettier';
+
 import enforceTopLevelDepsRelatedDescribe from './eslint-rules/enforce-top-level-deps-related-describe.cjs';
 
 export default [
   // 기본 타입스크립트 설정
   {
     files: ['**/*.ts'],
+    ignores: ['src/migrations/*'],
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
