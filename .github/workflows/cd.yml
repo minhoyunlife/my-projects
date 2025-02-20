@@ -5,7 +5,7 @@ on:
   push:
     branches:
       # - "main"
-      - "**"
+      - "**" # temp
     paths-ignore:
       - "**/*.md"
       - ".vscode/**"
@@ -42,13 +42,13 @@ jobs:
         uses: ./.github/actions/detect-changes
         with:
           # base-ref: ${{ github.event.before }}
-          base-ref: "origin/main"
+          base-ref: "origin/main" # temp
       - name: Check Migration Changes
         uses: ./.github/actions/check-migration
         id: check-migration
         with:
           # base-ref: ${{ github.event.before }}
-          base-ref: "origin/main"
+          base-ref: "origin/main" # temp
 
   build-images:
     needs: detect-changes
@@ -86,7 +86,7 @@ jobs:
       - name: Collect outputs
         id: collect-outputs
         run: |
-          echo "images=$(jq -n --arg key "${{ matrix.packages }}" --arg value "${{ steps.build.outputs.image_tag }}" '{($key): $value}')" >> $GITHUB_OUTPUT
+          echo "images=$(jq -n -c --arg key "${{ matrix.packages }}" --arg value "${{ steps.build.outputs.image_tag }}" '{($key): $value}')" >> $GITHUB_OUTPUT
 
   job2:
     runs-on: ubuntu-latest
