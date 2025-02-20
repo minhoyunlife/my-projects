@@ -25,5 +25,4 @@ import { AppModule } from '@/src/app.module';
   await app.listen(configService.get('app').port);
 
   // TEST
-  // TEST
 })();

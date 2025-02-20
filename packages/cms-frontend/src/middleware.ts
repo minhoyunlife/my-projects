@@ -64,5 +64,4 @@ export const config = {
   ],
 
   // TEST
-  // TEST
 };
