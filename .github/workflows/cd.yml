@@ -12,6 +12,11 @@ on:
       - ".github/**"
       - "!.github/workflows/cd.yml" # 편의를 위해, 본 워크플로우의 변경 시에는 트리거되도록
 
+env:
+  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+  GITHUB_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
+  NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
@@ -58,10 +63,28 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
       - name: Build and push image
-        env:
-          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-          GITHUB_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+        id: build-image
         run: |
           docker build --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} --build-arg NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} -f docker/${{matrix.packages}}.prod.Dockerfile -t $ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7} .
           docker push $ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7}
+          echo "image=$ECR_REGISTRY/my-project/${{ matrix.packages }}:${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+      - name: Get current task definition
+        id: get-task-def
+        run: |
+          mkdir -p ./task-definitions
+          TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition my-projects-${{ matrix.packages }} --query 'taskDefinition' --output json)
+          echo "$TASK_DEFINITION" > ./task-definitions/${{ matrix.packages }}.json
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: update-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ./task-definitions/${{ matrix.packages }}.json
+          container-name: ${{ matrix.packages }}
+          image: ${{ steps.build-image.outputs.image }}
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.update-task-def.outputs.task-definition }}
+          service: my-projects-${{ matrix.packages }}
+          cluster: my-projects-cluster
+          wait-for-service-stability: true
