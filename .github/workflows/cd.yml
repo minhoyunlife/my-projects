@@ -162,6 +162,7 @@ jobs:
           wait-for-service-stability: false
           run-task: true
           wait-for-task-stopped: true
+          run-task-launch-type: EC2
       - name: Get current task definition
         id: get-task-def
         run: |
