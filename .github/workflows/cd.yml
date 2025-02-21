@@ -56,8 +56,6 @@ jobs:
     strategy:
       matrix:
         packages: ${{ fromJson(needs.detect-changes.outputs.packages) }}
-    outputs:
-      images: ${{ steps.collect-outputs.outputs.images }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -82,18 +80,27 @@ jobs:
             -f docker/${{ matrix.packages }}.prod.Dockerfile \
             -t $IMAGE_TAG .
           docker push $IMAGE_TAG
-          echo "${{ matrix.packages }}-image=${IMAGE_TAG}" >> $GITHUB_OUTPUT
-      - name: Collect outputs
-        id: collect-outputs
-        run: |
-          echo "images=$(jq -n -c --arg key "${{ matrix.packages }}" --arg value "${{ steps.build.outputs.image_tag }}" '{($key): $value}')" >> $GITHUB_OUTPUT
+          echo "image-tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+      - name: Save build outputs
+        uses: cloudposse/github-action-matrix-outputs-write@v1
+        id: write-output
+        with:
+          matrix-step-name: ${{ github.job }}
+          matrix-key: ${{ matrix.packages }}
+          outputs: |
+            image-tag: ${{ steps.build.outputs.image-tag }}
 
-  job2:
+  deploy-frontend:
     runs-on: ubuntu-latest
     needs: [build-images]
     steps:
       - name: Get the output
-        run: echo '${{ needs.build-images.outputs.images }}'
+        uses: cloudposse/github-action-matrix-outputs-read@v1
+        id: read-output
+        with:
+          matrix-step-name: build
+      - run: |
+          echo ${{ steps.read-output.outputs.result }}
 
   # deploy-frontend:
   #   needs: [detect-changes, build-images]
