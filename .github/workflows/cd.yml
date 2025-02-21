@@ -153,33 +153,15 @@ jobs:
           task-definition: ./task-definitions/migration.json
           container-name: migration
           image: ${{ env.ECR_REGISTRY }}/${{ needs.read-tags.outputs.backend-image-tag }}
-      - name: Run migration task
+      - name: Run Database Migration
         if: ${{ needs.detect-changes.outputs.migrations == 'true' }}
-        run: |
-          TASK_ARN=$(aws ecs run-task \
-            --cluster my-projects-cluster \
-            --task-definition ${{ steps.update-migration-task.outputs.task-definition }} \
-            --launch-type EC2 \
-            --query 'tasks[0].taskArn' \
-            --output text)
-
-          echo "Waiting for migration task to complete..."
-
-          aws ecs wait tasks-stopped \
-            --cluster my-projects-cluster \
-            --tasks $TASK_ARN
-
-          EXIT_CODE=$(aws ecs describe-tasks \
-            --cluster my-projects-cluster \
-            --tasks $TASK_ARN \
-            --query 'tasks[0].containers[0].exitCode')
-
-          if [ "$EXIT_CODE" != "0" ]; then
-            echo "Migration failed with exit code $EXIT_CODE"
-            exit 1
-          fi
-
-          echo "Migration completed successfully"
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.update-migration-task.outputs.task-definition }}
+          cluster: my-projects-cluster
+          wait-for-service-stability: false
+          run-task: true
+          wait-for-task-stopped: true
       - name: Get current task definition
         id: get-task-def
         run: |
@@ -194,7 +176,7 @@ jobs:
           container-name: backend
           image: ${{ env.ECR_REGISTRY }}/${{ needs.read-tags.outputs.backend-image-tag }}
       - name: Deploy Amazon ECS task definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.update-task-def.outputs.task-definition }}
           service: my-projects-backend
@@ -226,7 +208,7 @@ jobs:
           container-name: cms-frontend
           image: ${{ env.ECR_REGISTRY }}/${{ needs.read-tags.outputs.cms-frontend-image-tag }}
       - name: Deploy Amazon ECS task definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.update-task-def.outputs.task-definition }}
           service: my-projects-cms-frontend
