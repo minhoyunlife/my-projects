@@ -117,12 +117,12 @@ jobs:
 
   deploy-frontend:
     runs-on: ubuntu-latest
-    needs: [build-images]
+    needs: [read-build-outputs]
     steps:
       - name: Get image tag
         run: |
-          echo ${{ needs.build-images.outputs.backend-image-tag }}
-          echo ${{ needs.build-images.outputs.cms-frontend-image-tag }}
+          echo ${{ needs.read-build-outputs.outputs.backend-image-tag }}
+          echo ${{ needs.read-build-outputs.outputs.cms-frontend-image-tag }}
 
   # deploy-frontend:
   #   needs: [detect-changes, build-images]
