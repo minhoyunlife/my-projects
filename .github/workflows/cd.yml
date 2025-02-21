@@ -102,18 +102,14 @@ jobs:
         id: read-output
         with:
           matrix-step-name: build-images
-      - name: Manipulate output
-        id: manipulate-output
-        run: |
-          echo "result=${{ fromJson(steps.read-output.outputs.result) }}" >> $GITHUB_OUTPUT
       - name: Get the backend image tag
         id: get-backend-image-tag
         run: |
-          echo "tag=${{ steps.manipulate-output.outputs.result.image-tag.backend }}" >> $GITHUB_OUTPUT
+          echo "tag=${{ fromJson(steps.read-output.outputs.result).image-tag.backend }}" >> $GITHUB_OUTPUT
       - name: Get the cms-frontend image tag
         id: get-cms-frontend-image-tag
         run: |
-          echo "tag=${{ steps.manipulate-output.outputs.result.image-tag.cms-frontend }}" >> $GITHUB_OUTPUT
+          echo "tag=${{ fromJson(steps.read-output.outputs.result).image-tag.cms-frontend }}" >> $GITHUB_OUTPUT
 
   deploy-frontend:
     runs-on: ubuntu-latest
