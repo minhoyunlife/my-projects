@@ -115,11 +115,11 @@ jobs:
       - name: Get the backend image tag
         id: get-backend-image-tag
         run: |
-          echo "tag=$(echo '${{ steps.read-output.outputs.result }}' | jq -r '."image"."backend"')" >> $GITHUB_OUTPUT
+          echo "tag=$(echo '${{ steps.read-output.outputs.result }}' | jq -r '."image-tag"."backend"')" >> $GITHUB_OUTPUT
       - name: Get the cms-frontend image tag
         id: get-cms-frontend-image-tag
         run: |
-          echo "tag=$(echo '${{ steps.read-output.outputs.result }}' | jq -r '."image"."cms-frontend"')" >> $GITHUB_OUTPUT
+          echo "tag=$(echo '${{ steps.read-output.outputs.result }}' | jq -r '."image-tag"."cms-frontend"')" >> $GITHUB_OUTPUT
 
   deploy-frontend:
     runs-on: ubuntu-latest
