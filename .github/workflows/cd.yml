@@ -62,25 +62,25 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: "recursive"
-      # - name: Configure AWS credentials
-      #   uses: aws-actions/configure-aws-credentials@v4
-      #   with:
-      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #     aws-region: ${{ secrets.AWS_REGION }}
-      # - name: Login to Amazon ECR
-      #   uses: aws-actions/amazon-ecr-login@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
       - name: Build and push images
         id: build
         run: |
           IMAGE_TAG=my-project/${{ matrix.packages }}:${GITHUB_SHA::7}
           FULL_IMAGE_PATH=$ECR_REGISTRY/${IMAGE_TAG}
-          # docker build \
-          #   --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} \
-          #   --build-arg NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
-          #   -f docker/${{ matrix.packages }}.prod.Dockerfile \
-          #   -t $FULL_IMAGE_PATH .
-          # docker push $FULL_IMAGE_PATH
+          docker build \
+            --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} \
+            --build-arg NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
+            -f docker/${{ matrix.packages }}.prod.Dockerfile \
+            -t $FULL_IMAGE_PATH .
+          docker push $FULL_IMAGE_PATH
           echo "image-tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
       - name: Save build outputs
         uses: cloudposse/github-action-matrix-outputs-write@v1
@@ -113,47 +113,33 @@ jobs:
           echo "tag=${{ fromJson(steps.read-output.outputs.result).image-tag.cms-frontend }}" >> $GITHUB_OUTPUT
 
   deploy-frontend:
-    runs-on: ubuntu-latest
     needs: [read-tags]
+    if: ${{ needs.read-tags.outputs.cms-frontend-image-tag != '' }}
+    runs-on: ubuntu-latest
     steps:
-      - name: Get image tag
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Get current task definition
+        id: get-task-def
         run: |
-          echo "${{ needs.read-tags.outputs }}"
-          echo "backend image tag:"
-          echo "${{ needs.read-tags.outputs.backend-image-tag }}"
-          echo "cms-frontend image tag:"
-          echo "${{ needs.read-tags.outputs.cms-frontend-image-tag }}"
-
-  # deploy-frontend:
-  #   needs: [detect-changes, build-images]
-  #   if: contains(fromJson(needs.detect-changes.outputs.packages), 'cms-frontend')
-  #   runs-on: ubuntu-latest
-  #   environment: production
-  #   steps:
-  #     - uses: aws-actions/configure-aws-credentials@v4
-  #       with:
-  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #         aws-region: ${{ secrets.AWS_REGION }}
-  #     - id: get-image
-  #       run: |
-  #         IMAGE_TAG=$(echo '${{ needs.build-images.outputs.image-tags }}' | jq -r '.cms')
-  #         echo "tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
-  #     - run: |
-  #         TASK_DEF=$(aws ecs describe-task-definition \
-  #           --task-definition my-projects-cms-frontend \
-  #           --query 'taskDefinition' \
-  #           --output json)
-  #         echo "$TASK_DEF" > ./task-definitions/cms-frontend.json
-  #     - uses: aws-actions/amazon-ecs-render-task-definition@v1
-  #       id: render-taskdef
-  #       with:
-  #         task-definition: ./task-definitions/cms-frontend.json
-  #         container-name: cms-frontend
-  #         image: ${{ steps.get-image.outputs.tag }}
-  #     - uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-  #       with:
-  #         task-definition: ${{ steps.render-taskdef.outputs.task-definition }}
-  #         service: my-projects-cms
-  #         cluster: my-projects-cluster
-  #         wait-for-service-stability: true
+          mkdir -p ./task-definitions
+          TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition my-projects-cms-frontend --query 'taskDefinition' --output json)
+          echo "$TASK_DEFINITION" > ./task-definitions/cms-frontend.json
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: update-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ./task-definitions/cms-frontend.json
+          container-name: cms-frontend
+          image: ${{ env.ECR_REGISTRY }}/${{ needs.read-tags.outputs.cms-frontend-image-tag }}
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.update-task-def.outputs.task-definition }}
+          service: my-projects-cms-frontend
+          cluster: my-projects-cluster
+          wait-for-service-stability: true
