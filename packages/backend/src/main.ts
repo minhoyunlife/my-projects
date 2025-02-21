@@ -23,6 +23,4 @@ import { AppModule } from '@/src/app.module';
   app.setGlobalPrefix('api');
 
   await app.listen(configService.get('app').port);
-
-  // TEST
 })();
