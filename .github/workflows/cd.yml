@@ -138,20 +138,28 @@ jobs:
       - name: Run Database Migration
         if: ${{ needs.detect-changes.outputs.migrations == 'true' }}
         run: |
-          BACKEND_IMAGE=$ECR_REGISTRY/${{ needs.read-tags.outputs.backend-image-tag }}
-
           echo "Starting database migration..."
 
+          mkdir -p ./task-definitions
+          aws ecs describe-task-definition \
+            --task-definition my-projects-migration \
+            --query 'taskDefinition' \
+            --output json > ./task-definitions/migration.json
+      - name: Update migration task definition
+        if: ${{ needs.detect-changes.outputs.migrations == 'true' }}
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        id: update-migration-task
+        with:
+          task-definition: ./task-definitions/migration.json
+          container-name: migration
+          image: ${{ env.ECR_REGISTRY }}/${{ needs.read-tags.outputs.backend-image-tag }}
+      - name: Run migration task
+        if: ${{ needs.detect-changes.outputs.migrations == 'true' }}
+        run: |
           TASK_ARN=$(aws ecs run-task \
             --cluster my-projects-cluster \
-            --task-definition my-projects-migration \
+            --task-definition ${{ steps.update-migration-task.outputs.task-definition }} \
             --launch-type EC2 \
-            --overrides '{
-              "containerOverrides": [{
-                "name": "migration",
-                "image": "'$BACKEND_IMAGE'"
-              }]
-            }' \
             --query 'tasks[0].taskArn' \
             --output text)
 
