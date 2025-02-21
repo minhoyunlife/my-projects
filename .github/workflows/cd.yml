@@ -98,7 +98,7 @@ jobs:
         uses: cloudposse/github-action-matrix-outputs-read@v1
         id: read-output
         with:
-          matrix-step-name: build
+          matrix-step-name: build-images
       - run: |
           echo ${{ steps.read-output.outputs.result }}
 
