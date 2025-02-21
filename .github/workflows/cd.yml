@@ -94,7 +94,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-images]
     outputs:
-      result: "${{ steps.read-output.outputs.result }}"
+      result: ${{ steps.read-output.outputs.result }}
     steps:
       - name: Get build outputs
         uses: cloudposse/github-action-matrix-outputs-read@v1
