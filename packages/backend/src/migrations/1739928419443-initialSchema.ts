@@ -67,9 +67,9 @@ export class InitialSchema1739928419443 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "artwork_genres_genre" ADD CONSTRAINT "FK_f50719004f6498d5efc631b7466" FOREIGN KEY ("genreId") REFERENCES "genre"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );
-    // await queryRunner.query(
-    //   `INSERT INTO "administrator" ("email", "isTotpEnabled") VALUES ('minhoyun.life@gmail.com', false)`,
-    // );
+    await queryRunner.query(
+      `INSERT INTO "administrator" ("email", "isTotpEnabled") VALUES ('minhoyun.life@gmail.com', false)`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

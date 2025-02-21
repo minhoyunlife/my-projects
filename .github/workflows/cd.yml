@@ -112,6 +112,87 @@ jobs:
         run: |
           echo "tag=${{ fromJson(steps.read-output.outputs.result).image-tag.cms-frontend }}" >> $GITHUB_OUTPUT
 
+  deploy-backend:
+    needs: [detect-changes, read-tags]
+    if: ${{ needs.read-tags.outputs.backend-image-tag != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Log Migration Details
+        if: ${{ needs.detect-changes.outputs.migrations == 'true' }}
+        run: |
+          echo "### Database Migration Execution" >> $GITHUB_STEP_SUMMARY
+          echo "Migration will be executed with the following changes:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          git diff --name-only ${{ github.event.before }} HEAD -- packages/backend/src/migrations/ >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+      - name: Run Database Migration
+        if: ${{ needs.detect-changes.outputs.migrations == 'true' }}
+        run: |
+          BACKEND_IMAGE=$ECR_REGISTRY/${{ needs.read-tags.outputs.backend-image-tag }}
+
+          echo "Starting database migration..."
+
+          TASK_ARN=$(aws ecs run-task \
+            --cluster my-projects-cluster \
+            --task-definition my-projects-migration \
+            --launch-type EC2 \
+            --overrides '{
+              "containerOverrides": [{
+                "name": "migration",
+                "image": "'$BACKEND_IMAGE'"
+              }]
+            }' \
+            --query 'tasks[0].taskArn' \
+            --output text)
+
+          echo "Waiting for migration task to complete..."
+
+          aws ecs wait tasks-stopped \
+            --cluster my-projects-cluster \
+            --tasks $TASK_ARN
+
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster my-projects-cluster \
+            --tasks $TASK_ARN \
+            --query 'tasks[0].containers[0].exitCode')
+
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "Migration failed with exit code $EXIT_CODE"
+            exit 1
+          fi
+
+          echo "Migration completed successfully"
+      - name: Get current task definition
+        id: get-task-def
+        run: |
+          mkdir -p ./task-definitions
+          TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition my-projects-backend --query 'taskDefinition' --output json)
+          echo "$TASK_DEFINITION" > ./task-definitions/backend.json
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: update-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ./task-definitions/backend.json
+          container-name: backend
+          image: ${{ env.ECR_REGISTRY }}/${{ needs.read-tags.outputs.backend-image-tag }}
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.update-task-def.outputs.task-definition }}
+          service: my-projects-backend
+          cluster: my-projects-cluster
+          wait-for-service-stability: true
+
   deploy-frontend:
     needs: [read-tags]
     if: ${{ needs.read-tags.outputs.cms-frontend-image-tag != '' }}
