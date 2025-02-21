@@ -90,12 +90,12 @@ jobs:
           outputs: |-
             image-tag: ${{ steps.build.outputs.image-tag }}
 
-  read-build-outputs:
+  read-tags:
     runs-on: ubuntu-latest
     needs: [build-images]
     outputs:
-      backend-image-tag: ${{ steps.get-backend-image-tag.outputs.tag }}
-      cms-frontend-image-tag: ${{ steps.get-cms-frontend-image-tag.outputs.tag }}
+      backend: "${{ steps.get-backend-image-tag.outputs.tag }}"
+      cms-frontend: "${{ steps.get-cms-frontend-image-tag.outputs.tag }}"
     steps:
       - name: Get build outputs
         uses: cloudposse/github-action-matrix-outputs-read@v1
@@ -113,16 +113,14 @@ jobs:
 
   deploy-frontend:
     runs-on: ubuntu-latest
-    needs: [read-build-outputs]
+    needs: [read-tags]
     steps:
       - name: Get image tag
         run: |
-          echo "All outputs from read-build-outputs:"
-          echo "${{ toJSON(needs.read-build-outputs.outputs) }}"
           echo "backend image tag:"
-          echo "${{ needs.read-build-outputs.outputs.backend-image-tag }}"
+          echo "${{ needs.read-tags.outputs.backend}}"
           echo "cms-frontend image tag:"
-          echo "${{ needs.read-build-outputs.outputs.cms-frontend-image-tag }}"
+          echo "${{ needs.read-tags.outputs.cms-frontend }}"
 
   # deploy-frontend:
   #   needs: [detect-changes, build-images]
