@@ -117,12 +117,12 @@ jobs:
     needs: [read-tags]
     steps:
       - name: Get image tag
-        run: |-
-          echo "${{ fromJson(needs.read-tags.outputs) }}"
+        run: |
+          echo "${{ needs.read-tags.outputs }}"
           echo "backend image tag:"
-          echo "${{ fromJson(needs.read-tags.outputs.backend-image-tag) }}"
+          echo "${{ needs.read-tags.outputs.backend-image-tag }}"
           echo "cms-frontend image tag:"
-          echo "${{ fromJson(needs.read-tags.outputs.cms-frontend-image-tag) }}"
+          echo "${{ needs.read-tags.outputs.cms-frontend-image-tag }}"
 
   # deploy-frontend:
   #   needs: [detect-changes, build-images]
