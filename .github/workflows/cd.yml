@@ -95,9 +95,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-images]
     steps:
-      - name: Get image tag
-        run: |-
-          echo "${{ fromJson(needs.build-images.outputs.json) }}"
+      - name: Debug raw output
+        run: |
+          echo "Raw JSON output:"
+          echo '${{ needs.build-images.outputs.json }}'
+      - name: Process output
+        run: |
+          echo "Processed output:"
+          echo '${{ needs.build-images.outputs.json }}' | jq '.'
 
   # deploy-frontend:
   #   needs: [detect-changes, build-images]
