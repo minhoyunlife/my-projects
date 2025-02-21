@@ -119,9 +119,10 @@ jobs:
     steps:
       - name: Get image tag
         run: |
-          echo ${{ needs.read-build-outputs.outputs }}
-          echo ${{ needs.read-build-outputs.outputs.backend-image-tag }}
-          echo ${{ needs.read-build-outputs.outputs.cms-frontend-image-tag }}
+          echo "All outputs from read-build-outputs:"
+          echo "${{ toJSON(needs.read-build-outputs.outputs) }}"
+          echo "cms-frontend image tag:"
+          echo "${{ needs.read-build-outputs.outputs.cms-frontend-image-tag }}"
 
   # deploy-frontend:
   #   needs: [detect-changes, build-images]
