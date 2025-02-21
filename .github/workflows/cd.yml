@@ -102,6 +102,16 @@ jobs:
         id: read-output
         with:
           matrix-step-name: build-images
+      - name: Debug raw data
+        run: |
+          echo "Raw output data:"
+          echo '${{ steps.read-output.outputs.result }}'
+      - name: Debug parsed data
+        run: |
+          echo "Backend tag value:"
+          echo '${{ steps.read-output.outputs.result }}' | jq -r '."image-tag"."backend"'
+          echo "CMS Frontend tag value:"
+          echo '${{ steps.read-output.outputs.result }}' | jq -r '."image-tag"."cms-frontend"'
       - name: Get the backend image tag
         id: get-backend-image-tag
         run: |
@@ -111,6 +121,10 @@ jobs:
         run: |
           echo '${{ steps.read-output.outputs.result }}' | jq -r '."image-tag"."cms-frontend"'
           echo "tag=$(echo '${{ steps.read-output.outputs.result }}' | jq -r '."image-tag"."cms-frontend"')" >> $GITHUB_OUTPUT
+      - name: Debug GITHUB_OUTPUT
+        run: |
+          echo "Current GITHUB_OUTPUT content:"
+          cat $GITHUB_OUTPUT
 
   deploy-frontend:
     runs-on: ubuntu-latest
