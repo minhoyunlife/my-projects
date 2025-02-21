@@ -106,12 +106,18 @@ jobs:
         id: get-backend-image-tag
         run: |
           BACKEND_IMAGE_TAG=${{ fromJson(steps.read-output.outputs.result)['image-tag']['backend'] }}
+          echo "Setting tag as: $BACKEND_IMAGE_TAG"
           echo "tag=$BACKEND_IMAGE_TAG" >> $GITHUB_OUTPUT
       - name: Get the cms-frontend image tag
         id: get-cms-frontend-image-tag
         run: |
           CMS_FRONTEND_IMAGE_TAG=${{ fromJson(steps.read-output.outputs.result)['image-tag']['cms-frontend'] }}
+          echo "Setting tag as: $CMS_FRONTEND_IMAGE_TAG"
           echo "tag=$CMS_FRONTEND_IMAGE_TAG" >> $GITHUB_OUTPUT
+      - name: Verify outputs
+        run: |
+          echo "Checking cms-frontend tag:"
+          echo "${{ steps.get-cms-frontend-image-tag.outputs.tag }}"
 
   deploy-frontend:
     runs-on: ubuntu-latest
