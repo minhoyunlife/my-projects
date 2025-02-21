@@ -119,7 +119,6 @@ jobs:
       - name: Get the cms-frontend image tag
         id: get-cms-frontend-image-tag
         run: |
-          echo '${{ steps.read-output.outputs.result }}' | jq -r '."image-tag"."cms-frontend"'
           echo "tag=$(echo '${{ steps.read-output.outputs.result }}' | jq -r '."image-tag"."cms-frontend"')" >> $GITHUB_OUTPUT
       - name: Debug GITHUB_OUTPUT
         run: |
