@@ -16,6 +16,7 @@ env:
   ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
   GITHUB_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
   NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+  AWS_CLOUDFRONT_DOMAIN: ${{ secrets.AWS_CLOUDFRONT_DOMAIN }}
 
 jobs:
   detect-changes:
@@ -75,6 +76,7 @@ jobs:
           docker build \
             --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} \
             --build-arg NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
+            --build-arg AWS_CLOUDFRONT_DOMAIN=${AWS_CLOUDFRONT_DOMAIN} \
             -f docker/${{ matrix.packages }}.prod.Dockerfile \
             -t $FULL_IMAGE_PATH .
           docker push $FULL_IMAGE_PATH
