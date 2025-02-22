@@ -29,6 +29,7 @@ ARG GITHUB_TOKEN
 COPY --from=build /app/packages/cms-frontend/.next ./.next
 COPY /.npmrc ./
 COPY packages/cms-frontend/package.json ./
+COPY packages/cms-frontend/next.config.ts ./
 RUN pnpm install --prod
 ENV PORT=${PORT:-5173}
 EXPOSE ${PORT}
