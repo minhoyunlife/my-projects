@@ -14,6 +14,7 @@ RUN pnpm install --frozen-lockfile
 # 3. Build Stage
 FROM base AS build
 ARG NEXT_PUBLIC_API_URL
+ARG AWS_CLOUDFRONT_DOMAIN
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages/cms-frontend/node_modules ./packages/cms-frontend/node_modules
 COPY packages/cms-frontend ./packages/cms-frontend
