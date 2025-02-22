@@ -31,10 +31,17 @@ import { AdminUser } from '@/src/modules/auth/interfaces/admin-user.interface';
 
 @Controller('auth')
 export class AuthController {
+  private readonly cookieDomain: string;
+
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
-  ) {}
+  ) {
+    this.cookieDomain =
+      this.configService.get('app.env') === Environment.PROD
+        ? '.minhoyun.life'
+        : undefined;
+  }
 
   @Get('github')
   @UseGuards(GithubAuthGuard)
@@ -94,6 +101,7 @@ export class AuthController {
             ? 'none'
             : 'lax',
         secure: this.configService.get('app.env') === Environment.PROD,
+        domain: this.cookieDomain,
       });
     }
 
@@ -163,6 +171,7 @@ export class AuthController {
       sameSite:
         this.configService.get('app.env') === Environment.PROD ? 'none' : 'lax',
       maxAge: this.authService.TOKEN_EXPIRY[TokenType.REFRESH] * 1000,
+      domain: this.cookieDomain,
     });
   }
 
@@ -172,6 +181,7 @@ export class AuthController {
       secure: this.configService.get('app.env') === Environment.PROD,
       sameSite:
         this.configService.get('app.env') === Environment.PROD ? 'none' : 'lax',
+      domain: this.cookieDomain,
     });
   }
 
@@ -180,6 +190,7 @@ export class AuthController {
       secure: this.configService.get('app.env') === Environment.PROD,
       sameSite:
         this.configService.get('app.env') === Environment.PROD ? 'none' : 'lax',
+      domain: this.cookieDomain,
     });
   }
 
@@ -188,6 +199,7 @@ export class AuthController {
       secure: this.configService.get('app.env') === Environment.PROD,
       sameSite:
         this.configService.get('app.env') === Environment.PROD ? 'none' : 'lax',
+      domain: this.cookieDomain,
     });
   }
 }
