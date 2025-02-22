@@ -24,7 +24,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV TZ=Asia/Seoul
 COPY --from=build /app/packages/backend/dist ./packages/backend/dist
+COPY packages/backend/src/migrations ./packages/backend/src/migrations
 COPY packages/backend/package.json ./packages/backend/
+COPY packages/backend/tsconfig.json ./packages/backend/
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile --prod
 WORKDIR /app/packages/backend
