@@ -16,6 +16,5 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages/cms-frontend/node_modules ./packages/cms-frontend/node_modules
 COPY packages/cms-frontend/src ./packages/cms-frontend/src
 COPY packages/cms-frontend/tsconfig.json ./packages/cms-frontend/tsconfig.json
-
 WORKDIR /app/packages/cms-frontend
 CMD ["pnpm", "run", "dev"]
