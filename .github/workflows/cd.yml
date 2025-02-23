@@ -4,8 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      # - "main"
-      - "**"
+      - "main"
     paths-ignore:
       - "**/*.md"
       - ".vscode/**"
@@ -42,14 +41,12 @@ jobs:
         id: check-changes
         uses: ./.github/actions/detect-changes
         with:
-          # base-ref: ${{ github.event.before }}
-          base-ref: "origin/main"
+          base-ref: ${{ github.event.before }}
       - name: Check Migration Changes
         uses: ./.github/actions/check-migration
         id: check-migration
         with:
-          # base-ref: ${{ github.event.before }}
-          base-ref: "origin/main"
+          base-ref: ${{ github.event.before }}
 
   build-images:
     needs: detect-changes
