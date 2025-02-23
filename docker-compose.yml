@@ -68,6 +68,31 @@ services:
     profiles:
       - dev
 
+  fanarts-frontend:
+    build:
+      context: .
+      dockerfile: docker/fanarts-frontend.Dockerfile
+      cache_from:
+        - type=local,src=.docker-cache/fanarts-frontend
+      cache_to:
+        - type=local,dest=.docker-cache/fanarts-frontend,mode=max
+      args:
+        GITHUB_TOKEN: ${GITHUB_TOKEN}
+    depends_on:
+      - backend
+      - db
+    env_file:
+      - ./.env
+    ports:
+      - "${FANARTS_FRONTEND_PORT}:5174"
+    volumes:
+      - ./packages/fanarts-frontend:/app/packages/fanarts-frontend
+      - /app/packages/fanarts-frontend/node_modules
+    networks:
+      - project-network
+    profiles:
+      - dev
+
   test-db:
     image: postgres:13-alpine
     environment:
