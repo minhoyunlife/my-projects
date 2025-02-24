@@ -14,7 +14,7 @@ import { AppModule } from '@/src/app.module';
   app.use(cookieParser());
 
   app.enableCors({
-    origin: process.env.ADMIN_WEB_URL,
+    origin: [process.env.ADMIN_WEB_URL, process.env.FANARTS_WEB_URL],
     credentials: true,
   });
 
