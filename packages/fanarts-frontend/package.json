@@ -7,14 +7,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
+    "build": "vite build --mode production",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "format": "prettier --write .",
     "lint": "eslint .",
-    "test:unit": "vitest",
+    "test:unit": "vitest --config ./vitest.config.ts",
     "test": "npm run test:unit -- --run"
   },
   "devDependencies": {
@@ -40,7 +40,9 @@
     "tailwindcss": "^4.0.0",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.20.0",
+    "unplugin-auto-import": "^0.18.5",
     "vite": "^6.0.0",
+    "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.0.0"
   },
   "dependencies": {

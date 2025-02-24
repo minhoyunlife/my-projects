@@ -8,6 +8,8 @@ import svelte from 'eslint-plugin-svelte';
 import globals from 'globals';
 import ts from 'typescript-eslint';
 
+import autoImportConfig from './.eslintrc-auto-import.json' assert { type: 'json' };
+
 const gitignorePath = fileURLToPath(new URL('./.gitignore', import.meta.url));
 
 export default ts.config(
@@ -21,7 +23,8 @@ export default ts.config(
     languageOptions: {
       globals: {
         ...globals.browser,
-        ...globals.node
+        ...globals.node,
+        ...autoImportConfig.globals
       }
     },
     plugins: {
@@ -35,6 +38,7 @@ export default ts.config(
       }
     },
     rules: {
+      'no-undef': 'off',
       'import/order': [
         'error',
         {

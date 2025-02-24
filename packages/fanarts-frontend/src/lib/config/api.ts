@@ -4,7 +4,7 @@ import { Configuration, ArtworksApi } from '@minhoyunlife/my-ts-client';
 import axios from 'axios';
 
 const getBaseUrl = () => {
-  if (import.meta.env.DEV) {
+  if (import.meta.env.MODE === 'development') {
     return browser
       ? 'http://localhost:3000/api' // 브라우저
       : 'http://backend:3000/api'; // SSR
