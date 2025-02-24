@@ -1,13 +1,13 @@
 import {
-	type GetArtworks200ResponseItemsInner as ArtworkResponse,
-	type GetArtworks200ResponseMetadata as PaginationMetadata,
-	type GetArtworksSortEnum,
-	type GetArtworksPlatformsEnum
+  type GetArtworks200ResponseItemsInner as ArtworkResponse,
+  type GetArtworks200ResponseMetadata as PaginationMetadata,
+  type GetArtworksSortEnum,
+  type GetArtworksPlatformsEnum
 } from '@minhoyunlife/my-ts-client';
 
 export interface ArtworkList {
-	items: Artwork[];
-	metadata: PaginationMetadata;
+  items: Artwork[];
+  metadata: PaginationMetadata;
 }
 
 export type Artwork = ArtworkResponse;
