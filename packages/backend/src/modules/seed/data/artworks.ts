@@ -15,6 +15,8 @@ type ArtworkSeed = {
   rating: number;
   isDraft: boolean;
   createdAt: string;
+  imageKey?: string;
+  isVertical?: boolean;
 };
 
 // NOTE: 어디까지나 시드 데이터이므로, 리뷰나 평점 등의 내용은 실제 내 의견과 다름!!!
@@ -42,6 +44,7 @@ export const ARTWORKS: ArtworkSeed[] = [
     rating: 20,
     isDraft: false,
     createdAt: '2024-02-01',
+    imageKey: 'temp/h1.webp',
   },
   {
     translations: {
@@ -65,6 +68,8 @@ export const ARTWORKS: ArtworkSeed[] = [
     rating: 20,
     isDraft: false,
     createdAt: '2024-01-30',
+    imageKey: 'temp/v2.webp',
+    isVertical: true,
   },
   {
     translations: {
@@ -88,6 +93,7 @@ export const ARTWORKS: ArtworkSeed[] = [
     rating: 20,
     isDraft: false,
     createdAt: '2024-01-28',
+    imageKey: 'temp/h2.webp',
   },
   {
     translations: {
@@ -112,6 +118,8 @@ export const ARTWORKS: ArtworkSeed[] = [
     rating: 19,
     isDraft: false,
     createdAt: '2024-01-25',
+    imageKey: 'temp/v1.webp',
+    isVertical: true,
   },
   {
     translations: {

@@ -282,6 +282,7 @@ describeWithDeps('ArtworksController', () => {
       koTitle: '테스트 작품명',
       enTitle: 'Test Artwork',
       jaTitle: 'テスト作品',
+      isVertical: true,
       imageKey: 'artworks/2024/03/abc123def456',
       createdAt: '2024-11-01',
       playedOn: Platform.STEAM,
@@ -376,7 +377,7 @@ describeWithDeps('ArtworksController', () => {
       const imageData = await Sharp({
         create: {
           width: 2000,
-          height: 2000,
+          height: 3000,
           channels: 3,
           background: 'green',
         },
@@ -395,6 +396,7 @@ describeWithDeps('ArtworksController', () => {
 
       await expect(response).toMatchOpenAPISpec();
       expect(response.body.imageKey).toBeDefined();
+      expect(response.body.isVertical).toBe(true);
     });
 
     it('이미지 파일이 누락될 경우, 400 에러가 반환됨', async () => {

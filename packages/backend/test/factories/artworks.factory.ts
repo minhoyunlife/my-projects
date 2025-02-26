@@ -14,6 +14,8 @@ export class ArtworksFactory {
       createdAt: new Date('2024-11-01'),
       playedOn: Platform.STEAM,
       rating: 10,
+      isDraft: true,
+      isVertical: false,
       translations: translations as ArtworkTranslation[],
       genres,
       ...override,

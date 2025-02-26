@@ -15,6 +15,7 @@ import { ImageStatus } from '@/src/modules/storage/enums/status.enum';
 
 type UploadResult = {
   imageKey: string;
+  isVertical: boolean;
 };
 
 @Injectable()
@@ -58,6 +59,9 @@ export class StorageService {
   }
 
   async uploadImage(file: Express.Multer.File): Promise<UploadResult> {
+    const metadata = await Sharp(file.buffer).metadata();
+    const isVertical = metadata.height > metadata.width;
+
     const optimizedBuffer = await this.optimizeImage(file.buffer);
     const imageKey = this.generateImageKey();
 
@@ -71,7 +75,7 @@ export class StorageService {
       }),
     );
 
-    return { imageKey };
+    return { imageKey, isVertical };
   }
 
   /**

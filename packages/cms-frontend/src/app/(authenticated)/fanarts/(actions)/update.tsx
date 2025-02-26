@@ -37,6 +37,7 @@ export interface Artwork {
     }>;
   }>;
   isDraft: boolean;
+  isVertical: boolean;
 }
 
 interface UpdateArtworkFormProps {
@@ -136,6 +137,13 @@ export function UpdateArtworkForm({
 
       <div className="space-y-4 mt-8">
         <h3 className="text-sm font-medium">게임 정보(임의)</h3>
+
+        <p className="text-sm">
+          이미지 방향:{" "}
+          <span className="font-bold">
+            {artwork.isVertical ? "세로" : "가로"}
+          </span>
+        </p>
 
         <FormField
           type="date"

@@ -13,6 +13,7 @@ export class ArtworkResponse {
   playedOn: string;
   rating: number;
   isDraft: boolean;
+  isVertical: boolean;
   translations: ArtworkTranslation[];
   genres: GenreResponse[];
 
@@ -23,6 +24,7 @@ export class ArtworkResponse {
     this.playedOn = artwork.playedOn ?? '';
     this.rating = artwork.rating;
     this.isDraft = artwork.isDraft;
+    this.isVertical = artwork.isVertical;
     this.translations = artwork.translations ?? [];
     this.genres =
       artwork.genres?.map((genre) => new GenreResponse(genre)) ?? [];

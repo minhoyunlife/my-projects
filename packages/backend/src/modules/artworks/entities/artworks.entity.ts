@@ -67,6 +67,12 @@ export class Artwork {
   isDraft: boolean;
 
   /**
+   * 작품 이미지의 세로 방향 여부
+   */
+  @Column({ default: false })
+  isVertical: boolean;
+
+  /**
    * 작품 대상 게임의 장르
    */
   @ManyToMany(() => Genre, (genre) => genre.artworks)

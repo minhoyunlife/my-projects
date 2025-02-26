@@ -129,7 +129,8 @@ export class SeedService {
 
     for (const seed of ARTWORKS) {
       const artwork = this.artworkRepository.create({
-        imageKey: 'example-key',
+        imageKey: seed.imageKey || 'example-key',
+        isVertical: seed.isVertical || false,
         genres: seed.genres.map((name) => genreMap.get(name)!),
         playedOn: seed.playedOn,
         rating: seed.rating,

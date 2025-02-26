@@ -1,4 +1,4 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { EntityManager, In } from 'typeorm';
@@ -132,6 +132,7 @@ export class ArtworksService {
         playedOn: dto.playedOn,
         rating: dto.rating,
         isDraft: true, // 작품 생성 시에는 무조건 초안 상태
+        isVertical: dto.isVertical,
         genres: genres,
         translations: [
           {
