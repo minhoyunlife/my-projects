@@ -71,7 +71,7 @@ export function useArtworks() {
     useMutation({
       mutationFn: async ({ file, data }: CreateArtworkParams) => {
         try {
-          const { imageKey } = await uploadImageWithProgress(
+          const { imageKey, isVertical } = await uploadImageWithProgress(
             file,
             handlers?.onProgress,
           );
@@ -79,6 +79,7 @@ export function useArtworks() {
           return await artworksApi.createArtwork({
             ...data,
             imageKey,
+            isVertical,
           });
         } catch (error) {
           throw error;
@@ -140,7 +141,7 @@ export function useArtworks() {
 async function uploadImageWithProgress(
   file: File,
   onProgress?: (progress: number) => void,
-): Promise<{ imageKey: string }> {
+): Promise<{ imageKey: string; isVertical: boolean }> {
   return artworksApi
     .uploadArtworkImage(file, {
       onUploadProgress: (progressEvent) => {
