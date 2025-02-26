@@ -7,6 +7,7 @@ import { createDto } from '@/test/utils/dto.util';
 describeWithoutDeps('CreateArtworkDto', () => {
   const validDtoData: Partial<CreateArtworkDto> = {
     imageKey: 'artworks/2024/03/abc123def456',
+    isVertical: true,
     koTitle: '테스트 작품 제목',
     enTitle: 'Test Artwork Title',
     jaTitle: 'テスト作品のタイトル',
@@ -43,6 +44,25 @@ describeWithoutDeps('CreateArtworkDto', () => {
       expect(errors).toHaveLength(1);
       expect(errors[0].property).toBe('imageKey');
       expect(errors[0].constraints).toHaveProperty('isNotEmpty');
+    });
+  });
+
+  describe('isVertical', () => {
+    it('값이 존재하는 경우, 에러가 발생하지 않음', async () => {
+      const dto = createDto(CreateArtworkDto, validDtoData);
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(0);
+    });
+
+    it('값이 존재하지 않는 경우, 에러가 발생함', async () => {
+      const { isVertical, ...rest } = validDtoData;
+      const dto = createDto(CreateArtworkDto, rest);
+      const errors = await validate(dto);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0].property).toBe('isVertical');
+      expect(errors[0].constraints).toHaveProperty('isBoolean');
     });
   });
 

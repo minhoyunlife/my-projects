@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsInt,
@@ -20,6 +21,9 @@ export class CreateArtworkDto {
   @IsNotEmpty()
   @IsString()
   imageKey: string;
+
+  @IsBoolean()
+  isVertical: boolean;
 
   @NormalizeWhitespace()
   @IsString()

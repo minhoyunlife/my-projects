@@ -111,6 +111,10 @@ describeWithoutDeps('ArtworkResponse', () => {
       expect(response.isDraft).toBe(artwork.isDraft);
     });
 
+    it('엔티티의 속성 값대로 isVertical 가 반환됨', () => {
+      expect(response.isVertical).toBe(artwork.isVertical);
+    });
+
     describe('translations', () => {
       it('엔티티에 속성 값이 존재하는 경우, translations 가 반환됨', () => {
         expect(response.translations).toHaveLength(3);
