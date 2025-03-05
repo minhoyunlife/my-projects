@@ -17,7 +17,6 @@ services:
       - "${SERVER_PORT}:3000"
     volumes:
       - ./packages/backend:/app/packages/backend
-      - /app/packages/backend/node_modules
     networks:
       - project-network
     profiles:
@@ -62,7 +61,6 @@ services:
       - "${CMS_FRONTEND_PORT}:5173"
     volumes:
       - ./packages/cms-frontend:/app/packages/cms-frontend
-      - /app/packages/cms-frontend/node_modules
     networks:
       - project-network
     profiles:
@@ -87,7 +85,6 @@ services:
       - "${FANARTS_FRONTEND_PORT}:5174"
     volumes:
       - ./packages/fanarts-frontend:/app/packages/fanarts-frontend
-      - /app/packages/fanarts-frontend/node_modules
     networks:
       - project-network
     profiles:
