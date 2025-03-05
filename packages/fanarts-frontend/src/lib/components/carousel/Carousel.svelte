@@ -1,11 +1,13 @@
 <script lang="ts">
+  import { cubicOut } from 'svelte/easing';
+  import { fly } from 'svelte/transition';
+
   import CarouselNav from '$lib/components/carousel/CarouselNav.svelte';
+
   import { artworkState } from '$lib/states/artwork.svelte';
   import type { Artwork } from '$lib/types/artwork';
   import { SlideDirection, type Direction } from '$lib/types/slide-direction';
   import { imagePreloader } from '$lib/utils/preloader.svelte';
-  import { cubicOut } from 'svelte/easing';
-  import { fly } from 'svelte/transition';
 
   let previousItemsCount = $state<number>(0);
   let isAnimating = $state<boolean>(false);

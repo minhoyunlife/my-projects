@@ -12,6 +12,54 @@ import autoImportConfig from './.eslintrc-auto-import.json' assert { type: 'json
 
 const gitignorePath = fileURLToPath(new URL('./.gitignore', import.meta.url));
 
+const importOrderRules = {
+  'no-undef': 'off',
+  'import/order': [
+    'error',
+    {
+      'newlines-between': 'always',
+      alphabetize: {
+        order: 'asc',
+        caseInsensitive: true
+      },
+      groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+      pathGroups: [
+        {
+          pattern: '$app/**',
+          group: 'external',
+          position: 'before'
+        },
+        {
+          pattern: '$env/**',
+          group: 'external',
+          position: 'before'
+        },
+        {
+          pattern: '$lib/components/**',
+          group: 'internal',
+          position: 'before'
+        },
+        {
+          pattern: '$lib/services/**',
+          group: 'internal',
+          position: 'before'
+        },
+        {
+          pattern: '$lib/stores/**',
+          group: 'internal',
+          position: 'before'
+        },
+        {
+          pattern: '$lib/**',
+          group: 'internal',
+          position: 'before'
+        }
+      ],
+      pathGroupsExcludedImportTypes: ['builtin']
+    }
+  ]
+};
+
 export default ts.config(
   includeIgnoreFile(gitignorePath),
   js.configs.recommended,
@@ -37,53 +85,7 @@ export default ts.config(
         }
       }
     },
-    rules: {
-      'no-undef': 'off',
-      'import/order': [
-        'error',
-        {
-          'newlines-between': 'always',
-          alphabetize: {
-            order: 'asc',
-            caseInsensitive: true
-          },
-          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-          pathGroups: [
-            {
-              pattern: '$app/**',
-              group: 'external',
-              position: 'before'
-            },
-            {
-              pattern: '$env/**',
-              group: 'external',
-              position: 'before'
-            },
-            {
-              pattern: '$lib/components/**',
-              group: 'internal',
-              position: 'before'
-            },
-            {
-              pattern: '$lib/services/**',
-              group: 'internal',
-              position: 'before'
-            },
-            {
-              pattern: '$lib/stores/**',
-              group: 'internal',
-              position: 'before'
-            },
-            {
-              pattern: '$lib/**',
-              group: 'internal',
-              position: 'before'
-            }
-          ],
-          pathGroupsExcludedImportTypes: ['builtin']
-        }
-      ]
-    }
+    rules: importOrderRules
   },
   {
     files: ['**/*.svelte'],
@@ -91,6 +93,7 @@ export default ts.config(
       parserOptions: {
         parser: ts.parser
       }
-    }
+    },
+    rules: importOrderRules
   }
 );
