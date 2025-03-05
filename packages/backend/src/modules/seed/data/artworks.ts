@@ -68,8 +68,8 @@ export const ARTWORKS: ArtworkSeed[] = [
     rating: 20,
     isDraft: false,
     createdAt: '2024-01-30',
-    imageKey: 'temp/v2.webp',
     isVertical: true,
+    imageKey: 'temp/v1.webp',
   },
   {
     translations: {
@@ -118,8 +118,6 @@ export const ARTWORKS: ArtworkSeed[] = [
     rating: 19,
     isDraft: false,
     createdAt: '2024-01-25',
-    imageKey: 'temp/v1.webp',
-    isVertical: true,
   },
   {
     translations: {

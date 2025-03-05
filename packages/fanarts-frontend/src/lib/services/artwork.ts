@@ -1,7 +1,7 @@
 import type { ArtworksApi } from '@minhoyunlife/my-ts-client';
 
 import { artworksApi } from '$lib/config/api';
-import type { ArtworkList, Platform, SortOption } from '$lib/types/artwork';
+import type { ArtworkResponse, PlatformOption, SortOption } from '$lib/types/artwork';
 
 export class ArtworkService {
   private readonly api: ArtworksApi = artworksApi;
@@ -9,9 +9,9 @@ export class ArtworkService {
   async getArtworks(
     page?: number,
     sort?: SortOption,
-    platforms?: Set<Platform>,
+    platforms?: Set<PlatformOption>,
     genreIds?: Set<string>
-  ): Promise<ArtworkList> {
+  ): Promise<ArtworkResponse> {
     try {
       const response = await this.api.getArtworks(page, sort, platforms, genreIds);
       return response.data;

@@ -10,6 +10,6 @@ export const load: PageLoad = async () => {
     return { artworks };
   } catch (error) {
     console.error('Failed to fetch artworks:', error);
-    throw error;
+    return { artworks: null };
   }
 };
