@@ -4,7 +4,7 @@ import type { AxiosResponse } from 'axios';
 import { ArtworkService } from '$lib/services/artwork';
 
 import { artworksApi } from '$lib/config/api';
-import { type SortOption, type Platform } from '$lib/types/artwork';
+import { type SortOption, type PlatformOption } from '$lib/types/artwork';
 
 vi.mock('$lib/config/api', () => ({
   artworksApi: {
@@ -43,7 +43,7 @@ describe('ArtworkService', () => {
   it('파라미터를 지정해서 작품 목록을 가져옴', async () => {
     const page = 1;
     const sort = 'created-desc' as SortOption;
-    const platforms = new Set(['Steam' as Platform]);
+    const platforms = new Set(['Steam' as PlatformOption]);
     const genreIds = new Set(['1']);
     vi.mocked(artworksApi.getArtworks).mockResolvedValue(mockResponse);
 
