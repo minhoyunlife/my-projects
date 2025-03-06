@@ -1,107 +1,153 @@
-import type { AxiosResponse } from 'axios';
+import { artworkService } from '$lib/services/artwork';
+import { translationService } from '$lib/services/translation';
 
-import { ArtworkService } from '$lib/services/artwork';
-
-import { artworksApi } from '$lib/config/api';
 import { ArtworkState } from '$lib/states/artwork.svelte';
-import { type ArtworkResponse } from '$lib/types/artwork';
+import type {
+  Artwork,
+  ArtworkResponse,
+  TranslatedArtwork,
+  TranslatedGenre
+} from '$lib/types/artwork';
+import type { LanguageCode } from '$lib/types/languages';
 
-vi.mock('$lib/config/api', () => ({
-  artworksApi: {
+vi.mock('$lib/services/artwork', () => ({
+  artworkService: {
     getArtworks: vi.fn()
   }
 }));
 
+vi.mock('$lib/services/translation', () => ({
+  translationService: {
+    translateArtworks: vi.fn()
+  }
+}));
+
+vi.mock('$lib/states/language.svelte', () => ({
+  languageState: {
+    currentLanguage: 'ko'
+  }
+}));
+
 describe('ArtworkState', () => {
-  let artworkService: ArtworkService;
   let artworkState: ArtworkState;
+  const testDate = new Date().toISOString();
+
+  const mockArtworks1: Artwork[] = [
+    {
+      id: '1',
+      imageUrl: 'image1.jpg',
+      isVertical: false,
+      translations: [
+        { language: 'ko', title: '작품 1', shortReview: '리뷰 1' },
+        { language: 'en', title: 'Artwork 1', shortReview: 'Review 1' }
+      ],
+      genres: [],
+      createdAt: testDate,
+      rating: 0,
+      isDraft: false,
+      playedOn: 'Steam'
+    },
+    {
+      id: '2',
+      imageUrl: 'image2.jpg',
+      isVertical: true,
+      translations: [
+        { language: 'ko', title: '작품 2', shortReview: '리뷰 2' },
+        { language: 'en', title: 'Artwork 2', shortReview: 'Review 2' }
+      ],
+      genres: [],
+      createdAt: testDate,
+      rating: 0,
+      isDraft: false,
+      playedOn: 'Steam'
+    }
+  ];
+
+  const mockArtworks2: Artwork[] = [
+    {
+      id: '3',
+      imageUrl: 'image3.jpg',
+      isVertical: false,
+      translations: [
+        { language: 'ko', title: '작품 3', shortReview: '리뷰 3' },
+        { language: 'en', title: 'Artwork 3', shortReview: 'Review 3' }
+      ],
+      genres: [],
+      createdAt: testDate,
+      rating: 0,
+      isDraft: false,
+      playedOn: 'Steam'
+    },
+    {
+      id: '4',
+      imageUrl: 'image4.jpg',
+      isVertical: true,
+      translations: [
+        { language: 'ko', title: '작품 4', shortReview: '리뷰 4' },
+        { language: 'en', title: 'Artwork 4', shortReview: 'Review 4' }
+      ],
+      genres: [],
+      createdAt: testDate,
+      rating: 0,
+      isDraft: false,
+      playedOn: 'Steam'
+    }
+  ];
 
   const mockResponse1: ArtworkResponse = {
-    items: [
-      {
-        id: '1',
-        imageUrl: 'image1.jpg',
-        isVertical: false,
-        translations: [],
-        genres: [],
-        createdAt: new Date().toISOString(),
-        rating: 0,
-        isDraft: false,
-        playedOn: 'Steam'
-      },
-      {
-        id: '2',
-        imageUrl: 'image2.jpg',
-        isVertical: true,
-        translations: [],
-        genres: [],
-        createdAt: new Date().toISOString(),
-        rating: 0,
-        isDraft: false,
-        playedOn: 'Steam'
-      }
-    ],
+    items: mockArtworks1,
     metadata: {
-      totalCount: 6,
-      totalPages: 3,
+      totalCount: 4,
+      totalPages: 2,
       currentPage: 1,
-      pageSize: 10
+      pageSize: 2
     }
   };
 
   const mockResponse2: ArtworkResponse = {
-    items: [
-      {
-        id: '3',
-        imageUrl: 'image3.jpg',
-        isVertical: false,
-        translations: [],
-        genres: [],
-        createdAt: new Date().toISOString(),
-        rating: 0,
-        isDraft: false,
-        playedOn: 'Steam'
-      },
-      {
-        id: '4',
-        imageUrl: 'image4.jpg',
-        isVertical: true,
-        translations: [],
-        genres: [],
-        createdAt: new Date().toISOString(),
-        rating: 0,
-        isDraft: false,
-        playedOn: 'Steam'
-      }
-    ],
+    items: mockArtworks2,
     metadata: {
-      totalCount: 6,
-      totalPages: 3,
+      totalCount: 4,
+      totalPages: 2,
       currentPage: 2,
-      pageSize: 10
+      pageSize: 2
     }
   };
 
   beforeEach(() => {
-    vi.mocked(artworksApi.getArtworks).mockReset();
+    vi.clearAllMocks();
 
-    vi.mocked(artworksApi.getArtworks).mockResolvedValue({
-      data: mockResponse1
-    } as AxiosResponse<ArtworkResponse>);
+    vi.mocked(translationService.translateArtworks).mockImplementation(
+      (artworks: Artwork[], language: LanguageCode) => {
+        return artworks.map((artwork) => {
+          const translation = artwork.translations?.find((t) => t.language === language);
 
-    artworkService = new ArtworkService();
-    artworkState = new ArtworkState(artworkService);
-  });
+          return {
+            id: artwork.id,
+            imageUrl: artwork.imageUrl,
+            isVertical: artwork.isVertical,
+            title: translation!.title,
+            shortReview: translation!.shortReview,
+            genres: [] as TranslatedGenre[],
+            createdAt: artwork.createdAt,
+            rating: artwork.rating,
+            isDraft: artwork.isDraft,
+            playedOn: artwork.playedOn
+          } as TranslatedArtwork;
+        });
+      }
+    );
 
-  afterEach(() => {
-    vi.resetAllMocks();
+    vi.mocked(artworkService.getArtworks).mockResolvedValue(mockResponse1);
+
+    artworkState = new ArtworkState();
   });
 
   describe('initialize', () => {
     it('제공된 데이터로 초기화를 수행함', () => {
       artworkState.initialize(mockResponse1);
 
-      expect(artworkState.items).toHaveLength(2);
+      expect(translationService.translateArtworks).toHaveBeenCalledWith(mockArtworks1, 'ko');
       expect(artworkState.currentIndex).toBe(0);
       expect(artworkState.isFirstItem).toBe(true);
       expect(artworkState.isLastItem).toBe(false);
@@ -113,9 +159,7 @@ describe('ArtworkState', () => {
     beforeEach(() => {
       artworkState.initialize(mockResponse1);
 
-      vi.mocked(artworksApi.getArtworks).mockResolvedValue({
-        data: mockResponse2
-      } as AxiosResponse<ArtworkResponse>);
+      vi.mocked(artworkService.getArtworks).mockResolvedValueOnce(mockResponse2);
     });
 
     it('현재 인덱스를 증가시킴', async () => {
@@ -128,8 +172,7 @@ describe('ArtworkState', () => {
       await artworkState.goToNextPage();
       await artworkState.goToNextPage();
 
-      expect(artworksApi.getArtworks).toHaveBeenCalledWith(2, undefined, undefined, undefined);
-      expect(artworkState.items).toHaveLength(4);
+      expect(artworkService.getArtworks).toHaveBeenCalledWith(2);
     });
   });
 
@@ -140,12 +183,10 @@ describe('ArtworkState', () => {
         metadata: { ...mockResponse1.metadata, currentPage: 2 }
       });
 
-      vi.mocked(artworksApi.getArtworks).mockResolvedValue({
-        data: {
-          ...mockResponse2,
-          metadata: { ...mockResponse2.metadata, currentPage: 1 }
-        }
-      } as AxiosResponse<ArtworkResponse>);
+      vi.mocked(artworkService.getArtworks).mockResolvedValueOnce({
+        ...mockResponse1,
+        metadata: { ...mockResponse1.metadata, currentPage: 1 }
+      });
     });
 
     it('현재 인덱스를 감소시킴', async () => {
@@ -158,8 +199,19 @@ describe('ArtworkState', () => {
 
     it('현 페이지의 최초 인덱스에 도달 시 이전 페이지를 불러옴', async () => {
       await artworkState.goToPrevPage();
+      expect(artworkService.getArtworks).toHaveBeenCalledWith(1);
+    });
+  });
 
-      expect(artworksApi.getArtworks).toHaveBeenCalledWith(1, undefined, undefined, undefined);
+  describe('updateLanguage', () => {
+    beforeEach(() => {
+      artworkState.initialize(mockResponse1);
+    });
+
+    it('언어 변경 시 아이템을 해당 언어로 번역함', () => {
+      artworkState.updateLanguage('en');
+
+      expect(translationService.translateArtworks).toHaveBeenCalledWith(mockArtworks1, 'en');
     });
   });
 });

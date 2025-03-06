@@ -21,3 +21,5 @@ export class ArtworkService {
     }
   }
 }
+
+export const artworkService = new ArtworkService();

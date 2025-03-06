@@ -1,10 +1,14 @@
-import { ArtworkService } from '$lib/services/artwork';
+import { artworkService, ArtworkService } from '$lib/services/artwork';
+import { TranslationService, translationService } from '$lib/services/translation';
 
-import type { Artwork, ArtworkResponse } from '$lib/types/artwork';
+import { LanguageState, languageState } from '$lib/states/language.svelte';
+import type { Artwork, ArtworkResponse, TranslatedArtwork } from '$lib/types/artwork';
+import type { LanguageCode } from '$lib/types/languages';
 
 export class ArtworkState {
   private _state = $state({
-    items: [] as Artwork[],
+    items: [] as TranslatedArtwork[],
+    originalItems: [] as Artwork[],
     currentIndex: 0,
     currentPage: 1,
     totalPages: 1,
@@ -13,29 +17,33 @@ export class ArtworkState {
   });
 
   items = $derived(this._state.items);
-
   currentIndex = $derived(this._state.currentIndex);
-
   isLoading = $derived(this._state.isLoading);
-
   isFirstItem = $derived(
     this._state.items.length === 0 ||
       (this._state.currentIndex === 0 && this._state.loadedPages.has(1))
   );
-
   isLastItem = $derived(
     this._state.items.length === 0 ||
       (this._state.currentIndex === this._state.items.length - 1 &&
         this._state.loadedPages.has(this._state.totalPages))
   );
 
-  constructor(private artworkService: ArtworkService) {}
+  constructor(
+    private language: LanguageState = languageState,
+    private translation: TranslationService = translationService,
+    private artwork: ArtworkService = artworkService
+  ) {}
 
   /**
    * 상태를 초기화
    */
   initialize(data: ArtworkResponse): void {
-    this._state.items = data.items || [];
+    this._state.originalItems = data.items || [];
+    this._state.items = this.translation.translateArtworks(
+      this._state.originalItems,
+      this.language.currentLanguage
+    );
     this._state.currentPage = data.metadata.currentPage || 1;
     this._state.totalPages = data.metadata.totalPages || 1;
     this._state.loadedPages = new Set([data.metadata.currentPage || 1]);
@@ -49,7 +57,7 @@ export class ArtworkState {
   async goToNextPage(): Promise<void> {
     if (this._state.items.length === 0) return;
 
-    const nextIndex = (this._state.currentIndex + 1) % this._state.items.length;
+    const nextIndex = this._state.currentIndex + 1;
     this.setIndex(nextIndex);
 
     const loadThreshold = 3;
@@ -71,8 +79,7 @@ export class ArtworkState {
   async goToPrevPage(): Promise<void> {
     if (this._state.items.length === 0) return;
 
-    const prevIndex =
-      (this._state.currentIndex - 1 + this._state.items.length) % this._state.items.length;
+    const prevIndex = this._state.currentIndex - 1;
     this.setIndex(prevIndex);
 
     const loadThreshold = 3;
@@ -86,6 +93,15 @@ export class ArtworkState {
           await this.loadPage(prevPage);
         }
       }
+    }
+  }
+
+  /**
+   * 원본 작품 데이터를 번역 데이터로 변환
+   */
+  updateLanguage(language: LanguageCode): void {
+    if (this._state.originalItems.length > 0) {
+      this._state.items = this.translation.translateArtworks(this._state.originalItems, language);
     }
   }
 
@@ -109,21 +125,33 @@ export class ArtworkState {
     this._state.isLoading = true;
 
     try {
-      const data = await this.artworkService.getArtworks(page);
+      const data = await this.artwork.getArtworks(page);
 
       const loadedPagesArray = Array.from(this._state.loadedPages);
       const maxLoadedPage = Math.max(...loadedPagesArray);
       const minLoadedPage = Math.min(...loadedPagesArray);
 
-      const newItems = data.items.filter(
-        (newItem) => !this._state.items.some((existingItem) => existingItem.id === newItem.id)
+      const newOriginalItems = data.items.filter(
+        (newItem) =>
+          !this._state.originalItems.some((existingItem) => existingItem.id === newItem.id)
       );
 
       if (page > maxLoadedPage) {
-        this._state.items = [...this._state.items, ...newItems];
+        this._state.originalItems = [...this._state.originalItems, ...newOriginalItems];
       } else if (page < minLoadedPage) {
-        this._state.items = [...newItems, ...this._state.items];
-        this._state.currentIndex += newItems.length;
+        this._state.originalItems = [...newOriginalItems, ...this._state.originalItems];
+      }
+
+      const newTranslatedItems = this.translation.translateArtworks(
+        newOriginalItems,
+        this.language.currentLanguage
+      );
+
+      if (page > maxLoadedPage) {
+        this._state.items = [...this._state.items, ...newTranslatedItems];
+      } else if (page < minLoadedPage) {
+        this._state.items = [...newTranslatedItems, ...this._state.items];
+        this._state.currentIndex += newTranslatedItems.length;
       }
 
       this._state.loadedPages = new Set([...this._state.loadedPages, page]);
@@ -142,4 +170,4 @@ export class ArtworkState {
   }
 }
 
-export const artworkState = new ArtworkState(new ArtworkService());
+export const artworkState = new ArtworkState();

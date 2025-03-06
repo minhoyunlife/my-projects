@@ -5,7 +5,7 @@
   import CarouselNav from '$lib/components/carousel/CarouselNav.svelte';
 
   import { artworkState } from '$lib/states/artwork.svelte';
-  import type { Artwork } from '$lib/types/artwork';
+  import type { TranslatedArtwork } from '$lib/types/artwork';
   import { SlideDirection, type Direction } from '$lib/types/slide-direction';
   import { imagePreloader } from '$lib/utils/preloader.svelte';
 
@@ -13,7 +13,7 @@
   let isAnimating = $state<boolean>(false);
   let direction = $state<Direction>(SlideDirection.RIGHT);
 
-  const currentArtwork = $derived<Artwork | null>(
+  const currentArtwork = $derived<TranslatedArtwork | null>(
     artworkState.items.length > 0 ? artworkState.items[artworkState.currentIndex] : null
   );
   const isLoading = $derived<boolean>(artworkState.isLoading);
@@ -103,17 +103,15 @@
               easing: cubicOut
             }}
             role="img"
-            aria-label={currentArtwork.translations?.[0]?.title || '이미지'}
+            aria-label={currentArtwork.title || '이미지'}
           >
-            {#if currentArtwork.translations && currentArtwork.translations.length > 0}
-              <div
-                class="absolute right-0 bottom-0 z-10 bg-black p-2 text-white opacity-75 transition-opacity duration-150"
-              >
-                <h3 class="text-right text-xs font-semibold sm:text-lg">
-                  {currentArtwork.translations[0].title}
-                </h3>
-              </div>
-            {/if}
+            <div
+              class="absolute right-0 bottom-0 z-10 bg-black p-2 text-white opacity-75 transition-opacity duration-150"
+            >
+              <h3 class="text-right text-xs font-semibold sm:text-lg">
+                {currentArtwork.title}
+              </h3>
+            </div>
           </div>
         {/key}
       </div>
