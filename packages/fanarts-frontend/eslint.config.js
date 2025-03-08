@@ -14,6 +14,13 @@ const gitignorePath = fileURLToPath(new URL('./.gitignore', import.meta.url));
 
 const importOrderRules = {
   'no-undef': 'off',
+  '@typescript-eslint/no-unused-vars': [
+    'warn',
+    {
+      argsIgnorePattern: '^_',
+      varsIgnorePattern: '^_'
+    }
+  ],
   'import/order': [
     'error',
     {
