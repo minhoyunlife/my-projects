@@ -119,7 +119,7 @@
             onkeydown={(e) => e.key === 'Enter' && handleImageClick(e)}
           >
             <div
-              class="absolute right-0 bottom-0 z-10 max-w-full overflow-hidden bg-black p-2 whitespace-nowrap text-white opacity-75 transition-opacity duration-150 sm:mb-4 md:overflow-visible md:whitespace-normal"
+              class="absolute right-0 bottom-0 z-10 max-w-full overflow-hidden bg-black p-2 whitespace-nowrap text-white opacity-75 transition-opacity duration-150 md:overflow-visible md:whitespace-normal"
             >
               <ScrollingText
                 text={currentArtwork.title}
