@@ -3,11 +3,14 @@
   import { fly } from 'svelte/transition';
 
   import CarouselNav from '$lib/components/carousel/CarouselNav.svelte';
+  import ScrollingText from '$lib/components/common/ScrollingText.svelte';
 
   import { artworkState } from '$lib/states/artwork.svelte';
   import type { TranslatedArtwork } from '$lib/types/artwork';
   import { SlideDirection, type Direction } from '$lib/types/slide-direction';
   import { imagePreloader } from '$lib/utils/preloader.svelte';
+
+  const { artworkClick } = $props();
 
   let previousItemsCount = $state<number>(0);
   let isAnimating = $state<boolean>(false);
@@ -49,6 +52,12 @@
     }, 150);
   }
 
+  function handleImageClick(event: MouseEvent | KeyboardEvent) {
+    if (!currentArtwork) return;
+
+    artworkClick(currentArtwork, event.currentTarget as HTMLDivElement);
+  }
+
   function preloadNewPageItems() {
     const items = artworkState.items;
     const currentCount = items.length;
@@ -70,7 +79,7 @@
   });
 </script>
 
-<div class="relative flex h-full w-full items-center justify-center overflow-hidden">
+<div class="relative z-10 flex h-full w-full items-center justify-center overflow-hidden">
   {#if currentArtwork}
     <div class="flex h-full w-full items-center justify-between">
       <div class="z-10 h-8 w-8 sm:ml-10">
@@ -86,10 +95,13 @@
       >
         {#key currentArtwork.id}
           <div
-            class="absolute inset-0 bg-cover bg-center bg-no-repeat will-change-transform"
+            role="button"
+            tabindex="0"
+            class="absolute inset-0 cursor-pointer bg-cover bg-center bg-no-repeat will-change-transform"
             style={`
               background-image: url('${currentArtwork.imageUrl}');
             `}
+            data-artwork-id={currentArtwork.id}
             in:fly={{
               x: direction === SlideDirection.RIGHT ? '100vw' : '-100vw',
               duration: 500,
@@ -102,15 +114,17 @@
               opacity: isAnimating ? 0 : 1,
               easing: cubicOut
             }}
-            role="img"
             aria-label={currentArtwork.title || '이미지'}
+            onclick={handleImageClick}
+            onkeydown={(e) => e.key === 'Enter' && handleImageClick(e)}
           >
             <div
-              class="absolute right-0 bottom-0 z-10 bg-black p-2 text-white opacity-75 transition-opacity duration-150"
+              class="absolute right-0 bottom-0 z-10 max-w-full overflow-hidden bg-black p-2 whitespace-nowrap text-white opacity-75 transition-opacity duration-150 sm:mb-4 md:overflow-visible md:whitespace-normal"
             >
-              <h3 class="text-right text-xs font-semibold sm:text-lg">
-                {currentArtwork.title}
-              </h3>
+              <ScrollingText
+                text={currentArtwork.title}
+                className=" text-xs font-semibold sm:text-lg"
+              />
             </div>
           </div>
         {/key}
