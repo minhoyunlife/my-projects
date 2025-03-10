@@ -6,6 +6,7 @@
   import ScrollingText from '$lib/components/common/ScrollingText.svelte';
 
   import { artworkState } from '$lib/states/artwork.svelte';
+  import { t } from '$lib/texts';
   import type { TranslatedArtwork } from '$lib/types/artwork';
   import { SlideDirection, type Direction } from '$lib/types/slide-direction';
   import { imagePreloader } from '$lib/utils/preloader.svelte';
@@ -91,7 +92,7 @@
       </div>
 
       <div
-        class={`relative flex overflow-hidden ${isVertical ? 'h-[296px] w-[200px] sm:h-[444px] sm:w-[300px] md:h-[592px] md:w-[400px] lg:h-[740px] lg:w-[500px]' : 'h-[200px] w-[296px] sm:h-[300px] sm:w-[444px] md:h-[400px] md:w-[592px] lg:h-[500px] lg:w-[740px]'}`}
+        class={`relative flex overflow-hidden ${isVertical ? 'h-[296px] w-[200px] sm:h-[444px] sm:w-[300px] md:h-[592px] md:w-[400px] lg:h-[666px] lg:w-[450px]' : 'h-[200px] w-[296px] sm:h-[300px] sm:w-[444px] md:h-[400px] md:w-[592px] lg:h-[450px] lg:w-[666px]'}`}
       >
         {#key currentArtwork.id}
           <div
@@ -139,6 +140,6 @@
       </div>
     </div>
   {:else}
-    <div class="text-center text-gray-500">표시할 이미지가 없습니다</div>
+    <div class="text-center text-gray-500">{t('carousel.noData')}</div>
   {/if}
 </div>
