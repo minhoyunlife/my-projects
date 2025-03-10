@@ -15,6 +15,7 @@ FROM base AS frontend
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages/fanarts-frontend/node_modules ./packages/fanarts-frontend/node_modules
 COPY packages/fanarts-frontend/src ./packages/fanarts-frontend/src
+COPY packages/fanarts-frontend/static ./packages/fanarts-frontend/static
 COPY packages/fanarts-frontend/tsconfig.json ./packages/fanarts-frontend/tsconfig.json
 COPY packages/fanarts-frontend/svelte.config.js ./packages/fanarts-frontend/
 COPY packages/fanarts-frontend/vite.config.ts ./packages/fanarts-frontend/

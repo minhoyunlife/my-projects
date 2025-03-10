@@ -16,7 +16,7 @@
   });
 </script>
 
-<header class="absolute top-0 left-0 z-50 w-full p-4">
+<header class="absolute top-0 left-0 z-40 w-full bg-transparent p-4">
   <div class="relative container mx-auto flex items-center justify-center">
     <div class="absolute left-1/2 -translate-x-1/2 transform">
       <div class="flex items-center text-xl font-bold">

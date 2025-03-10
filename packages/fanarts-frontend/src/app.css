@@ -1,1 +1,13 @@
 @import 'tailwindcss';
+
+@layer base {
+  @font-face {
+    font-family: 'GalmuriMono11';
+    src: url('/font/GalmuriMono11.woff2') format('woff2');
+    font-display: swap;
+  }
+
+  html {
+    font-family: 'GalmuriMono11', sans-serif;
+  }
+}
