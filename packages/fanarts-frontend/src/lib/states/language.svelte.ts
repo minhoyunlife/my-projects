@@ -1,7 +1,7 @@
 import { supportedLanguages, type LanguageCode } from '$lib/types/languages';
 
 export class LanguageState {
-  private _state = $state<LanguageCode>('ko');
+  private _state = $state<LanguageCode>('none');
 
   initialize() {
     const savedLanguage = this.getSavedLanguage();

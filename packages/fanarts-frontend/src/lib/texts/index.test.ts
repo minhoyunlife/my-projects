@@ -28,9 +28,8 @@ describe('translations', () => {
       expect(t('common.title')).toBe(ja.common.title);
     });
 
-    it('키에 해당하는 번역 정보가 없는 경우, 키 그 자체를 반환함', () => {
-      const nonExistentKey = 'nonexistent.key';
-      expect(t(nonExistentKey)).toBe(nonExistentKey);
+    it('키에 해당하는 번역 정보가 없는 경우, 빈 문자열을 반환함', () => {
+      expect(t('nonexistent.key')).toBe('');
     });
 
     it('키가 비어있어도 에러를 발생시키지 않음', () => {
