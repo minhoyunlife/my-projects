@@ -22,3 +22,32 @@
     font-family: 'GalmuriMono11', sans-serif;
   }
 }
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #181735;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #363766;
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #7877a7;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #363766 #181735;
+}
+
+::-webkit-scrollbar-corner {
+  background: #181735;
+}

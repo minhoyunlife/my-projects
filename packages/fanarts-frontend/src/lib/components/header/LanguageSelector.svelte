@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { backIn, backOut } from 'svelte/easing';
   import { slide } from 'svelte/transition';
   import { Icon } from 'svelte-icons-pack';
@@ -7,9 +7,12 @@
 
   import { artworkState } from '$lib/states/artwork.svelte';
   import { languageState } from '$lib/states/language.svelte';
+  import type { Breakpoint } from '$lib/types/breakpoint';
   import { languageNames, supportedLanguages, type LanguageCode } from '$lib/types/languages';
+  import { listenBreakpointChange } from '$lib/utils/breakpoint';
 
   let showDropdown = $state(false);
+  let size: Breakpoint = $state('small');
 
   const currentLanguage = $derived(languageState.currentLanguage);
 
@@ -24,39 +27,47 @@
   }
 
   onMount(() => {
-    languageState.initialize();
+    const unsubscribe = listenBreakpointChange((newBreakpoint) => {
+      size = newBreakpoint;
+    });
+
+    onDestroy(() => {
+      unsubscribe();
+    });
   });
 </script>
 
-<div class="relative">
-  <button
-    class="text-s flex cursor-pointer items-center gap-1"
-    onclick={toggleDropdown}
-    aria-haspopup="true"
-    aria-expanded={showDropdown}
-  >
-    <!-- TODO: 동적인 배경색에 잘 보이는 색상으로 동적으로 변경 필요 -->
-    <Icon src={IoLanguage} size="24" />
-  </button>
+<button
+  class="hover:drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]flex w-full cursor-pointer items-center justify-center gap-1 text-white transition-all duration-300 hover:drop-shadow-[0_0_4px_rgba(255,255,255,0.8)] sm:mr-10"
+  onclick={toggleDropdown}
+  aria-haspopup="true"
+  aria-expanded={showDropdown}
+>
+  <Icon src={IoLanguage} size={size === 'small' ? 24 : 32} />
+</button>
 
-  {#if showDropdown}
-    <div
-      class="absolute right-0 mt-1"
-      role="menu"
-      in:slide={{ duration: 300, easing: backOut, axis: 'y' }}
-      out:slide={{ duration: 300, easing: backIn, axis: 'y' }}
-    >
+{#if showDropdown}
+  <div
+    class="bg-primary-dark absolute right-0 z-40 w-20 overflow-hidden rounded-lg shadow-lg"
+    role="menu"
+    in:slide={{ duration: 300, easing: backOut, axis: 'y' }}
+    out:slide={{ duration: 300, easing: backIn, axis: 'y' }}
+  >
+    <div class="py-1">
       {#each supportedLanguages as language}
-        <button
-          class="block w-full py-2 text-right {language === currentLanguage
-            ? 'text-amber-100' // TODO: 동적인 배경색에 잘 보이는 색상으로 동적으로 변경 필요
-            : ''}"
-          role="menuitem"
-          onclick={() => handleLanguageChange(language)}
-        >
-          {languageNames[language]}
-        </button>
+        {#if language != 'none'}
+          <button
+            class="w-full cursor-pointer py-2 text-center text-sm transition-colors duration-200 sm:text-base {language ===
+            currentLanguage
+              ? 'bg-primary text-primary-lightest font-bold'
+              : 'hover:bg-primary text-white'}"
+            role="menuitem"
+            onclick={() => handleLanguageChange(language)}
+          >
+            {languageNames[language]}
+          </button>
+        {/if}
       {/each}
     </div>
-  {/if}
-</div>
+  </div>
+{/if}
