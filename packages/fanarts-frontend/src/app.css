@@ -1,5 +1,16 @@
 @import 'tailwindcss';
 
+@theme {
+  --color-primary-darkest: #181735;
+  --color-primary-dark: #282455;
+  --color-primary: #363766;
+  --color-primary-light: #7877a7;
+  --color-primary-lightest: #9e9bd3;
+  --color-text: #f0f0ff;
+  --color-text-muted: #ada9d4;
+  --color-secondary: #ff5a5a;
+}
+
 @layer base {
   @font-face {
     font-family: 'GalmuriMono11';
