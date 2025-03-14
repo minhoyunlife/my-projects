@@ -82,8 +82,8 @@
 
 <div class="relative z-10 flex h-full w-full items-center justify-center overflow-hidden">
   {#if currentArtwork}
-    <div class="flex h-full w-full items-center justify-between">
-      <div class="z-10 h-8 w-8 sm:ml-10">
+    <div class="container flex h-full w-full items-center justify-between">
+      <div class="z-10 h-8 w-8">
         <CarouselNav
           direction="before"
           handleClick={handlePrevClick}
@@ -92,13 +92,13 @@
       </div>
 
       <div
-        class={`relative flex overflow-hidden ${isVertical ? 'h-[296px] w-[200px] sm:h-[444px] sm:w-[300px] md:h-[592px] md:w-[400px] lg:h-[666px] lg:w-[450px]' : 'h-[200px] w-[296px] sm:h-[300px] sm:w-[444px] md:h-[400px] md:w-[592px] lg:h-[450px] lg:w-[666px]'}`}
+        class={`relative flex overflow-visible ${isVertical ? 'h-[296px] w-[200px] sm:h-[444px] sm:w-[300px] md:h-[592px] md:w-[400px]' : 'h-[200px] w-[296px] sm:h-[300px] sm:w-[444px] md:h-[400px] md:w-[592px]'}`}
       >
         {#key currentArtwork.id}
           <div
             role="button"
             tabindex="0"
-            class="absolute inset-0 cursor-pointer bg-cover bg-center bg-no-repeat will-change-transform"
+            class="absolute inset-0 cursor-pointer rounded-3xl bg-cover bg-center bg-no-repeat"
             style={`
               background-image: url('${currentArtwork.imageUrl}');
             `}
@@ -120,7 +120,7 @@
             onkeydown={(e) => e.key === 'Enter' && handleImageClick(e)}
           >
             <div
-              class="absolute right-0 bottom-0 z-10 max-w-full overflow-hidden bg-black p-2 whitespace-nowrap text-white opacity-75 transition-opacity duration-150 md:overflow-visible md:whitespace-normal"
+              class="bg-primary-darkest absolute right-0 bottom-0 z-10 max-w-full overflow-hidden rounded-br-3xl p-2 whitespace-nowrap text-white opacity-75 transition-opacity duration-150 sm:p-3 md:overflow-visible md:whitespace-normal"
             >
               <ScrollingText
                 text={currentArtwork.title}
@@ -131,7 +131,7 @@
         {/key}
       </div>
 
-      <div class="z-10 h-8 w-8 sm:mr-10">
+      <div class="z-10 h-8 w-8">
         <CarouselNav
           direction="after"
           handleClick={handleNextClick}
@@ -140,6 +140,6 @@
       </div>
     </div>
   {:else}
-    <div class="text-center text-gray-500">{t('carousel.noData')}</div>
+    <div class="text-text-muted text-center">{t('carousel.noData')}</div>
   {/if}
 </div>

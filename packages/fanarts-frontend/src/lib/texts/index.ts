@@ -29,24 +29,25 @@ export function t(key: string): string {
   const language = languageState.currentLanguage as SupportedLanguages;
   const keys = key.split('.');
 
-  const translation = translations[language] || translations.ko;
+  const translation = translations[language];
 
   const result = getNestedValue(translation, keys);
 
   if (typeof result !== 'string') {
     console.warn(`Translation missing for key: ${key} in language: ${language}`);
-    return key;
+    return '';
   }
 
   return result;
 }
 
 export function formatDate(isoString: string): string {
-  if (!isoString) return '';
+  const language = languageState.currentLanguage;
+
+  if (!isoString || language === 'none') return '';
 
   try {
     const date = new Date(isoString);
-    const language = languageState.currentLanguage;
 
     const dateOptions: Intl.DateTimeFormatOptions = {
       year: 'numeric',
