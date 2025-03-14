@@ -83,7 +83,7 @@
 <div class="relative z-10 flex h-full w-full items-center justify-center overflow-hidden">
   {#if currentArtwork}
     <div class="container flex h-full w-full items-center justify-between">
-      <div class="z-10 h-8 w-8 sm:ml-10">
+      <div class="z-10 h-8 w-8">
         <CarouselNav
           direction="before"
           handleClick={handlePrevClick}
@@ -98,7 +98,7 @@
           <div
             role="button"
             tabindex="0"
-            class="absolute inset-0 cursor-pointer rounded-3xl bg-cover bg-center bg-no-repeat shadow-lg drop-shadow-[2px_2px_6px_rgba(18,17,35,0.9)] transition-all duration-500 will-change-transform"
+            class="absolute inset-0 cursor-pointer rounded-3xl bg-cover bg-center bg-no-repeat"
             style={`
               background-image: url('${currentArtwork.imageUrl}');
             `}
@@ -131,7 +131,7 @@
         {/key}
       </div>
 
-      <div class="z-10 h-8 w-8 sm:mr-10">
+      <div class="z-10 h-8 w-8">
         <CarouselNav
           direction="after"
           handleClick={handleNextClick}

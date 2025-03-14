@@ -85,7 +85,7 @@
       onclick={onClose}
     >
       <Icon src={BiX} />
-      <span class="text-xs">{t('viewer.close')}</span>
+      <span class="text-xs">{t('common.close')}</span>
     </button>
 
     <!-- 이미지 컨테이너 -->

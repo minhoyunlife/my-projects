@@ -38,7 +38,7 @@
 </script>
 
 <button
-  class="hover:drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]flex w-full cursor-pointer items-center justify-center gap-1 text-white transition-all duration-300 hover:drop-shadow-[0_0_4px_rgba(255,255,255,0.8)] sm:mr-10"
+  class="text-text-muted flex w-full cursor-pointer items-center justify-center transition-all duration-300 hover:drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]"
   onclick={toggleDropdown}
   aria-haspopup="true"
   aria-expanded={showDropdown}
