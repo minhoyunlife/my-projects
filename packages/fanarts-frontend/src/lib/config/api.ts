@@ -9,6 +9,7 @@ const getBaseUrl = () => {
       ? 'http://localhost:3000/api' // 브라우저
       : 'http://backend:3000/api'; // SSR
   } else {
+    // build 과정에서 주입될 환경변수
     return import.meta.env.VITE_API_URL;
   }
 };
