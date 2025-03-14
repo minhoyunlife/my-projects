@@ -13,6 +13,7 @@ RUN pnpm install --frozen-lockfile
 
 # 3. Build Stage
 FROM base AS build
+ARG VITE_API_URL
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages/fanarts-frontend/node_modules ./packages/fanarts-frontend/node_modules
 COPY packages/fanarts-frontend ./packages/fanarts-frontend
