@@ -123,7 +123,7 @@
             <p class="text-sm sm:text-base">
               {t('info.how_to_make_desc')}
             </p>
-            <img src="/tools.webp" alt="tools" class="mt-2 w-full rounded-lg shadow-lg" />
+            <img src="/images/tools.webp" alt="tools" class="mt-2 w-full rounded-lg shadow-lg" />
           </section>
         </div>
       </div>
