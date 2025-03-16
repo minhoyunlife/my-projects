@@ -1,6 +1,7 @@
 export default {
   common: {
     title: 'MHY’s Game Fan Art Gallery',
+    description: 'A personal gallery showcasing hand-drawn fan art created after completing games.',
     close: 'Close'
   },
   loader: {

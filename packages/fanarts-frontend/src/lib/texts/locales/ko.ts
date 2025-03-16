@@ -1,6 +1,7 @@
 export default {
   common: {
     title: 'MHY 의 게임 팬아트 갤러리',
+    description: '게임을 클리어한 후 손으로 그린 팬아트를 전시하는 개인 갤러리.',
     close: '닫기'
   },
   loader: {

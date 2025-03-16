@@ -1,6 +1,7 @@
 export default {
   common: {
     title: 'MHYのゲームファンアートギャラリー',
+    description: 'ゲームをクリアした後に手描きで制作したファンアートを展示する個人ギャラリー。',
     close: '閉じる'
   },
   loader: {

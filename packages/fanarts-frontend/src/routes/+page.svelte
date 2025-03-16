@@ -1,5 +1,6 @@
 <script lang="ts">
   import Carousel from '$lib/components/carousel/Carousel.svelte';
+  import Meta from '$lib/components/common/Meta.svelte';
   import Header from '$lib/components/header/Header.svelte';
   import Loader from '$lib/components/loader/Loader.svelte';
   import Viewer from '$lib/components/viewer/Viewer.svelte';
@@ -53,6 +54,8 @@
     }
   });
 </script>
+
+<Meta />
 
 {#if showLoading}
   <Loader onComplete={completeLoading} />
