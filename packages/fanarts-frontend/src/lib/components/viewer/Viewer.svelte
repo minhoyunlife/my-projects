@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { fade } from 'svelte/transition';
   import { Icon } from 'svelte-icons-pack';
   import { BiX } from 'svelte-icons-pack/bi';
 
   import PlatformIcon from '$lib/components/common/PlatformIcon.svelte';
-  import RatingStar from '$lib/components/common/RatingStar.svelte';
+  import RatingHeart from '$lib/components/common/RatingHeart.svelte';
   import ScrollingText from '$lib/components/common/ScrollingText.svelte';
 
   import { formatDate, t } from '$lib/texts';
@@ -62,9 +62,15 @@
       }, 500);
     }, 50);
   });
-</script>
 
-<svelte:window on:keydown={handleKeydown} />
+  onMount(() => {
+    window.addEventListener('keydown', handleKeydown);
+
+    onDestroy(() => {
+      window.removeEventListener('keydown', handleKeydown);
+    });
+  });
+</script>
 
 <div
   class="bg-primary-darkest fixed inset-0 z-30"
@@ -75,7 +81,16 @@
 <div
   class="fixed inset-0 z-30 flex items-center justify-center"
   transition:fade={{ duration: 300 }}
+  role="dialog"
+  aria-modal="true"
 >
+  <!-- 배경 클릭 시 닫기 처리 -->
+  <button
+    class="absolute inset-0 z-0 h-full w-full cursor-default bg-transparent"
+    aria-label={t('common.close')}
+    onclick={onClose}
+  ></button>
+
   <div class="relative flex w-full flex-col items-center justify-center sm:flex-row">
     <!-- 닫기 버튼 -->
     <button
@@ -148,11 +163,11 @@
           </div>
         {/if}
 
-        <!-- 평점 -->
+        <!-- 상성도(평점) -->
         {#if artwork.rating !== undefined && artwork.rating !== null}
           <div class="mb-2 flex items-center text-xs sm:mb-4 sm:text-sm md:text-sm lg:text-lg">
             <span class="text-text-muted">{t('viewer.rating')}:</span>
-            <RatingStar rating={artwork.rating} maxValue={20} maxStars={5} className="ml-2" />
+            <RatingHeart rating={artwork.rating} maxValue={20} maxHearts={5} className="ml-2" />
           </div>
         {/if}
 

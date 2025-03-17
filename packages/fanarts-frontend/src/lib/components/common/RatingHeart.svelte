@@ -1,27 +1,26 @@
 <script lang="ts">
   import { Icon } from 'svelte-icons-pack';
-  import { FaSolidStar, FaStar } from 'svelte-icons-pack/fa';
+  import { FaHeart, FaSolidHeart } from 'svelte-icons-pack/fa';
 
   const {
     rating,
     maxValue = 20,
-    maxStars = 5,
+    maxHearts = 5,
     className = ''
   } = $props<{
     rating: number;
     maxValue?: number;
-    maxStars?: number;
+    maxHearts?: number;
     className?: string;
   }>();
 
   let showTooltip = $state(false);
 
-  const normalizedRating = $derived(rating / (maxValue / maxStars));
-  const stars = Array(maxStars).fill(0);
+  const normalizedRating = $derived(rating / (maxValue / maxHearts));
+  const hearts = Array(maxHearts).fill(0);
 
-  function getStarFillPercentage(index: number): number {
-    const starValue = Math.max(0, Math.min(1, normalizedRating - index));
-    return starValue;
+  function getHeartFillPercentage(index: number): number {
+    return Math.max(0, Math.min(1, normalizedRating - index));
   }
 
   function handleMouseEnter() {
@@ -49,20 +48,20 @@
   onblur={handleBlur}
   role="img"
 >
-  {#each stars as _, i}
+  {#each hearts as _, i}
     {#key i}
       <div class="relative mr-0.5 inline-block h-4 w-4">
-        <!-- 빈 별 배경 -->
+        <!-- 빈 하트 배경 -->
         <span class="text-primary-light absolute inset-0">
-          <Icon src={FaStar} size="16" />
+          <Icon src={FaHeart} size="16" />
         </span>
 
-        <!-- 채워진 별 -->
+        <!-- 채워진 하트 -->
         <div
-          class="absolute inset-0 overflow-hidden text-yellow-400"
-          style="width: {getStarFillPercentage(i) * 100}%"
+          class="text-secondary absolute inset-0 overflow-hidden"
+          style="width: {getHeartFillPercentage(i) * 100}%"
         >
-          <Icon src={FaSolidStar} size="16" className="absolute inset-0 " />
+          <Icon src={FaSolidHeart} size="16" className="absolute inset-0 " />
         </div>
       </div>
     {/key}

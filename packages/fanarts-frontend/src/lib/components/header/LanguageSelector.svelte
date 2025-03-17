@@ -11,6 +11,9 @@
   import { languageNames, supportedLanguages, type LanguageCode } from '$lib/types/languages';
   import { listenBreakpointChange } from '$lib/utils/breakpoint';
 
+  let buttonElement = $state<HTMLElement | null>(null);
+  let dropdownElement = $state<HTMLElement | null>(null);
+
   let showDropdown = $state(false);
   let size: Breakpoint = $state('small');
 
@@ -26,18 +29,41 @@
     showDropdown = !showDropdown;
   }
 
+  function handleOutsideClick(event: MouseEvent) {
+    if (showDropdown && buttonElement && dropdownElement) {
+      if (
+        !buttonElement.contains(event.target as Node) &&
+        !dropdownElement.contains(event.target as Node)
+      ) {
+        showDropdown = false;
+      }
+    }
+  }
+
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape' && showDropdown) {
+      showDropdown = false;
+    }
+  }
+
   onMount(() => {
     const unsubscribe = listenBreakpointChange((newBreakpoint) => {
       size = newBreakpoint;
     });
 
+    document.addEventListener('click', handleOutsideClick);
+    document.addEventListener('keydown', handleKeydown);
+
     onDestroy(() => {
       unsubscribe();
+      document.removeEventListener('click', handleOutsideClick);
+      document.removeEventListener('keydown', handleKeydown);
     });
   });
 </script>
 
 <button
+  bind:this={buttonElement}
   class="text-text-muted flex w-full cursor-pointer items-center justify-center transition-all duration-300 hover:drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]"
   onclick={toggleDropdown}
   aria-haspopup="true"
@@ -48,6 +74,7 @@
 
 {#if showDropdown}
   <div
+    bind:this={dropdownElement}
     class="bg-primary-dark absolute right-0 z-40 w-20 overflow-hidden rounded-lg shadow-lg"
     role="menu"
     in:slide={{ duration: 300, easing: backOut, axis: 'y' }}

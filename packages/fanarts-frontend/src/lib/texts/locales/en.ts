@@ -22,6 +22,9 @@ export default {
     copyright: 'Copyright Notice',
     copyright_desc:
       'This site is a personal gallery showcasing fanart of games that I love and draw my own hands. All copyrights for the original games and official illustrations belong to their respective developers. If any game company wishes to have their fanart removed, please contact me via the email below and I will promptly remove the relevant works.',
+    review: 'About Compatibility and Reviews',
+    review_desc:
+      'The compatibility scores and reviews given to games are solely the subjective impressions of the author. Every game has its own unique fun and value, and the same game can be experienced differently by different people.',
     how_to_make: 'How I Create My Artwork',
     how_to_make_desc:
       'I select official game illustrations that I find appealing and recreate them by hand using the tools listed below.'
@@ -31,7 +34,7 @@ export default {
   },
   viewer: {
     platform: 'Platform',
-    rating: 'Rating',
+    rating: 'Compatibility',
     createdAt: 'Created At'
   }
 };
