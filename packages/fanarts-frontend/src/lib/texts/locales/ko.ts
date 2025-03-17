@@ -31,7 +31,7 @@ export default {
   },
   viewer: {
     platform: '플랫폼',
-    rating: '평점',
+    rating: '상성도',
     createdAt: '작성일'
   }
 };

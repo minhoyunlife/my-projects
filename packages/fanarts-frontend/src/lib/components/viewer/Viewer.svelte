@@ -5,7 +5,7 @@
   import { BiX } from 'svelte-icons-pack/bi';
 
   import PlatformIcon from '$lib/components/common/PlatformIcon.svelte';
-  import RatingStar from '$lib/components/common/RatingStar.svelte';
+  import RatingHeart from '$lib/components/common/RatingHeart.svelte';
   import ScrollingText from '$lib/components/common/ScrollingText.svelte';
 
   import { formatDate, t } from '$lib/texts';
@@ -148,11 +148,11 @@
           </div>
         {/if}
 
-        <!-- 평점 -->
+        <!-- 상성도(평점) -->
         {#if artwork.rating !== undefined && artwork.rating !== null}
           <div class="mb-2 flex items-center text-xs sm:mb-4 sm:text-sm md:text-sm lg:text-lg">
             <span class="text-text-muted">{t('viewer.rating')}:</span>
-            <RatingStar rating={artwork.rating} maxValue={20} maxStars={5} className="ml-2" />
+            <RatingHeart rating={artwork.rating} maxValue={20} maxHearts={5} className="ml-2" />
           </div>
         {/if}
 
