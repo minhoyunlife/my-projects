@@ -13,8 +13,9 @@
 
   const { artworkClick } = $props();
 
-  let swipeThreshold = 50;
-  let swipeMaxTime = 300;
+  let swipeThreshold = 30;
+  let swipeMaxTime = 400;
+  let swipeMinVelocity = 0.3;
 
   let previousItemsCount = $state<number>(0);
   let isAnimating = $state<boolean>(false);
@@ -58,7 +59,8 @@
     }
 
     const rawDeltaX = currentX - startX;
-    const resistanceFactor = isFirstItem && rawDeltaX > 0 ? 0 : isLastItem && rawDeltaX < 0 ? 0 : 1;
+    const resistanceFactor =
+      isFirstItem && rawDeltaX > 0 ? 0.2 : isLastItem && rawDeltaX < 0 ? 0.2 : 1;
 
     dragDeltaX = rawDeltaX * resistanceFactor;
   }
@@ -74,11 +76,18 @@
     const deltaX = currentX - startX;
     const swipeTime = Date.now() - swipeStartTime;
 
-    if (Math.abs(deltaX) > swipeThreshold && swipeTime < swipeMaxTime) {
+    const velocity = Math.abs(deltaX) / swipeTime;
+
+    if (
+      (Math.abs(deltaX) > swipeThreshold && swipeTime < swipeMaxTime) ||
+      (velocity > swipeMinVelocity && Math.abs(deltaX) > 10)
+    ) {
       if (deltaX > 0 && !isFirstItem) {
         handlePrevClick();
       } else if (deltaX < 0 && !isLastItem) {
         handleNextClick();
+      } else {
+        dragDeltaX = 0;
       }
     } else {
       dragDeltaX = 0;
