@@ -118,6 +118,15 @@
 
           <section>
             <h3 class="text-primary-lightest mb-2 text-lg font-semibold">
+              {t('info.review')}
+            </h3>
+            <p class="text-sm sm:text-base">
+              {t('info.review_desc')}
+            </p>
+          </section>
+
+          <section>
+            <h3 class="text-primary-lightest mb-2 text-lg font-semibold">
               {t('info.how_to_make')}
             </h3>
             <p class="text-sm sm:text-base">
