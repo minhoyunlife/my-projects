@@ -22,7 +22,6 @@
     isOpen = false;
   }
 
-  // ESC 키로 모달 닫기
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === 'Escape' && isOpen) {
       closeModal();
@@ -54,19 +53,23 @@
 
 {#if isOpen}
   <!-- 배경 오버레이 -->
-  <div
-    class="bg-primary-darkest fixed inset-0 z-30 cursor-default"
+  <button
+    class="bg-primary-darkest fixed inset-0 z-30 h-full w-full cursor-default border-0"
     transition:fade={{ duration: 300 }}
     style="background-image: linear-gradient(to right, transparent 3px, rgba(0, 0, 0, 0.7) 1px), linear-gradient(to bottom, transparent 3px, rgba(0, 0, 0, 0.7) 1px); background-size: 4px 4px;"
-  ></div>
+    onclick={closeModal}
+    aria-label={t('common.close')}
+  ></button>
 
   <!-- 모달 컨테이너 -->
   <div
-    class="fixed inset-0 z-40 flex cursor-default items-center justify-center p-4"
+    class="pointer-events-none fixed inset-0 z-40 flex cursor-default items-center justify-center p-4"
     transition:fade={{ duration: 200 }}
+    role="dialog"
+    aria-modal="true"
   >
     <div
-      class="bg-primary-dark relative flex h-[75vh] w-[80vw] max-w-2xl flex-col items-center rounded-xl shadow-xl"
+      class="bg-primary-dark pointer-events-auto relative flex h-[75vh] w-[80vw] max-w-2xl flex-col items-center rounded-xl shadow-xl"
       in:fly={{ y: 20, duration: 300, easing: backOut }}
       out:fly={{ y: 20, duration: 200, easing: backIn }}
     >
@@ -91,6 +94,7 @@
       <!-- 스크롤 가능한 내용 영역 -->
       <div class="flex-grow overflow-y-auto px-5">
         <div class="text-text space-y-4 py-2">
+          <!-- 소개 -->
           <section>
             <h3 class="text-primary-lightest mb-2 text-lg font-semibold">
               {t('info.fanart_gallery')}
@@ -100,6 +104,7 @@
             </p>
           </section>
 
+          <!-- 저작권 -->
           <section>
             <h3 class="text-primary-lightest mb-2 text-lg font-semibold">
               {t('info.copyright')}
@@ -116,6 +121,7 @@
             </p>
           </section>
 
+          <!-- 리뷰 -->
           <section>
             <h3 class="text-primary-lightest mb-2 text-lg font-semibold">
               {t('info.review')}
@@ -125,6 +131,7 @@
             </p>
           </section>
 
+          <!-- 제작 방법 -->
           <section>
             <h3 class="text-primary-lightest mb-2 text-lg font-semibold">
               {t('info.how_to_make')}
