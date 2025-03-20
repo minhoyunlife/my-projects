@@ -1,23 +1,18 @@
 import { Transform } from 'class-transformer';
-import {
-  IsArray,
-  IsEnum,
-  IsInt,
-  IsOptional,
-  IsString,
-  MaxLength,
-  Min,
-  MinLength,
-} from 'class-validator';
+import { IsEnum, IsOptional } from 'class-validator';
 
+import {
+  ValidatedEnumArray,
+  ValidatedStringArray,
+} from '@/src/common/decorators/validated-array.decorator';
+import { ValidatedInt } from '@/src/common/decorators/validated-int.decorator';
+import { ValidatedString } from '@/src/common/decorators/validated-string.decorator';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
 import { Status } from '@/src/modules/artworks/enums/status.enum';
 
 export class GetArtworksQueryDto {
-  @IsOptional()
-  @IsInt()
-  @Min(1)
+  @ValidatedInt({ optional: true, min: 1 })
   @Transform(({ value }) => {
     if (!value && value !== 0) return undefined;
 
@@ -30,31 +25,22 @@ export class GetArtworksQueryDto {
   @IsEnum(SortType)
   sort?: SortType = SortType.CREATED_DESC;
 
-  @IsOptional()
-  @IsArray()
-  @IsEnum(Platform, { each: true })
+  @ValidatedEnumArray(Platform, { optional: true })
   @Transform(({ value }) => {
     return Array.isArray(value) ? value : [value];
   })
   platforms?: Platform[];
 
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
+  @ValidatedStringArray({ optional: true })
   @Transform(({ value }) => {
     return Array.isArray(value) ? value : [value];
   })
   genreIds?: string[];
 
-  @IsOptional()
-  @MinLength(1)
-  @MaxLength(50)
-  @Transform(({ value }) => value?.trim().replace(/\s+/g, ' '))
+  @ValidatedString({ optional: true, minLength: 1, maxLength: 50 })
   search?: string;
 
-  @IsOptional()
-  @IsArray()
-  @IsEnum(Status, { each: true })
+  @ValidatedEnumArray(Status, { optional: true })
   @Transform(({ value }) => {
     return Array.isArray(value) ? value : [value];
   })

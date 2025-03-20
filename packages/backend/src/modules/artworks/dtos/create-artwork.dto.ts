@@ -1,46 +1,32 @@
 import {
-  IsArray,
   IsBoolean,
   IsDateString,
   IsEnum,
-  IsInt,
   IsNotEmpty,
   IsOptional,
-  IsString,
-  Max,
-  MaxLength,
-  Min,
-  MinLength,
 } from 'class-validator';
 
 import { NormalizeWhitespace } from '@/src/common/decorators/normalize-whitespace.decorator';
+import { ValidatedStringArray } from '@/src/common/decorators/validated-array.decorator';
+import { ValidatedInt } from '@/src/common/decorators/validated-int.decorator';
+import { ValidatedString } from '@/src/common/decorators/validated-string.decorator';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 
 export class CreateArtworkDto {
-  @NormalizeWhitespace()
   @IsNotEmpty()
-  @IsString()
+  @ValidatedString()
   imageKey: string;
 
   @IsBoolean()
   isVertical: boolean;
 
-  @NormalizeWhitespace()
-  @IsString()
-  @MinLength(1)
-  @MaxLength(100)
+  @ValidatedString({ minLength: 1, maxLength: 100 })
   koTitle: string;
 
-  @NormalizeWhitespace()
-  @IsString()
-  @MinLength(1)
-  @MaxLength(100)
+  @ValidatedString({ minLength: 1, maxLength: 100 })
   enTitle: string;
 
-  @NormalizeWhitespace()
-  @IsString()
-  @MinLength(1)
-  @MaxLength(100)
+  @ValidatedString({ minLength: 1, maxLength: 100 })
   jaTitle: string;
 
   @NormalizeWhitespace()
@@ -52,31 +38,18 @@ export class CreateArtworkDto {
   @IsEnum(Platform)
   playedOn?: Platform;
 
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  @Max(20)
+  @ValidatedInt({ optional: true, min: 0, max: 20 })
   rating?: number;
 
-  @IsOptional()
-  @NormalizeWhitespace()
-  @IsString()
-  @MaxLength(200)
+  @ValidatedString({ optional: true, maxLength: 200 })
   koShortReview?: string;
 
-  @IsOptional()
-  @NormalizeWhitespace()
-  @IsString()
-  @MaxLength(200)
+  @ValidatedString({ optional: true, maxLength: 200 })
   enShortReview?: string;
 
-  @IsOptional()
-  @NormalizeWhitespace()
-  @IsString()
-  @MaxLength(200)
+  @ValidatedString({ optional: true, maxLength: 200 })
   jaShortReview?: string;
 
-  @IsArray()
-  @IsString({ each: true })
+  @ValidatedStringArray()
   genreIds: string[];
 }
