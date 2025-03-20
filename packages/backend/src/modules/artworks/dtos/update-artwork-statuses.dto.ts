@@ -1,10 +1,10 @@
 import { Transform } from 'class-transformer';
-import { ArrayNotEmpty, IsArray, IsBoolean, IsString } from 'class-validator';
+import { IsBoolean } from 'class-validator';
+
+import { ValidatedStringArray } from '@/src/common/decorators/validated-array.decorator';
 
 export class UpdateArtworkStatusesDto {
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsString({ each: true })
+  @ValidatedStringArray({ notEmpty: true })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       return [value].filter(Boolean);
