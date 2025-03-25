@@ -7,10 +7,10 @@ import {
   PutObjectTaggingCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import { Logger } from 'ajv';
 import { nanoid } from 'nanoid';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import Sharp from 'sharp';
+import { Logger } from 'winston';
 
 import { withRetry } from '@/src/common/utils/retry.util';
 import { ImageFileType } from '@/src/modules/artworks/enums/file-type.enum';
