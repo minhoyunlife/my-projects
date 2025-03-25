@@ -1,7 +1,6 @@
 import { registerAs } from '@nestjs/config';
 
 import * as winston from 'winston';
-import WinstonCloudwatch from 'winston-cloudwatch';
 
 export interface LogRequest {
   id: string;
@@ -96,15 +95,7 @@ export default registerAs('logger', () => {
               filename: 'logs/combined.log',
             }),
           ]
-        : [
-            new WinstonCloudwatch({
-              logGroupName: process.env.AWS_CLOUDWATCH_LOG_GROUP_NAME,
-              logStreamName: `backend-${new Date().toISOString().replace(/:/g, '-')}`,
-              awsRegion: process.env.AWS_REGION,
-              messageFormatter: ({ level, message, ...meta }) =>
-                JSON.stringify({ level, message, ...meta }),
-            }),
-          ]),
+        : []),
     ],
   };
 });
