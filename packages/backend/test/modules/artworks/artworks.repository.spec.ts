@@ -4,7 +4,7 @@ import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
-import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
+import { Sort } from '@/src/modules/artworks/enums/sort-type.enum';
 import { ArtworkException } from '@/src/modules/artworks/exceptions/artworks.exception';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
@@ -283,7 +283,7 @@ describeWithDeps('ArtworksRepository', () => {
         const [result, totalCount] = await artworkRepo.getAllWithFilters({
           page: 1,
           pageSize: 10,
-          sort: SortType.CREATED_DESC,
+          sort: Sort.CREATED_DESC,
           isDraftIn: [false],
         });
 
@@ -309,7 +309,7 @@ describeWithDeps('ArtworksRepository', () => {
         const [result, totalCount] = await artworkRepo.getAllWithFilters({
           page: 1,
           pageSize: 10,
-          sort: SortType.CREATED_DESC,
+          sort: Sort.CREATED_DESC,
           isDraftIn: [true],
         });
 
@@ -331,7 +331,7 @@ describeWithDeps('ArtworksRepository', () => {
         const [result, totalCount] = await artworkRepo.getAllWithFilters({
           page: 1,
           pageSize: 10,
-          sort: SortType.CREATED_DESC,
+          sort: Sort.CREATED_DESC,
           isDraftIn: [false, true],
         });
 
@@ -345,7 +345,7 @@ describeWithDeps('ArtworksRepository', () => {
         const [result, totalCount] = await artworkRepo.getAllWithFilters({
           page: 1,
           pageSize: 10,
-          sort: SortType.CREATED_DESC,
+          sort: Sort.CREATED_DESC,
           isDraftIn: [true, false],
           search: 'Zelda',
         });
@@ -361,7 +361,7 @@ describeWithDeps('ArtworksRepository', () => {
         const [result, totalCount] = await artworkRepo.getAllWithFilters({
           page: 1,
           pageSize: 10,
-          sort: SortType.CREATED_DESC,
+          sort: Sort.CREATED_DESC,
           isDraftIn: [true, false],
           search: 'Final',
         });
@@ -383,7 +383,7 @@ describeWithDeps('ArtworksRepository', () => {
         const [result, totalCount] = await artworkRepo.getAllWithFilters({
           page: 1,
           pageSize: 10,
-          sort: SortType.CREATED_DESC,
+          sort: Sort.CREATED_DESC,
           isDraftIn: [true, false],
         });
 
@@ -397,7 +397,7 @@ describeWithDeps('ArtworksRepository', () => {
         const [result, totalCount] = await artworkRepo.getAllWithFilters({
           page: 1,
           pageSize: 10,
-          sort: SortType.CREATED_DESC,
+          sort: Sort.CREATED_DESC,
           isDraftIn: [true, false],
           platforms: [Platform.STEAM],
         });
@@ -422,7 +422,7 @@ describeWithDeps('ArtworksRepository', () => {
         const [result, totalCount] = await artworkRepo.getAllWithFilters({
           page: 1,
           pageSize: 10,
-          sort: SortType.CREATED_DESC,
+          sort: Sort.CREATED_DESC,
           isDraftIn: [true, false],
           platforms: [Platform.STEAM, Platform.SWITCH],
         });
@@ -444,7 +444,7 @@ describeWithDeps('ArtworksRepository', () => {
         const [result, totalCount] = await artworkRepo.getAllWithFilters({
           page: 1,
           pageSize: 10,
-          sort: SortType.CREATED_DESC,
+          sort: Sort.CREATED_DESC,
           isDraftIn: [true, false],
         });
 
@@ -458,7 +458,7 @@ describeWithDeps('ArtworksRepository', () => {
         const [result, totalCount] = await artworkRepo.getAllWithFilters({
           page: 1,
           pageSize: 10,
-          sort: SortType.CREATED_DESC,
+          sort: Sort.CREATED_DESC,
           isDraftIn: [true, false],
           genreIds: [genres[0].id], // RPG
         });
@@ -489,7 +489,7 @@ describeWithDeps('ArtworksRepository', () => {
         const [result, totalCount] = await artworkRepo.getAllWithFilters({
           page: 1,
           pageSize: 10,
-          sort: SortType.CREATED_DESC,
+          sort: Sort.CREATED_DESC,
           isDraftIn: [true, false],
           genreIds: [genres[0].id, genres[1].id], // RPG, Action
         });
@@ -516,7 +516,7 @@ describeWithDeps('ArtworksRepository', () => {
         const [result, totalCount] = await artworkRepo.getAllWithFilters({
           page: 1,
           pageSize: 10,
-          sort: SortType.CREATED_DESC,
+          sort: Sort.CREATED_DESC,
           isDraftIn: [true, false],
         });
 
@@ -530,7 +530,7 @@ describeWithDeps('ArtworksRepository', () => {
         const [result, _] = await artworkRepo.getAllWithFilters({
           page: 1,
           pageSize: 10,
-          sort: SortType.CREATED_DESC,
+          sort: Sort.CREATED_DESC,
           isDraftIn: [true, false],
         });
 
@@ -552,7 +552,7 @@ describeWithDeps('ArtworksRepository', () => {
         const [result, _] = await artworkRepo.getAllWithFilters({
           page: 1,
           pageSize: 10,
-          sort: SortType.CREATED_ASC,
+          sort: Sort.CREATED_ASC,
           isDraftIn: [true, false],
         });
 
@@ -574,7 +574,7 @@ describeWithDeps('ArtworksRepository', () => {
         const [result, _] = await artworkRepo.getAllWithFilters({
           page: 1,
           pageSize: 10,
-          sort: SortType.RATING_DESC,
+          sort: Sort.RATING_DESC,
           isDraftIn: [true, false],
         });
 
@@ -596,7 +596,7 @@ describeWithDeps('ArtworksRepository', () => {
         const [result, _] = await artworkRepo.getAllWithFilters({
           page: 1,
           pageSize: 10,
-          sort: SortType.RATING_ASC,
+          sort: Sort.RATING_ASC,
           isDraftIn: [true, false],
         });
 
@@ -620,7 +620,7 @@ describeWithDeps('ArtworksRepository', () => {
         const [result, totalCount] = await artworkRepo.getAllWithFilters({
           page: 1,
           pageSize: 2,
-          sort: SortType.CREATED_DESC,
+          sort: Sort.CREATED_DESC,
           isDraftIn: [true, false],
         });
 
@@ -641,7 +641,7 @@ describeWithDeps('ArtworksRepository', () => {
         const [result, totalCount] = await artworkRepo.getAllWithFilters({
           page: 2, // 두번째 페이지
           pageSize: 2,
-          sort: SortType.CREATED_DESC,
+          sort: Sort.CREATED_DESC,
           isDraftIn: [true, false],
         });
 
@@ -664,7 +664,7 @@ describeWithDeps('ArtworksRepository', () => {
         const [result, totalCount] = await artworkRepo.getAllWithFilters({
           page: 1,
           pageSize: 1,
-          sort: SortType.CREATED_DESC,
+          sort: Sort.CREATED_DESC,
           isDraftIn: [true, false],
           search: 'Final',
           platforms: [Platform.STEAM, Platform.EPIC],

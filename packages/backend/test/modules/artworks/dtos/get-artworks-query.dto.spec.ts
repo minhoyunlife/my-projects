@@ -2,14 +2,14 @@ import { validate } from 'class-validator';
 
 import { GetArtworksQueryDto } from '@/src/modules/artworks/dtos/get-artworks-query.dto';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
-import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
+import { Sort } from '@/src/modules/artworks/enums/sort-type.enum';
 import { Status } from '@/src/modules/artworks/enums/status.enum';
 import { createDto } from '@/test/utils/dto.util';
 
 describeWithoutDeps('GetArtworksQueryDto', () => {
   const validDtoData: Partial<GetArtworksQueryDto> = {
     page: 1,
-    sort: SortType.CREATED_DESC,
+    sort: Sort.CREATED_DESC,
     platforms: [Platform.STEAM],
     genreIds: ['genre-1', 'genre-2'],
     search: 'test',
@@ -80,15 +80,14 @@ describeWithoutDeps('GetArtworksQueryDto', () => {
       expect(errors).toHaveLength(0);
     });
 
-    it('값이 enum 에 존재하지 않는 경우, 에러가 발생함', async () => {
+    it('값이 enum 에 존재하지 않는 경우, 디폴트 값으로 설정됨', async () => {
       const dto = createDto(GetArtworksQueryDto, validDtoData, {
-        sort: 'unknown' as SortType,
+        sort: 'unknown' as unknown as Sort,
       });
       const errors = await validate(dto);
 
-      expect(errors).toHaveLength(1);
-      expect(errors[0].property).toBe('sort');
-      expect(errors[0].constraints).toHaveProperty('isEnum');
+      expect(errors).toHaveLength(0);
+      expect(dto.sort).toBe(Sort.CREATED_DESC);
     });
   });
 
