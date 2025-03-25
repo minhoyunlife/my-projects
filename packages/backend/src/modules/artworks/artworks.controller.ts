@@ -86,9 +86,7 @@ export class ArtworksController {
     @Req() request: Request & { user?: AdminUser },
   ) {
     const isAuthenticated = !!request.user;
-
     const pageSize = isAuthenticated ? PAGE_SIZE.CMS : PAGE_SIZE.PUBLIC;
-
     const result = await this.artworksService.getArtworks(
       query,
       isAuthenticated,
@@ -134,8 +132,7 @@ export class ArtworksController {
   async updateArtworksStatuses(
     @Body() dto: UpdateArtworkStatusesDto,
   ): Promise<void> {
-    const { ids, setPublished } = dto;
-    await this.artworksService.updateStatuses(ids, setPublished);
+    await this.artworksService.updateStatuses(dto.ids, dto.setPublished);
   }
 
   @Patch('/:id')

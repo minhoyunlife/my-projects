@@ -15,7 +15,7 @@ import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-tran
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { ImageFileType } from '@/src/modules/artworks/enums/file-type.enum';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
-import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
+import { Sort } from '@/src/modules/artworks/enums/sort-type.enum';
 import { StatusValidator } from '@/src/modules/artworks/validators/artwork-status.validator';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
@@ -228,7 +228,7 @@ describeWithDeps('ArtworksController', () => {
     it('정렬이 정상적으로 동작함', async () => {
       const response = await request(app.getHttpServer())
         .get('/artworks')
-        .query({ sort: SortType.CREATED_ASC })
+        .query({ sort: Sort.CREATED_ASC.toString() })
         .expect(200);
 
       await expect(response).toMatchOpenAPISpec();

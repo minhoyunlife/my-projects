@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsEnum, IsOptional } from 'class-validator';
+import { IsIn, IsOptional, IsString } from 'class-validator';
 
 import {
   ValidatedEnumArray,
@@ -8,7 +8,7 @@ import {
 import { ValidatedInt } from '@/src/common/decorators/validated-int.decorator';
 import { ValidatedString } from '@/src/common/decorators/validated-string.decorator';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
-import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
+import { Sort } from '@/src/modules/artworks/enums/sort-type.enum';
 import { Status } from '@/src/modules/artworks/enums/status.enum';
 
 export class GetArtworksQueryDto {
@@ -22,8 +22,11 @@ export class GetArtworksQueryDto {
   page?: number;
 
   @IsOptional()
-  @IsEnum(SortType)
-  sort?: SortType = SortType.CREATED_DESC;
+  @IsIn(Sort.all())
+  @Transform(({ value }) => {
+    return Sort.fromString(value);
+  })
+  sort?: Sort = Sort.CREATED_DESC;
 
   @ValidatedEnumArray(Platform, { optional: true })
   @Transform(({ value }) => {

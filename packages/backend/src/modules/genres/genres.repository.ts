@@ -34,28 +34,33 @@ export class GenresRepository extends TransactionalRepository<Genre> {
     pageSize: number;
     search?: string;
   }): Promise<[Genre[], number]> {
+    const query = this.createBaseGenreQuery();
     const subQuery = this.subQueryForSearch(filters.search);
-    let query = this.createBaseGenreQuery();
-    query = this.applySearchSubQuery(query, subQuery);
-    query = this.applyPagination(query, filters.page, filters.pageSize);
+
+    this.applySearchSubQuery(query, subQuery);
+    this.applyPagination(query, filters.page, filters.pageSize);
+
     return query.getManyAndCount();
   }
 
   async findByName(search: string): Promise<Genre[]> {
-    let subQuery = this.subQueryForSearch(search);
-    subQuery = this.applyLimit(subQuery, 10);
-    let query = this.createBaseGenreQuery();
-    query = this.applySearchSubQuery(query, subQuery);
+    const query = this.createBaseGenreQuery();
+    const subQuery = this.subQueryForSearch(search).limit(10);
+
+    this.applySearchSubQuery(query, subQuery);
+
     return query.getMany();
   }
 
   async findByIds(ids: string[]): Promise<Genre[]> {
     if (ids.length === 0) return [];
+
     return this.findBy({ id: In(ids) });
   }
 
   async createOne(genreData: Partial<Genre>): Promise<Genre> {
     this.assertTranslationsExist(genreData);
+
     await this.checkDuplicateNamesForCreate(
       genreData.translations.map((t) => t.name),
     );
@@ -67,12 +72,15 @@ export class GenresRepository extends TransactionalRepository<Genre> {
       where: { id: genreData.id },
       relations: ['translations'],
     });
+
     this.assertGenreExist(genre);
+
     await this.checkDuplicateNamesForUpdate(
       genreData.translations.map((t) => t.name),
       genre.id,
     );
     this.replaceTranslations(genreData, genre);
+
     return this.save(genre);
   }
 
@@ -81,8 +89,10 @@ export class GenresRepository extends TransactionalRepository<Genre> {
       where: { id: In(ids) },
       relations: ['translations', 'artworks'],
     });
+
     this.assertAllGenresExist(genres, ids);
     this.assertGenresNotInUse(genres);
+
     await this.remove(genres);
   }
 
@@ -107,10 +117,10 @@ export class GenresRepository extends TransactionalRepository<Genre> {
   private applySearchSubQuery(
     baseQuery: SelectQueryBuilder<Genre>,
     subQuery: SelectQueryBuilder<Genre> | null,
-  ): SelectQueryBuilder<Genre> {
-    if (!subQuery) return baseQuery;
+  ): void {
+    if (!subQuery) return;
 
-    return baseQuery
+    baseQuery
       .where(`genre.id IN (${subQuery.getQuery()})`)
       .setParameters(subQuery.getParameters());
   }
@@ -119,21 +129,14 @@ export class GenresRepository extends TransactionalRepository<Genre> {
     query: SelectQueryBuilder<Genre>,
     page: number,
     pageSize: number,
-  ): SelectQueryBuilder<Genre> {
-    return query.skip((page - 1) * pageSize).take(pageSize);
-  }
-
-  private applyLimit(
-    query: SelectQueryBuilder<Genre>,
-    limit: number,
-  ): SelectQueryBuilder<Genre> {
-    return query.limit(limit);
+  ): void {
+    query.skip((page - 1) * pageSize).take(pageSize);
   }
 
   private replaceTranslations(
     newGenreData: Partial<Genre>,
     existingGenre: Genre,
-  ) {
+  ): void {
     newGenreData.translations.forEach((newTranslation) => {
       const existingTranslation = existingGenre.translations.find(
         (t) => t.language === newTranslation.language,
@@ -145,7 +148,7 @@ export class GenresRepository extends TransactionalRepository<Genre> {
     });
   }
 
-  private async checkDuplicateNamesForCreate(names: string[]) {
+  private async checkDuplicateNamesForCreate(names: string[]): Promise<void> {
     const query = this.queryForDuplicateNames(names);
     this.assertDuplicatesNotExist(await query.getMany());
   }
@@ -153,7 +156,7 @@ export class GenresRepository extends TransactionalRepository<Genre> {
   private async checkDuplicateNamesForUpdate(
     names: string[],
     genreIdToExclude: string,
-  ) {
+  ): Promise<void> {
     const query = this.queryForDuplicateNames(names);
     let duplicates = (await query.getMany()).filter(
       (g) => g.id !== genreIdToExclude,
@@ -161,7 +164,7 @@ export class GenresRepository extends TransactionalRepository<Genre> {
     this.assertDuplicatesNotExist(duplicates);
   }
 
-  private queryForDuplicateNames(names: string[]) {
+  private queryForDuplicateNames(names: string[]): SelectQueryBuilder<Genre> {
     return this.createBaseGenreQuery().where(
       'translation.name IN (:...names)',
       {
@@ -191,7 +194,7 @@ export class GenresRepository extends TransactionalRepository<Genre> {
     );
   }
 
-  private assertAllGenresExist(genres: Genre[], ids: string[]) {
+  private assertAllGenresExist(genres: Genre[], ids: string[]): void {
     if (genres.length !== ids.length) {
       const foundIds = new Set(genres.map((g) => g.id));
       const notFoundIds = ids.filter((id) => !foundIds.has(id));
@@ -206,7 +209,7 @@ export class GenresRepository extends TransactionalRepository<Genre> {
     }
   }
 
-  private assertGenreExist(genre: Genre) {
+  private assertGenreExist(genre: Genre): void {
     if (!genre) {
       throw new GenreException(
         GenreErrorCode.NOT_FOUND,
@@ -215,7 +218,7 @@ export class GenresRepository extends TransactionalRepository<Genre> {
     }
   }
 
-  private assertGenresNotInUse(genres: Genre[]) {
+  private assertGenresNotInUse(genres: Genre[]): void {
     if (genres.every((g) => g.artworks.length === 0)) return;
 
     throw new GenreException(
@@ -229,7 +232,7 @@ export class GenresRepository extends TransactionalRepository<Genre> {
     );
   }
 
-  private assertDuplicatesNotExist(duplicates: Genre[]) {
+  private assertDuplicatesNotExist(duplicates: Genre[]): void {
     if (duplicates.length === 0) return;
 
     throw new GenreException(

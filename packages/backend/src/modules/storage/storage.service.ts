@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import {
@@ -7,9 +7,12 @@ import {
   PutObjectTaggingCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
+import { Logger } from 'ajv';
 import { nanoid } from 'nanoid';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import Sharp from 'sharp';
 
+import { withRetry } from '@/src/common/utils/retry.util';
 import { ImageFileType } from '@/src/modules/artworks/enums/file-type.enum';
 import { ImageStatus } from '@/src/modules/storage/enums/status.enum';
 
@@ -30,7 +33,10 @@ export class StorageService {
     return this.s3Client;
   }
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
+  ) {
     const endpoint = this.configService.get('s3.endpoint');
 
     this.s3Client = new S3Client({
@@ -84,20 +90,25 @@ export class StorageService {
    * @param status - 변경할 상태 값
    */
   async changeImageTag(imageKey: string, status: ImageStatus): Promise<void> {
-    await this.client.send(
-      new PutObjectTaggingCommand({
-        Bucket: this.bucket,
-        Key: imageKey,
-        Tagging: {
-          TagSet: [
-            {
-              Key: 'status',
-              Value: status,
-            },
-          ],
+    try {
+      await withRetry(() => this.executeChangeImageTag(imageKey, status), {
+        onError: (error, attempt) => {
+          this.logger.warn(`Failed to change image tag`, {
+            imageKey,
+            error: error.message,
+            status,
+          });
         },
-      }),
-    );
+      });
+    } catch (error) {
+      this.logger.error(`Failed to change image tag after all retries`, {
+        imageKey,
+        error: error.message,
+        status,
+        stack: error.stack,
+      });
+      throw error;
+    }
   }
 
   private async optimizeImage(buffer: Buffer): Promise<Buffer> {
@@ -120,5 +131,25 @@ export class StorageService {
     const uniqueId = nanoid();
 
     return `artworks/${date}/${uniqueId}.webp`;
+  }
+
+  private async executeChangeImageTag(
+    imageKey: string,
+    status: ImageStatus,
+  ): Promise<void> {
+    await this.client.send(
+      new PutObjectTaggingCommand({
+        Bucket: this.bucket,
+        Key: imageKey,
+        Tagging: {
+          TagSet: [
+            {
+              Key: 'status',
+              Value: status,
+            },
+          ],
+        },
+      }),
+    );
   }
 }

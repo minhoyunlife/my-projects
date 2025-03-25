@@ -45,7 +45,7 @@ export class GenresService {
   async createGenre(dto: CreateGenreDto): Promise<Genre> {
     return this.entityManager.transaction(async (manager) => {
       const genresTxRepo = this.genresRepository.forTransaction(manager);
-      const genreData = this.createGenreDataFromDto(dto, null);
+      const genreData = this.buildGenreDataFromDto(dto, null);
       return await genresTxRepo.createOne(genreData);
     });
   }
@@ -55,7 +55,7 @@ export class GenresService {
 
     return this.entityManager.transaction(async (manager) => {
       const genresTxRepo = this.genresRepository.forTransaction(manager);
-      const genreData = this.createGenreDataFromDto(dto, id);
+      const genreData = this.buildGenreDataFromDto(dto, id);
       return await genresTxRepo.updateOne(genreData);
     });
   }
@@ -67,17 +67,17 @@ export class GenresService {
     });
   }
 
-  private createGenreDataFromDto(
+  private buildGenreDataFromDto(
     dto: UpdateGenreDto,
     id?: string,
   ): Partial<Genre> {
     return {
       id: id ? id : undefined,
-      translations: this.createTranslationsFromDto(dto),
+      translations: this.buildTranslationsFromDto(dto),
     };
   }
 
-  private createTranslationsFromDto(dto: UpdateGenreDto): GenreTranslation[] {
+  private buildTranslationsFromDto(dto: UpdateGenreDto): GenreTranslation[] {
     const translations = [];
     this.addTranslationIfProvided(translations, Language.KO, dto.koName);
     this.addTranslationIfProvided(translations, Language.EN, dto.enName);

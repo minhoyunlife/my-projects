@@ -8,7 +8,7 @@ import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { UpdateArtworkDto } from '@/src/modules/artworks/dtos/update-artwork.dto';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
-import { SortType } from '@/src/modules/artworks/enums/sort-type.enum';
+import { Sort } from '@/src/modules/artworks/enums/sort-type.enum';
 import { StatusError } from '@/src/modules/artworks/enums/status-error.enum';
 import { Status } from '@/src/modules/artworks/enums/status.enum';
 import {
@@ -122,10 +122,10 @@ describeWithoutDeps('ArtworksService', () => {
 
     describe('정렬 방식 검증', () => {
       it('쿼리 파라미터에 sort 가 지정된 경우, 해당 값으로 지정됨', async () => {
-        await service.getArtworks({ sort: SortType.RATING_ASC }, false);
+        await service.getArtworks({ sort: Sort.RATING_ASC }, false);
 
         expect(getAllWithFiltersMock).toHaveBeenCalledWith(
-          expect.objectContaining({ sort: SortType.RATING_ASC }),
+          expect.objectContaining({ sort: Sort.RATING_ASC }),
         );
       });
 
@@ -133,7 +133,7 @@ describeWithoutDeps('ArtworksService', () => {
         await service.getArtworks({}, false);
 
         expect(getAllWithFiltersMock).toHaveBeenCalledWith(
-          expect.objectContaining({ sort: SortType.CREATED_DESC }),
+          expect.objectContaining({ sort: Sort.CREATED_DESC }),
         );
       });
     });
@@ -244,16 +244,17 @@ describeWithoutDeps('ArtworksService', () => {
 
   describe('createArtwork', () => {
     const createOneMock = vi.fn();
-    const findByMock = vi.fn();
+    const findByIdsMock = vi.fn();
     const txRepoMock = {
       createOne: createOneMock,
     };
     const genresTxRepoMock = {
-      findBy: findByMock,
+      findByIds: findByIdsMock,
     };
 
     const dto: CreateArtworkDto = {
       imageKey: 'artworks/2024/03/abc123def456',
+      isVertical: true,
       playedOn: Platform.STEAM,
       genreIds: ['genre-1'],
       koTitle: '테스트 작품',
@@ -266,7 +267,7 @@ describeWithoutDeps('ArtworksService', () => {
 
     beforeEach(() => {
       createOneMock.mockClear();
-      findByMock.mockClear();
+      findByIdsMock.mockClear();
 
       artworksRepository.forTransaction = vi.fn().mockReturnValue(txRepoMock);
       genresRepository.forTransaction = vi
@@ -310,18 +311,17 @@ describeWithoutDeps('ArtworksService', () => {
         ],
       };
 
-      findByMock.mockResolvedValue(mockGenres);
+      findByIdsMock.mockResolvedValue(mockGenres);
       createOneMock.mockResolvedValue(expectedArtwork);
 
       const result = await service.createArtwork(dto);
 
-      expect(findByMock).toHaveBeenCalledWith({ id: In(['genre-1']) });
       expect(createOneMock).toHaveBeenCalled();
       expect(result).toEqual(expectedArtwork);
     });
 
     it('존재하지 않는 장르 ID가 포함된 경우, 에러가 발생', async () => {
-      findByMock.mockResolvedValue([]);
+      findByIdsMock.mockResolvedValue([]);
 
       await expect(service.createArtwork(dto)).rejects.toThrowError(
         ArtworkException,
@@ -329,7 +329,7 @@ describeWithoutDeps('ArtworksService', () => {
     });
 
     it('작품 생성에 실패할 경우, 에러가 발생', async () => {
-      findByMock.mockResolvedValue([{ id: 'genre-1' }]);
+      findByIdsMock.mockResolvedValue([{ id: 'genre-1' }]);
       createOneMock.mockRejectedValue(new Error());
 
       await expect(service.createArtwork(dto)).rejects.toThrowError();

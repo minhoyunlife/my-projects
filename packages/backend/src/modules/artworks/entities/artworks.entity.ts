@@ -57,9 +57,6 @@ export class Artwork {
   })
   rating: number;
 
-  // TODO: 프론트 구현 방식에 따라, 작품 이미지로부터 주요 색상들을 추출한 값을 저장할 칼럼을 추가할지도?
-  // colorPalette: string[];
-
   /**
    * 작품 공개 여부
    */
