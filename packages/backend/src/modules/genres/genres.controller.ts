@@ -17,9 +17,9 @@ import { BearerAuthGuard } from '@/src/modules/auth/guards/token.auth.guard';
 import { CreateGenreDto } from '@/src/modules/genres/dtos/create-genre.dto';
 import { DeleteGenresDto } from '@/src/modules/genres/dtos/delete-genres.dto';
 import {
-  GenreListResponse,
-  GenreResponse,
-  GenreSearchResponse,
+  GenreListResponseDto,
+  GenreResponseDto,
+  GenreSearchResponseDto,
 } from '@/src/modules/genres/dtos/genre-response.dto';
 import { GetGenresByNameQueryDto } from '@/src/modules/genres/dtos/get-genres-by-name-query.dto';
 import { GetGenresQueryDto } from '@/src/modules/genres/dtos/get-genres-query.dto';
@@ -35,10 +35,10 @@ export class GenresController {
   @HttpCode(HttpStatus.OK)
   async getGenres(
     @Query() query: GetGenresQueryDto,
-  ): Promise<GenreListResponse> {
+  ): Promise<GenreListResponseDto> {
     const result = await this.genresService.getGenres(query);
 
-    return new GenreListResponse(
+    return new GenreListResponseDto(
       result.items,
       result.totalCount,
       query.page ?? 1,
@@ -52,15 +52,15 @@ export class GenresController {
   async getGenresByName(@Query() query: GetGenresByNameQueryDto) {
     const result = await this.genresService.getGenresByName(query);
 
-    return new GenreSearchResponse(result);
+    return new GenreSearchResponseDto(result);
   }
 
   @Post()
   @UseGuards(BearerAuthGuard)
   @HttpCode(HttpStatus.CREATED)
-  async createGenre(@Body() dto: CreateGenreDto): Promise<GenreResponse> {
+  async createGenre(@Body() dto: CreateGenreDto): Promise<GenreResponseDto> {
     const genre = await this.genresService.createGenre(dto);
-    return new GenreResponse(genre);
+    return new GenreResponseDto(genre);
   }
 
   @Patch('/:id')
@@ -69,9 +69,9 @@ export class GenresController {
   async updateGenre(
     @Param('id') id: string,
     @Body() dto: UpdateGenreDto,
-  ): Promise<GenreResponse> {
+  ): Promise<GenreResponseDto> {
     const genre = await this.genresService.updateGenre(id, dto);
-    return new GenreResponse(genre);
+    return new GenreResponseDto(genre);
   }
 
   @Delete()

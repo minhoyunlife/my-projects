@@ -5,7 +5,7 @@ import {
   ArtworkResponse,
 } from '@/src/modules/artworks/dtos/artwork-response.dto';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
-import { GenreResponse } from '@/src/modules/genres/dtos/genre-response.dto';
+import { GenreResponseDto } from '@/src/modules/genres/dtos/genre-response.dto';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import { StorageService } from '@/src/modules/storage/storage.service';
@@ -136,9 +136,9 @@ describeWithoutDeps('ArtworkResponse', () => {
     });
 
     describe('genres', () => {
-      it('엔티티의 속성 값이 존재하는 경우, GenreResponse 인스턴스의 배열이 반환됨', () => {
+      it('엔티티의 속성 값이 존재하는 경우, GenreResponseDto 인스턴스의 배열이 반환됨', () => {
         expect(response.genres).toEqual(
-          genres.map((genre) => new GenreResponse(genre)),
+          genres.map((genre) => new GenreResponseDto(genre)),
         );
       });
 

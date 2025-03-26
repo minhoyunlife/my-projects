@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
-import { GenreResponse } from '@/src/modules/genres/dtos/genre-response.dto';
+import { GenreResponseDto } from '@/src/modules/genres/dtos/genre-response.dto';
 import { StorageService } from '@/src/modules/storage/storage.service';
 
 @Injectable()
@@ -15,7 +15,7 @@ export class ArtworkResponse {
   isDraft: boolean;
   isVertical: boolean;
   translations: ArtworkTranslation[];
-  genres: GenreResponse[];
+  genres: GenreResponseDto[];
 
   constructor(storageService: StorageService, artwork: Artwork) {
     this.id = artwork.id;
@@ -27,7 +27,7 @@ export class ArtworkResponse {
     this.isVertical = artwork.isVertical;
     this.translations = artwork.translations ?? [];
     this.genres =
-      artwork.genres?.map((genre) => new GenreResponse(genre)) ?? [];
+      artwork.genres?.map((genre) => new GenreResponseDto(genre)) ?? [];
   }
 }
 

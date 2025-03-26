@@ -18,6 +18,7 @@ import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenreErrorCode } from '@/src/modules/genres/exceptions/genres.exception';
 import { GenresController } from '@/src/modules/genres/genres.controller';
+import { GenresMapper } from '@/src/modules/genres/genres.mapper';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { GenresService } from '@/src/modules/genres/genres.service';
 import { AdministratorsFactory } from '@/test/factories/administrator.factory';
@@ -49,7 +50,7 @@ describeWithDeps('GenresController', () => {
         Administrator,
       ],
       controllers: [GenresController],
-      providers: [GenresService, GenresRepository],
+      providers: [GenresService, GenresRepository, GenresMapper],
     });
 
     authService = app.get(AuthService);
