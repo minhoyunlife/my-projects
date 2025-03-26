@@ -27,6 +27,7 @@ import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { ImageStatus } from '@/src/modules/storage/enums/status.enum';
 import { StorageService } from '@/src/modules/storage/storage.service';
+import { TransactionService } from '@/src/modules/transaction/transaction.service';
 
 @Injectable()
 export class ArtworksService {
@@ -35,7 +36,7 @@ export class ArtworksService {
     private readonly genresRepository: GenresRepository,
     private readonly storageService: StorageService,
     private readonly statusValidator: StatusValidator,
-    private readonly entityManager: EntityManager,
+    private readonly transactionService: TransactionService,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {}
 
@@ -54,9 +55,9 @@ export class ArtworksService {
   }
 
   async createArtwork(dto: CreateArtworkDto): Promise<Artwork> {
-    return this.entityManager.transaction(async (manager) => {
-      const artworksTxRepo = this.artworksRepository.forTransaction(manager);
-      const genresTxRepo = this.genresRepository.forTransaction(manager);
+    return this.transactionService.executeInTransaction(async (manager) => {
+      const artworksTxRepo = this.artworksRepository.withTransaction(manager);
+      const genresTxRepo = this.genresRepository.withTransaction(manager);
 
       const genres = await this.findAndValidateGenres(
         genresTxRepo,
@@ -71,9 +72,9 @@ export class ArtworksService {
   async updateArtwork(id: string, dto: UpdateArtworkDto): Promise<Artwork> {
     this.assertAtLeastOneFieldProvided(dto);
 
-    return this.entityManager.transaction(async (manager) => {
-      const artworksTxRepo = this.artworksRepository.forTransaction(manager);
-      const genresTxRepo = this.genresRepository.forTransaction(manager);
+    return this.transactionService.executeInTransaction(async (manager) => {
+      const artworksTxRepo = this.artworksRepository.withTransaction(manager);
+      const genresTxRepo = this.genresRepository.withTransaction(manager);
 
       const genres = dto.genreIds
         ? await this.findAndValidateGenres(genresTxRepo, dto.genreIds)
@@ -105,8 +106,8 @@ export class ArtworksService {
   }
 
   async deleteArtworks(ids: string[]): Promise<void> {
-    return this.entityManager.transaction(async (manager) => {
-      const artworksTxRepo = this.artworksRepository.forTransaction(manager);
+    return this.transactionService.executeInTransaction(async (manager) => {
+      const artworksTxRepo = this.artworksRepository.withTransaction(manager);
       const deletedArtworks = await artworksTxRepo.deleteMany(ids);
 
       this.markArtworkAsDeleted(deletedArtworks);

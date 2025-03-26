@@ -16,12 +16,14 @@ import {
   GenreException,
 } from '@/src/modules/genres/exceptions/genres.exception';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
+import { TransactionService } from '@/src/modules/transaction/transaction.service';
 
 @Injectable()
 export class GenresService {
   constructor(
     private readonly genresRepository: GenresRepository,
-    private readonly entityManager: EntityManager,
+    private readonly transactionService: TransactionService,
+    // private readonly entityManager: EntityManager,
   ) {}
 
   async getGenres(query: GetGenresQueryDto): Promise<EntityList<Genre>> {
@@ -43,8 +45,8 @@ export class GenresService {
   }
 
   async createGenre(dto: CreateGenreDto): Promise<Genre> {
-    return this.entityManager.transaction(async (manager) => {
-      const genresTxRepo = this.genresRepository.forTransaction(manager);
+    return this.transactionService.executeInTransaction(async (manager) => {
+      const genresTxRepo = this.genresRepository.withTransaction(manager);
       const genreData = this.buildGenreDataFromDto(dto, null);
       return await genresTxRepo.createOne(genreData);
     });
@@ -53,16 +55,16 @@ export class GenresService {
   async updateGenre(id: string, dto: UpdateGenreDto): Promise<Genre> {
     this.assertAllTranslationNamesExist(dto);
 
-    return this.entityManager.transaction(async (manager) => {
-      const genresTxRepo = this.genresRepository.forTransaction(manager);
+    return this.transactionService.executeInTransaction(async (manager) => {
+      const genresTxRepo = this.genresRepository.withTransaction(manager);
       const genreData = this.buildGenreDataFromDto(dto, id);
       return await genresTxRepo.updateOne(genreData);
     });
   }
 
   async deleteGenres(ids: string[]): Promise<void> {
-    return this.entityManager.transaction(async (manager) => {
-      const genresTxRepo = this.genresRepository.forTransaction(manager);
+    return this.transactionService.executeInTransaction(async (manager) => {
+      const genresTxRepo = this.genresRepository.withTransaction(manager);
       await genresTxRepo.deleteMany(ids);
     });
   }

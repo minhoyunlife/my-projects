@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
 
-import { TransactionalRepository } from '@/src/common/repositories/transactional.repository';
+import { Transactional } from '@/src/common/interfaces/transactional.interface';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import {
@@ -12,21 +12,14 @@ import {
 } from '@/src/modules/genres/exceptions/genres.exception';
 
 @Injectable()
-export class GenresRepository extends TransactionalRepository<Genre> {
+export class GenresRepository implements Transactional<GenresRepository> {
   constructor(
     @InjectRepository(Genre)
-    repository: Repository<Genre>,
-  ) {
-    super(Genre, repository);
-  }
+    public readonly repository: Repository<Genre>,
+  ) {}
 
-  /**
-   * 트랜잭션용 장르 리포지토리 인스턴스를 반환하기 위한 세컨드 컨스트럭터
-   * @param {EntityManager} entityManager - 트랜잭션를 처리하는 엔티티 매니저
-   * @returns {GenresRepository} - 트랜잭션용 장르 리포지토리 인스턴스
-   */
-  forTransaction(entityManager: EntityManager): GenresRepository {
-    return new GenresRepository(entityManager.getRepository(Genre));
+  withTransaction(manager: EntityManager): GenresRepository {
+    return new GenresRepository(manager.getRepository(Genre));
   }
 
   async getAllWithFilters(filters: {
@@ -55,7 +48,7 @@ export class GenresRepository extends TransactionalRepository<Genre> {
   async findByIds(ids: string[]): Promise<Genre[]> {
     if (ids.length === 0) return [];
 
-    return this.findBy({ id: In(ids) });
+    return this.repository.findBy({ id: In(ids) });
   }
 
   async createOne(genreData: Partial<Genre>): Promise<Genre> {
@@ -64,11 +57,11 @@ export class GenresRepository extends TransactionalRepository<Genre> {
     await this.checkDuplicateNamesForCreate(
       genreData.translations.map((t) => t.name),
     );
-    return this.save(this.create(genreData));
+    return this.repository.save(this.repository.create(genreData));
   }
 
   async updateOne(genreData: Partial<Genre>): Promise<Genre> {
-    const genre = await this.findOne({
+    const genre = await this.repository.findOne({
       where: { id: genreData.id },
       relations: ['translations'],
     });
@@ -81,11 +74,11 @@ export class GenresRepository extends TransactionalRepository<Genre> {
     );
     this.replaceTranslations(genreData, genre);
 
-    return this.save(genre);
+    return this.repository.save(genre);
   }
 
   async deleteMany(ids: string[]): Promise<void> {
-    const genres = await this.find({
+    const genres = await this.repository.find({
       where: { id: In(ids) },
       relations: ['translations', 'artworks'],
     });
@@ -93,11 +86,12 @@ export class GenresRepository extends TransactionalRepository<Genre> {
     this.assertAllGenresExist(genres, ids);
     this.assertGenresNotInUse(genres);
 
-    await this.remove(genres);
+    await this.repository.remove(genres);
   }
 
   private createBaseGenreQuery(): SelectQueryBuilder<Genre> {
-    return this.createQueryBuilder('genre')
+    return this.repository
+      .createQueryBuilder('genre')
       .innerJoinAndSelect('genre.translations', 'translation')
       .orderBy('genre.id', 'ASC');
   }
@@ -105,7 +99,8 @@ export class GenresRepository extends TransactionalRepository<Genre> {
   private subQueryForSearch(search: string): SelectQueryBuilder<Genre> | null {
     if (!search) return null;
 
-    return this.createQueryBuilder()
+    return this.repository
+      .createQueryBuilder()
       .select('DISTINCT genre.id')
       .from(Genre, 'genre')
       .leftJoin('genre.translations', 'translation')

@@ -16,6 +16,7 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 
 import { AuthModule } from '@/src/modules/auth/auth.module';
 import validationPipeConfig from '@/src/modules/config/settings/validation-pipe.config';
+import { TransactionModule } from '@/src/modules/transaction/transaction.module';
 import { TEST_DB_CONFIG, TEST_S3_CONFIG } from '@/test/test.config';
 
 type TestModuleOptions = {
@@ -92,6 +93,7 @@ export async function createTestingApp({
     imports: [
       testConfigModule,
       MockLoggerModule,
+      TransactionModule,
       TypeOrmModule.forRoot({
         ...TEST_DB_CONFIG,
         entities,

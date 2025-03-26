@@ -43,7 +43,7 @@ describeWithDeps('GenresRepository', () => {
     beforeEach(async () => {
       await clearTables(dataSource, [Genre]);
 
-      genres = await saveEntities(genreRepo, [
+      genres = await saveEntities(genreRepo.repository, [
         GenresFactory.createTestData({}, [
           { language: Language.KO, name: '롤플레잉' },
           { language: Language.EN, name: 'RPG' },
@@ -169,7 +169,7 @@ describeWithDeps('GenresRepository', () => {
     beforeEach(async () => {
       await clearTables(dataSource, [Genre]);
 
-      await saveEntities(genreRepo, [
+      await saveEntities(genreRepo.repository, [
         GenresFactory.createTestData(
           {
             id: 'genre-1', // 검증 편의를 위해 ID 에 순서를 지정
@@ -254,7 +254,7 @@ describeWithDeps('GenresRepository', () => {
     beforeEach(async () => {
       await clearTables(dataSource, [Genre]);
 
-      genres = await saveEntities(genreRepo, [
+      genres = await saveEntities(genreRepo.repository, [
         GenresFactory.createTestData({}, [
           { language: Language.KO, name: '액션' },
           { language: Language.EN, name: 'Action' },
@@ -313,7 +313,7 @@ describeWithDeps('GenresRepository', () => {
 
       const result = await genreRepo.createOne(genreData);
 
-      const saved = await genreRepo.findOne({
+      const saved = await genreRepo.repository.findOne({
         where: { id: result.id },
         relations: {
           translations: true,
@@ -346,7 +346,7 @@ describeWithDeps('GenresRepository', () => {
     });
 
     it('중복된 장르명이 있는 경우 에러가 발생함', async () => {
-      await saveEntities(genreRepo, [
+      await saveEntities(genreRepo.repository, [
         GenresFactory.createTestData({
           translations: [
             { language: Language.KO, name: '액션' },
@@ -376,7 +376,7 @@ describeWithDeps('GenresRepository', () => {
     beforeEach(async () => {
       await clearTables(dataSource, [Genre]);
 
-      const genres = await saveEntities(genreRepo, [
+      const genres = await saveEntities(genreRepo.repository, [
         GenresFactory.createTestData({}, [
           { language: Language.KO, name: '액' },
           { language: Language.EN, name: 'Action' },
@@ -402,7 +402,7 @@ describeWithDeps('GenresRepository', () => {
 
       const result = await genreRepo.updateOne(genreData);
 
-      const saved = await genreRepo.findOne({
+      const saved = await genreRepo.repository.findOne({
         where: { id: result.id },
         relations: {
           translations: true,
@@ -458,7 +458,7 @@ describeWithDeps('GenresRepository', () => {
     beforeEach(async () => {
       await clearTables(dataSource, [Genre]);
 
-      genres = await saveEntities(genreRepo, [
+      genres = await saveEntities(genreRepo.repository, [
         GenresFactory.createTestData({}, [
           { language: Language.KO, name: '액션' },
           { language: Language.EN, name: 'Action' },
@@ -500,7 +500,7 @@ describeWithDeps('GenresRepository', () => {
         const ids = [genres[0].id, genres[1].id];
         await genreRepo.deleteMany(ids);
 
-        const saved = await genreRepo.findBy({ id: In(ids) });
+        const saved = await genreRepo.repository.findBy({ id: In(ids) });
         expect(saved).toHaveLength(0);
       });
 
@@ -522,7 +522,7 @@ describeWithDeps('GenresRepository', () => {
         GenreException,
       );
 
-      const saved = await genreRepo.findBy({ id: genres[0].id });
+      const saved = await genreRepo.repository.findBy({ id: genres[0].id });
       expect(saved).toHaveLength(1);
     });
 
@@ -533,7 +533,7 @@ describeWithDeps('GenresRepository', () => {
         GenreException,
       );
 
-      const saved = await genreRepo.findBy({ id: genres[0].id });
+      const saved = await genreRepo.repository.findBy({ id: genres[0].id });
       expect(saved).toHaveLength(1);
     });
   });
