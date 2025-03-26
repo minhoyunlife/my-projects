@@ -20,6 +20,7 @@ import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { ImageStatus } from '@/src/modules/storage/enums/status.enum';
 import { StorageService } from '@/src/modules/storage/storage.service';
+import { TransactionService } from '@/src/modules/transaction/transaction.service';
 import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
 
 describeWithoutDeps('ArtworksService', () => {
@@ -28,7 +29,6 @@ describeWithoutDeps('ArtworksService', () => {
   let genresRepository: Partial<GenresRepository>;
   let storageService: Partial<StorageService>;
   let statusValidator: Partial<StatusValidator>;
-  let entityManager: EntityManager;
 
   beforeEach(async () => {
     const module: TestingModule = await createTestingModuleWithoutDB({
@@ -54,9 +54,9 @@ describeWithoutDeps('ArtworksService', () => {
           },
         },
         {
-          provide: EntityManager,
+          provide: TransactionService,
           useValue: {
-            transaction: vi.fn((cb) => cb(entityManager)),
+            executeInTransaction: vi.fn((cb) => cb()),
           },
         },
       ],
@@ -67,7 +67,6 @@ describeWithoutDeps('ArtworksService', () => {
     genresRepository = module.get<GenresRepository>(GenresRepository);
     storageService = module.get<StorageService>(StorageService);
     statusValidator = module.get<StatusValidator>(StatusValidator);
-    entityManager = module.get<EntityManager>(EntityManager);
   });
 
   describe('getArtworks', () => {
@@ -269,8 +268,8 @@ describeWithoutDeps('ArtworksService', () => {
       createOneMock.mockClear();
       findByIdsMock.mockClear();
 
-      artworksRepository.forTransaction = vi.fn().mockReturnValue(txRepoMock);
-      genresRepository.forTransaction = vi
+      artworksRepository.withTransaction = vi.fn().mockReturnValue(txRepoMock);
+      genresRepository.withTransaction = vi
         .fn()
         .mockReturnValue(genresTxRepoMock);
     });
@@ -358,8 +357,8 @@ describeWithoutDeps('ArtworksService', () => {
       updateOneMock.mockClear();
       findByIdsMock.mockClear();
 
-      artworksRepository.forTransaction = vi.fn().mockReturnValue(txRepoMock);
-      genresRepository.forTransaction = vi
+      artworksRepository.withTransaction = vi.fn().mockReturnValue(txRepoMock);
+      genresRepository.withTransaction = vi
         .fn()
         .mockReturnValue(genresTxRepoMock);
     });
@@ -595,7 +594,7 @@ describeWithoutDeps('ArtworksService', () => {
       deleteManyMock.mockClear();
       changeImageTagMock.mockClear();
 
-      artworksRepository.forTransaction = vi.fn().mockReturnValue({
+      artworksRepository.withTransaction = vi.fn().mockReturnValue({
         deleteMany: deleteManyMock,
       });
       storageService.changeImageTag = changeImageTagMock;

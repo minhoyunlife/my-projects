@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
 
-import { TransactionalRepository } from '@/src/common/repositories/transactional.repository';
+import { Transactional } from '@/src/common/interfaces/transactional.interface';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { Sort } from '@/src/modules/artworks/enums/sort-type.enum';
@@ -15,21 +15,14 @@ import { ArtworkFilter } from '@/src/modules/artworks/interfaces/filter.interfac
 import { Language } from '@/src/modules/genres/enums/language.enum';
 
 @Injectable()
-export class ArtworksRepository extends TransactionalRepository<Artwork> {
+export class ArtworksRepository implements Transactional<ArtworksRepository> {
   constructor(
     @InjectRepository(Artwork)
-    private readonly repository: Repository<Artwork>,
-  ) {
-    super(Artwork, repository);
-  }
+    public readonly repository: Repository<Artwork>,
+  ) {}
 
-  /**
-   * 트랜잭션용 작품 리포지토리 인스턴스를 반환하기 위한 세컨드 컨스트럭터
-   * @param {EntityManager} entityManager - 트랜잭션를 처리하는 엔티티 매니저
-   * @returns {ArtworksRepository} - 트랜잭션용 작품 리포지토리 인스턴스
-   */
-  forTransaction(entityManager: EntityManager): ArtworksRepository {
-    return new ArtworksRepository(entityManager.getRepository(Artwork));
+  withTransaction(manager: EntityManager): ArtworksRepository {
+    return new ArtworksRepository(manager.getRepository(Artwork));
   }
 
   async getAllWithFilters(
@@ -57,11 +50,11 @@ export class ArtworksRepository extends TransactionalRepository<Artwork> {
   }
 
   async createOne(artworkData: Partial<Artwork>): Promise<Artwork> {
-    return this.save(this.create(artworkData));
+    return this.repository.save(this.repository.create(artworkData));
   }
 
   async updateOne(artworkData: Partial<Artwork>): Promise<Artwork> {
-    const artwork = await this.findOne({
+    const artwork = await this.repository.findOne({
       where: { id: artworkData.id },
       relations: ['translations', 'genres'],
     });
@@ -72,7 +65,7 @@ export class ArtworksRepository extends TransactionalRepository<Artwork> {
     this.updateArtworkFields(artworkData, artwork);
     this.replaceTranslations(artworkData, artwork);
 
-    return this.save(artwork);
+    return this.repository.save(artwork);
   }
 
   async updateManyStatuses(
@@ -80,11 +73,11 @@ export class ArtworksRepository extends TransactionalRepository<Artwork> {
     setPublished: boolean,
   ): Promise<void> {
     if (ids.length === 0) return;
-    await this.update({ id: In(ids) }, { isDraft: !setPublished });
+    await this.repository.update({ id: In(ids) }, { isDraft: !setPublished });
   }
 
   async deleteMany(ids: string[]): Promise<Artwork[]> {
-    const artworks = await this.find({
+    const artworks = await this.repository.find({
       where: { id: In(ids) },
       relations: ['translations'],
     });
@@ -92,11 +85,12 @@ export class ArtworksRepository extends TransactionalRepository<Artwork> {
     this.assertAllProvidedArtworksExist(artworks, ids);
     this.assertAllArtworksDraft(artworks);
 
-    return this.remove(artworks);
+    return this.repository.remove(artworks);
   }
 
   private createBaseArtworkQuery(): SelectQueryBuilder<Artwork> {
-    return this.createQueryBuilder('artwork')
+    return this.repository
+      .createQueryBuilder('artwork')
       .leftJoinAndSelect('artwork.genres', 'genre')
       .leftJoinAndSelect('genre.translations', 'translation')
       .leftJoinAndSelect('artwork.translations', 'artworkTranslation');
@@ -108,7 +102,8 @@ export class ArtworksRepository extends TransactionalRepository<Artwork> {
   ): void {
     if (!genreIds || genreIds.length === 0) return;
 
-    const subQuery = this.createQueryBuilder()
+    const subQuery = this.repository
+      .createQueryBuilder()
       .select('DISTINCT artwork.id')
       .from(Artwork, 'artwork')
       .leftJoin('artwork.genres', 'genre')

@@ -59,7 +59,7 @@ describeWithDeps('ArtworksRepository', () => {
           name: 'アクション',
         }),
       ]);
-      savedGenres = await saveEntities(genreRepo, [genreEntity]);
+      savedGenres = await saveEntities(genreRepo.repository, [genreEntity]);
     });
 
     it('작품 데이터를 성공적으로 생성함', async () => {
@@ -80,7 +80,7 @@ describeWithDeps('ArtworksRepository', () => {
       );
       const result = await artworkRepo.createOne(artworkData);
 
-      const saved = await artworkRepo.findOne({
+      const saved = await artworkRepo.repository.findOne({
         where: { id: result.id },
         relations: {
           genres: {
@@ -141,7 +141,7 @@ describeWithDeps('ArtworksRepository', () => {
     beforeEach(async () => {
       await clearTables(dataSource, [Artwork, Genre]);
 
-      genres = await saveEntities(genreRepo, [
+      genres = await saveEntities(genreRepo.repository, [
         GenresFactory.createTestData({}, [
           { language: Language.KO, name: '롤플레잉' },
           { language: Language.EN, name: 'RPG' },
@@ -159,7 +159,7 @@ describeWithDeps('ArtworksRepository', () => {
         ]),
       ]);
 
-      artworks = await saveEntities(artworkRepo, [
+      artworks = await saveEntities(artworkRepo.repository, [
         ArtworksFactory.createTestData(
           {
             isDraft: false,
@@ -692,7 +692,7 @@ describeWithDeps('ArtworksRepository', () => {
     beforeEach(async () => {
       await clearTables(dataSource, [Artwork, Genre]);
 
-      const genre = await saveEntities(genreRepo, [
+      const genre = await saveEntities(genreRepo.repository, [
         GenresFactory.createTestData({}, [
           { language: Language.KO, name: '액션' },
           { language: Language.EN, name: 'Action' },
@@ -700,7 +700,7 @@ describeWithDeps('ArtworksRepository', () => {
         ]),
       ]);
 
-      savedArtworks = await saveEntities(artworkRepo, [
+      savedArtworks = await saveEntities(artworkRepo.repository, [
         ArtworksFactory.createTestData(
           { isDraft: true },
           [
@@ -785,7 +785,7 @@ describeWithDeps('ArtworksRepository', () => {
     beforeEach(async () => {
       await clearTables(dataSource, [Artwork, Genre]);
 
-      savedGenres = await saveEntities(genreRepo, [
+      savedGenres = await saveEntities(genreRepo.repository, [
         GenresFactory.createTestData({}, [
           GenreTranslationsFactory.createTestData({
             language: Language.KO,
@@ -803,7 +803,7 @@ describeWithDeps('ArtworksRepository', () => {
       ]);
 
       savedArtwork = (
-        await saveEntities(artworkRepo, [
+        await saveEntities(artworkRepo.repository, [
           ArtworksFactory.createTestData(
             { isDraft: true },
             [
@@ -881,7 +881,9 @@ describeWithDeps('ArtworksRepository', () => {
 
     it('장르 정보가 성공적으로 수정됨', async () => {
       const newGenre = (
-        await saveEntities(genreRepo, [GenresFactory.createTestData()])
+        await saveEntities(genreRepo.repository, [
+          GenresFactory.createTestData(),
+        ])
       )[0];
 
       const updateData = {
@@ -926,7 +928,7 @@ describeWithDeps('ArtworksRepository', () => {
     beforeEach(async () => {
       await clearTables(dataSource, [Artwork, Genre]);
 
-      const genre = await saveEntities(genreRepo, [
+      const genre = await saveEntities(genreRepo.repository, [
         GenresFactory.createTestData({}, [
           { language: Language.KO, name: '액션' },
           { language: Language.EN, name: 'Action' },
@@ -934,7 +936,7 @@ describeWithDeps('ArtworksRepository', () => {
         ]),
       ]);
 
-      savedArtworks = await saveEntities(artworkRepo, [
+      savedArtworks = await saveEntities(artworkRepo.repository, [
         ArtworksFactory.createTestData(
           { isDraft: true },
           [
@@ -978,7 +980,9 @@ describeWithDeps('ArtworksRepository', () => {
       const targetIds = savedArtworks.map((artwork) => artwork.id);
       await artworkRepo.updateManyStatuses(targetIds, true);
 
-      const updatedArtworks = await artworkRepo.findBy({ id: In(targetIds) });
+      const updatedArtworks = await artworkRepo.repository.findBy({
+        id: In(targetIds),
+      });
       expect(updatedArtworks.every((artwork) => !artwork.isDraft)).toBe(true);
     });
 
@@ -990,7 +994,9 @@ describeWithDeps('ArtworksRepository', () => {
       // 다시 비공개로 변경
       await artworkRepo.updateManyStatuses(targetIds, false);
 
-      const updatedArtworks = await artworkRepo.findBy({ id: In(targetIds) });
+      const updatedArtworks = await artworkRepo.repository.findBy({
+        id: In(targetIds),
+      });
       expect(updatedArtworks.every((artwork) => artwork.isDraft)).toBe(true);
     });
 
@@ -1005,8 +1011,8 @@ describeWithDeps('ArtworksRepository', () => {
       await artworkRepo.updateManyStatuses([targetId], true);
 
       const [updated, notUpdated] = await Promise.all([
-        artworkRepo.findOneBy({ id: targetId }),
-        artworkRepo.findOneBy({ id: savedArtworks[1].id }),
+        artworkRepo.repository.findOneBy({ id: targetId }),
+        artworkRepo.repository.findOneBy({ id: savedArtworks[1].id }),
       ]);
 
       expect(updated.isDraft).toBe(false);
@@ -1020,7 +1026,7 @@ describeWithDeps('ArtworksRepository', () => {
     beforeEach(async () => {
       await clearTables(dataSource, [Artwork, Genre]);
 
-      const genre = await saveEntities(genreRepo, [
+      const genre = await saveEntities(genreRepo.repository, [
         GenresFactory.createTestData({}, [
           { language: Language.KO, name: '액션' },
           { language: Language.EN, name: 'Action' },
@@ -1028,7 +1034,7 @@ describeWithDeps('ArtworksRepository', () => {
         ]),
       ]);
 
-      artworks = await saveEntities(artworkRepo, [
+      artworks = await saveEntities(artworkRepo.repository, [
         ArtworksFactory.createTestData(
           {
             isDraft: true,
@@ -1078,7 +1084,7 @@ describeWithDeps('ArtworksRepository', () => {
 
       expect(deletedArtworks).toHaveLength(1);
 
-      const saved = await artworkRepo.findBy({ id: In(targetIds) });
+      const saved = await artworkRepo.repository.findBy({ id: In(targetIds) });
       expect(saved).toHaveLength(0);
     });
 
@@ -1099,7 +1105,7 @@ describeWithDeps('ArtworksRepository', () => {
         ArtworkException,
       );
 
-      const saved = await artworkRepo.findBy({ id: artworks[0].id });
+      const saved = await artworkRepo.repository.findBy({ id: artworks[0].id });
       expect(saved).toHaveLength(1);
     });
 
@@ -1110,7 +1116,7 @@ describeWithDeps('ArtworksRepository', () => {
         ArtworkException,
       );
 
-      const saved = await artworkRepo.findBy({ id: In(targetIds) });
+      const saved = await artworkRepo.repository.findBy({ id: In(targetIds) });
       expect(saved).toHaveLength(2);
     });
   });

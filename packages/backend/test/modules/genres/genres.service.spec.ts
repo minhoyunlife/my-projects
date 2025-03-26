@@ -12,12 +12,13 @@ import {
 } from '@/src/modules/genres/exceptions/genres.exception';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { GenresService } from '@/src/modules/genres/genres.service';
+import { TransactionService } from '@/src/modules/transaction/transaction.service';
 import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
 
 describeWithoutDeps('GenresService', () => {
   let service: GenresService;
   let genresRepository: Partial<GenresRepository>;
-  let entityManager: EntityManager;
+  // let entityManager: EntityManager;
 
   beforeEach(async () => {
     const module: TestingModule = await createTestingModuleWithoutDB({
@@ -25,12 +26,12 @@ describeWithoutDeps('GenresService', () => {
         GenresService,
         {
           provide: GenresRepository,
-          useValue: { forTransaction: vi.fn() },
+          useValue: { withTransction: vi.fn() },
         },
         {
-          provide: EntityManager,
+          provide: TransactionService,
           useValue: {
-            transaction: vi.fn((cb) => cb(entityManager)),
+            executeInTransaction: vi.fn((cb) => cb()),
           },
         },
       ],
@@ -38,7 +39,7 @@ describeWithoutDeps('GenresService', () => {
 
     service = module.get<GenresService>(GenresService);
     genresRepository = module.get<GenresRepository>(GenresRepository);
-    entityManager = module.get<EntityManager>(EntityManager);
+    // entityManager = module.get<EntityManager>(EntityManager);
   });
 
   describe('getGenres', () => {
@@ -131,7 +132,7 @@ describeWithoutDeps('GenresService', () => {
     beforeEach(() => {
       createOneMock.mockClear();
 
-      genresRepository.forTransaction = vi.fn().mockReturnThis();
+      genresRepository.withTransaction = vi.fn().mockReturnThis();
       genresRepository.createOne = createOneMock;
     });
 
@@ -178,7 +179,7 @@ describeWithoutDeps('GenresService', () => {
     beforeEach(() => {
       updateOneMock.mockClear();
 
-      genresRepository.forTransaction = vi.fn().mockReturnThis();
+      genresRepository.withTransaction = vi.fn().mockReturnThis();
       genresRepository.updateOne = updateOneMock;
     });
 
@@ -262,7 +263,7 @@ describeWithoutDeps('GenresService', () => {
     beforeEach(() => {
       deleteManyMock.mockClear();
 
-      genresRepository.forTransaction = vi.fn().mockReturnThis();
+      genresRepository.withTransaction = vi.fn().mockReturnThis();
       genresRepository.deleteMany = deleteManyMock;
     });
 

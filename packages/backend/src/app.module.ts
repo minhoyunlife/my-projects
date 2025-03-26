@@ -27,12 +27,14 @@ import { SeedModule } from '@/src/modules/seed/seed.module';
 import { SeedService } from '@/src/modules/seed/seed.service';
 import { TerminationMiddleware } from '@/src/modules/termination/termination.middleware';
 import { TerminationService } from '@/src/modules/termination/termination.service';
+import { TransactionModule } from '@/src/modules/transaction/transaction.module';
 
 @Module({
   imports: [
     AppConfigModule,
     HealthModule,
     TypeOrmModule.forRootAsync(getTypeOrmConfig()),
+    TransactionModule,
     AppLoggerModule,
     SeedModule,
     // 이 아래로 프로젝트의 구현과 관련된 모듈을 정의할 것
