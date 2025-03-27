@@ -20,8 +20,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import {
-  ArtworkListResponse,
-  ArtworkResponse,
+  ArtworkListResponseDto,
+  ArtworkResponseDto,
 } from '@/src/modules/artworks/dtos/artwork-response.dto';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { DeleteArtworksDto } from '@/src/modules/artworks/dtos/delete-artworks.dto';
@@ -92,7 +92,7 @@ export class ArtworksController {
       isAuthenticated,
     );
 
-    return new ArtworkListResponse(
+    return new ArtworkListResponseDto(
       this.storageService,
       result.items,
       result.totalCount,
@@ -106,9 +106,9 @@ export class ArtworksController {
   @HttpCode(HttpStatus.CREATED)
   async createArtwork(
     @Body() createArtworkDto: CreateArtworkDto,
-  ): Promise<ArtworkResponse> {
+  ): Promise<ArtworkResponseDto> {
     const artwork = await this.artworksService.createArtwork(createArtworkDto);
-    return new ArtworkResponse(this.storageService, artwork);
+    return new ArtworkResponseDto(this.storageService, artwork);
   }
 
   @Post('/images')
@@ -141,9 +141,9 @@ export class ArtworksController {
   async updateArtwork(
     @Param('id') id: string,
     @Body() dto: UpdateArtworkDto,
-  ): Promise<ArtworkResponse> {
+  ): Promise<ArtworkResponseDto> {
     const artwork = await this.artworksService.updateArtwork(id, dto);
-    return new ArtworkResponse(this.storageService, artwork);
+    return new ArtworkResponseDto(this.storageService, artwork);
   }
 
   @Delete()

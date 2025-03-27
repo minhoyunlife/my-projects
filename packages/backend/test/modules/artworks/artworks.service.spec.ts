@@ -1,8 +1,7 @@
 import { TestingModule } from '@nestjs/testing';
 
-import { EntityManager, In } from 'typeorm';
-
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
+import { ArtworksMapper } from '@/src/modules/artworks/artworks.mapper';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
@@ -59,6 +58,7 @@ describeWithoutDeps('ArtworksService', () => {
             executeInTransaction: vi.fn((cb) => cb()),
           },
         },
+        ArtworksMapper,
       ],
     });
 

@@ -1,8 +1,6 @@
-import { ConfigService } from '@nestjs/config';
-
 import {
-  ArtworkListResponse,
-  ArtworkResponse,
+  ArtworkListResponseDto,
+  ArtworkResponseDto,
 } from '@/src/modules/artworks/dtos/artwork-response.dto';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { GenreResponseDto } from '@/src/modules/genres/dtos/genre-response.dto';
@@ -40,7 +38,7 @@ describeWithoutDeps('ArtworkResponse', () => {
   ) as Artwork;
 
   describe('ArtworkResponse', () => {
-    const response = new ArtworkResponse(mockStorageService, artwork);
+    const response = new ArtworkResponseDto(mockStorageService, artwork);
 
     it('엔티티의 속성 값대로 id 가 반환됨', () => {
       expect(response.id).toBe(artwork.id);
@@ -60,7 +58,7 @@ describeWithoutDeps('ArtworkResponse', () => {
           createdAt: null,
         }) as Artwork;
 
-        const responseWithNullCreatedAt = new ArtworkResponse(
+        const responseWithNullCreatedAt = new ArtworkResponseDto(
           mockStorageService,
           artworkWithNullCreatedAt,
         );
@@ -79,7 +77,7 @@ describeWithoutDeps('ArtworkResponse', () => {
           playedOn: null,
         }) as Artwork;
 
-        const responseWithNullPlayedOn = new ArtworkResponse(
+        const responseWithNullPlayedOn = new ArtworkResponseDto(
           mockStorageService,
           artworkWithNullPlayedOn,
         );
@@ -98,7 +96,7 @@ describeWithoutDeps('ArtworkResponse', () => {
           rating: null,
         }) as Artwork;
 
-        const responseWithNullRating = new ArtworkResponse(
+        const responseWithNullRating = new ArtworkResponseDto(
           mockStorageService,
           artworkWithNullRating,
         );
@@ -126,7 +124,7 @@ describeWithoutDeps('ArtworkResponse', () => {
           null,
         ) as Artwork;
 
-        const responseWithNullTranslations = new ArtworkResponse(
+        const responseWithNullTranslations = new ArtworkResponseDto(
           mockStorageService,
           artworkWithNullTranslations,
         );
@@ -147,7 +145,7 @@ describeWithoutDeps('ArtworkResponse', () => {
           genres: undefined,
         }) as Artwork;
 
-        const responseWithUndefinedGenres = new ArtworkResponse(
+        const responseWithUndefinedGenres = new ArtworkResponseDto(
           mockStorageService,
           artworkWithUndefinedGenres,
         );
@@ -160,7 +158,7 @@ describeWithoutDeps('ArtworkResponse', () => {
           genres: [],
         }) as Artwork;
 
-        const responseWithEmptyGenres = new ArtworkResponse(
+        const responseWithEmptyGenres = new ArtworkResponseDto(
           mockStorageService,
           artworkWithEmptyGenres,
         );
@@ -172,7 +170,7 @@ describeWithoutDeps('ArtworkResponse', () => {
 
   describe('ArtworkListResponse', () => {
     const artworks = [artwork];
-    const response = new ArtworkListResponse(
+    const response = new ArtworkListResponseDto(
       mockStorageService,
       artworks,
       1,
@@ -183,7 +181,7 @@ describeWithoutDeps('ArtworkResponse', () => {
     it('엔티티의 속성 값대로 items 가 반환됨', () => {
       for (const a of artworks) {
         expect(response.items).toEqual([
-          new ArtworkResponse(mockStorageService, a),
+          new ArtworkResponseDto(mockStorageService, a),
         ]);
       }
     });

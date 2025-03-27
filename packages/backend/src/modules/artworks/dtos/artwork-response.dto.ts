@@ -6,7 +6,7 @@ import { GenreResponseDto } from '@/src/modules/genres/dtos/genre-response.dto';
 import { StorageService } from '@/src/modules/storage/storage.service';
 
 @Injectable()
-export class ArtworkResponse {
+export class ArtworkResponseDto {
   id: string;
   imageUrl: string;
   createdAt: string;
@@ -32,8 +32,8 @@ export class ArtworkResponse {
 }
 
 @Injectable()
-export class ArtworkListResponse {
-  items: ArtworkResponse[];
+export class ArtworkListResponseDto {
+  items: ArtworkResponseDto[];
   metadata: {
     totalCount: number;
     totalPages: number;
@@ -49,7 +49,7 @@ export class ArtworkListResponse {
     pageSize: number,
   ) {
     this.items = artworks.map(
-      (artwork) => new ArtworkResponse(storageService, artwork),
+      (artwork) => new ArtworkResponseDto(storageService, artwork),
     );
     this.metadata = {
       totalCount,
