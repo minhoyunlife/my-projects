@@ -7,12 +7,9 @@ import { GetGenresByNameQueryDto } from '@/src/modules/genres/dtos/get-genres-by
 import { GetGenresQueryDto } from '@/src/modules/genres/dtos/get-genres-query.dto';
 import { UpdateGenreDto } from '@/src/modules/genres/dtos/update-genre.dto';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
-import {
-  GenreErrorCode,
-  GenreException,
-} from '@/src/modules/genres/exceptions/genres.exception';
 import { GenresMapper } from '@/src/modules/genres/genres.mapper';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
+import { GenresValidator } from '@/src/modules/genres/genres.validator';
 import { TransactionService } from '@/src/modules/transaction/transaction.service';
 
 @Injectable()
@@ -21,6 +18,7 @@ export class GenresService {
     private readonly genresRepository: GenresRepository,
     private readonly transactionService: TransactionService,
     private readonly genresMapper: GenresMapper,
+    private readonly genresValidator: GenresValidator,
   ) {}
 
   async getGenres(query: GetGenresQueryDto): Promise<EntityList<Genre>> {
@@ -44,39 +42,48 @@ export class GenresService {
   async createGenre(dto: CreateGenreDto): Promise<Genre> {
     return this.transactionService.executeInTransaction(async (manager) => {
       const genresTxRepo = this.genresRepository.withTransaction(manager);
+
       const genreData = this.genresMapper.toEntityForCreate(dto);
-      return await genresTxRepo.createOne(genreData);
+      this.genresValidator.assertTranslationsExist(genreData);
+
+      const duplicates = await genresTxRepo.findDuplicateNameOfGenres(
+        genreData.translations.map((t) => t.name),
+      );
+      this.genresValidator.assertDuplicatesNotExist(duplicates);
+
+      return genresTxRepo.createOne(genreData);
     });
   }
 
   async updateGenre(id: string, dto: UpdateGenreDto): Promise<Genre> {
-    this.assertAllTranslationNamesExist(dto);
+    this.genresValidator.assertAllTranslationNamesExist(dto);
 
     return this.transactionService.executeInTransaction(async (manager) => {
       const genresTxRepo = this.genresRepository.withTransaction(manager);
+
+      const genre = await genresTxRepo.findOneWithDetails(id);
+      this.genresValidator.assertGenreExist(genre);
+
       const genreData = this.genresMapper.toEntityForUpdate(dto, id);
-      return await genresTxRepo.updateOne(genreData);
+      const duplicates = await genresTxRepo.findDuplicateNameOfGenres(
+        genreData.translations.map((t) => t.name),
+        id,
+      );
+      this.genresValidator.assertDuplicatesNotExist(duplicates);
+
+      return await genresTxRepo.updateOne(genreData, genre);
     });
   }
 
   async deleteGenres(ids: string[]): Promise<void> {
     return this.transactionService.executeInTransaction(async (manager) => {
       const genresTxRepo = this.genresRepository.withTransaction(manager);
-      await genresTxRepo.deleteMany(ids);
-    });
-  }
 
-  private assertAllTranslationNamesExist(dto: UpdateGenreDto) {
-    if (!dto.koName && !dto.enName && !dto.jaName) {
-      throw new GenreException(
-        GenreErrorCode.NO_TRANSLATIONS_PROVIDED,
-        'At least one translation must be provided',
-        {
-          translations: [
-            'At least one translation is required to update genre',
-          ],
-        },
-      );
-    }
+      const genres = await genresTxRepo.findManyWithDetails(ids);
+      this.genresValidator.assertAllGenresExist(genres, ids);
+      this.genresValidator.assertGenresNotInUse(genres);
+
+      await genresTxRepo.deleteMany(genres);
+    });
   }
 }
