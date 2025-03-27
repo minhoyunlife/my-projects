@@ -10,7 +10,7 @@ import { GenresValidator } from '@/src/modules/genres/genres.validator';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
 
-describe('GenresValidator', () => {
+describeWithoutDeps('GenresValidator', () => {
   let validator: GenresValidator;
 
   beforeEach(() => {
