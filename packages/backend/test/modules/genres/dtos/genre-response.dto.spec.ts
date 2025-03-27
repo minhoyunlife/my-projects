@@ -1,7 +1,7 @@
 import {
-  GenreListResponse,
-  GenreResponse,
-  GenreSearchResponse,
+  GenreListResponseDto,
+  GenreResponseDto,
+  GenreSearchResponseDto,
 } from '@/src/modules/genres/dtos/genre-response.dto';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
@@ -25,7 +25,7 @@ describeWithoutDeps('GenreResponse', () => {
   ]) as Genre;
 
   describe('GenreResponse', () => {
-    const response = new GenreResponse(genre);
+    const response = new GenreResponseDto(genre);
 
     it('엔티티의 속성 값대로 id 가 반환됨', () => {
       expect(response.id).toBe(genre.id);
@@ -42,7 +42,7 @@ describeWithoutDeps('GenreResponse', () => {
           translations: null,
         }) as Genre;
 
-        const responseWithNullTranslations = new GenreResponse(
+        const responseWithNullTranslations = new GenreResponseDto(
           genreWithNullTranslations,
         );
 
@@ -54,11 +54,11 @@ describeWithoutDeps('GenreResponse', () => {
   describe('GenreListResponse', () => {
     const genres = [genre];
 
-    const response = new GenreListResponse(genres, 1, 1, 20);
+    const response = new GenreListResponseDto(genres, 1, 1, 20);
 
     it('엔티티의 속성 값대로 items 가 반환됨', () => {
       for (const g of genres) {
-        expect(response.items).toEqual([new GenreResponse(g)]);
+        expect(response.items).toEqual([new GenreResponseDto(g)]);
       }
     });
 
@@ -75,11 +75,11 @@ describeWithoutDeps('GenreResponse', () => {
   describe('GenreSearchResponse', () => {
     const genres = [genre];
 
-    const response = new GenreSearchResponse(genres);
+    const response = new GenreSearchResponseDto(genres);
 
     it('엔티티의 속성 값대로 items 가 반환됨', () => {
       for (const g of genres) {
-        expect(response.items).toEqual([new GenreResponse(g)]);
+        expect(response.items).toEqual([new GenreResponseDto(g)]);
       }
     });
   });

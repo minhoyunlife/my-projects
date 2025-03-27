@@ -6,6 +6,7 @@ import { DataSource, In, Repository } from 'typeorm';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { ArtworksController } from '@/src/modules/artworks/artworks.controller';
+import { ArtworksMapper } from '@/src/modules/artworks/artworks.mapper';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
@@ -59,6 +60,7 @@ describeWithDeps('ArtworksController', () => {
         StorageService,
         ArtworksRepository,
         GenresRepository,
+        ArtworksMapper,
       ],
     });
 

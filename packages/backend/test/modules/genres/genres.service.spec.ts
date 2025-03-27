@@ -1,7 +1,5 @@
 import { TestingModule } from '@nestjs/testing';
 
-import { EntityManager } from 'typeorm';
-
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { CreateGenreDto } from '@/src/modules/genres/dtos/create-genre.dto';
 import { UpdateGenreDto } from '@/src/modules/genres/dtos/update-genre.dto';
@@ -10,6 +8,7 @@ import {
   GenreErrorCode,
   GenreException,
 } from '@/src/modules/genres/exceptions/genres.exception';
+import { GenresMapper } from '@/src/modules/genres/genres.mapper';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { GenresService } from '@/src/modules/genres/genres.service';
 import { TransactionService } from '@/src/modules/transaction/transaction.service';
@@ -18,7 +17,6 @@ import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
 describeWithoutDeps('GenresService', () => {
   let service: GenresService;
   let genresRepository: Partial<GenresRepository>;
-  // let entityManager: EntityManager;
 
   beforeEach(async () => {
     const module: TestingModule = await createTestingModuleWithoutDB({
@@ -34,12 +32,12 @@ describeWithoutDeps('GenresService', () => {
             executeInTransaction: vi.fn((cb) => cb()),
           },
         },
+        GenresMapper,
       ],
     });
 
     service = module.get<GenresService>(GenresService);
     genresRepository = module.get<GenresRepository>(GenresRepository);
-    // entityManager = module.get<EntityManager>(EntityManager);
   });
 
   describe('getGenres', () => {

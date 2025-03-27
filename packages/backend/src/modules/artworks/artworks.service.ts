@@ -1,17 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { EntityManager } from 'typeorm';
 import { Logger } from 'winston';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { addErrorMessages } from '@/src/common/exceptions/base.exception';
 import { EntityList } from '@/src/common/interfaces/entity-list.interface';
+import { ArtworksMapper } from '@/src/modules/artworks/artworks.mapper';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { GetArtworksQueryDto } from '@/src/modules/artworks/dtos/get-artworks-query.dto';
 import { UpdateArtworkDto } from '@/src/modules/artworks/dtos/update-artwork.dto';
-import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Sort } from '@/src/modules/artworks/enums/sort-type.enum';
 import { StatusError } from '@/src/modules/artworks/enums/status-error.enum';
@@ -23,7 +22,6 @@ import {
 import { ArtworkFilter } from '@/src/modules/artworks/interfaces/filter.interface';
 import { StatusValidator } from '@/src/modules/artworks/validators/artwork-status.validator';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { ImageStatus } from '@/src/modules/storage/enums/status.enum';
 import { StorageService } from '@/src/modules/storage/storage.service';
@@ -37,6 +35,7 @@ export class ArtworksService {
     private readonly storageService: StorageService,
     private readonly statusValidator: StatusValidator,
     private readonly transactionService: TransactionService,
+    private readonly artworksMapper: ArtworksMapper,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {}
 
@@ -63,9 +62,10 @@ export class ArtworksService {
         genresTxRepo,
         dto.genreIds,
       );
-      const artwork = this.buildArtworkEntity(dto, genres);
+      const artworkData = this.artworksMapper.toEntityForCreate(dto);
+      artworkData.genres = genres;
 
-      return await artworksTxRepo.createOne(artwork);
+      return await artworksTxRepo.createOne(artworkData);
     });
   }
 
@@ -80,13 +80,10 @@ export class ArtworksService {
         ? await this.findAndValidateGenres(genresTxRepo, dto.genreIds)
         : undefined;
 
-      const translations = this.buildTranslations(dto);
-      const artworkData = this.buildArtworkUpdateData(
-        id,
-        dto,
-        translations,
-        genres,
-      );
+      const artworkData = this.artworksMapper.toEntityForUpdate(dto, id);
+      if (genres) {
+        artworkData.genres = genres;
+      }
 
       return artworksTxRepo.updateOne(artworkData);
     });
@@ -127,96 +124,6 @@ export class ArtworksService {
       search: dto.search ?? undefined,
       isDraftIn: this.determineStatusFilter(dto.status, isAuthenticated),
     };
-  }
-
-  private buildArtworkEntity(
-    dto: CreateArtworkDto,
-    genres: Genre[],
-  ): Partial<Artwork> {
-    return {
-      imageKey: dto.imageKey,
-      createdAt: dto.createdAt ? new Date(dto.createdAt) : null,
-      playedOn: dto.playedOn,
-      rating: dto.rating,
-      isDraft: true, // 작품 생성 시에는 무조건 초안 상태
-      isVertical: dto.isVertical,
-      genres: genres,
-      translations: [
-        {
-          language: Language.KO,
-          title: dto.koTitle,
-          shortReview: dto.koShortReview,
-        },
-        {
-          language: Language.EN,
-          title: dto.enTitle,
-          shortReview: dto.enShortReview,
-        },
-        {
-          language: Language.JA,
-          title: dto.jaTitle,
-          shortReview: dto.jaShortReview,
-        },
-      ] as ArtworkTranslation[],
-    };
-  }
-
-  private buildTranslations(dto: UpdateArtworkDto): ArtworkTranslation[] {
-    const translations: ArtworkTranslation[] = [];
-
-    this.addTranslationIfNeeded(
-      translations,
-      Language.KO,
-      dto.koTitle,
-      dto.koShortReview,
-    );
-    this.addTranslationIfNeeded(
-      translations,
-      Language.EN,
-      dto.enTitle,
-      dto.enShortReview,
-    );
-    this.addTranslationIfNeeded(
-      translations,
-      Language.JA,
-      dto.jaTitle,
-      dto.jaShortReview,
-    );
-
-    return translations;
-  }
-
-  private buildArtworkUpdateData(
-    id: string,
-    dto: UpdateArtworkDto,
-    translations: ArtworkTranslation[],
-    genres?: Genre[],
-  ): Partial<Artwork> {
-    return {
-      id,
-      ...(translations.length > 0 && { translations }),
-      ...(genres && { genres }),
-      ...(dto.createdAt && { createdAt: new Date(dto.createdAt) }),
-      ...(dto.playedOn !== undefined && { playedOn: dto.playedOn }),
-      ...(dto.rating !== undefined && { rating: dto.rating }),
-    };
-  }
-
-  private addTranslationIfNeeded(
-    translations: ArtworkTranslation[],
-    language: Language,
-    title?: string,
-    shortReview?: string,
-  ): void {
-    if (title === undefined && shortReview === undefined) return;
-
-    const translation = {
-      language,
-      ...(title !== undefined && { title }),
-      ...(shortReview !== undefined && { shortReview }),
-    } as ArtworkTranslation;
-
-    translations.push(translation);
   }
 
   private determineStatusFilter(

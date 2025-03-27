@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
-import { GenreResponse } from '@/src/modules/genres/dtos/genre-response.dto';
+import { GenreResponseDto } from '@/src/modules/genres/dtos/genre-response.dto';
 import { StorageService } from '@/src/modules/storage/storage.service';
 
 @Injectable()
-export class ArtworkResponse {
+export class ArtworkResponseDto {
   id: string;
   imageUrl: string;
   createdAt: string;
@@ -15,7 +15,7 @@ export class ArtworkResponse {
   isDraft: boolean;
   isVertical: boolean;
   translations: ArtworkTranslation[];
-  genres: GenreResponse[];
+  genres: GenreResponseDto[];
 
   constructor(storageService: StorageService, artwork: Artwork) {
     this.id = artwork.id;
@@ -27,13 +27,13 @@ export class ArtworkResponse {
     this.isVertical = artwork.isVertical;
     this.translations = artwork.translations ?? [];
     this.genres =
-      artwork.genres?.map((genre) => new GenreResponse(genre)) ?? [];
+      artwork.genres?.map((genre) => new GenreResponseDto(genre)) ?? [];
   }
 }
 
 @Injectable()
-export class ArtworkListResponse {
-  items: ArtworkResponse[];
+export class ArtworkListResponseDto {
+  items: ArtworkResponseDto[];
   metadata: {
     totalCount: number;
     totalPages: number;
@@ -49,7 +49,7 @@ export class ArtworkListResponse {
     pageSize: number,
   ) {
     this.items = artworks.map(
-      (artwork) => new ArtworkResponse(storageService, artwork),
+      (artwork) => new ArtworkResponseDto(storageService, artwork),
     );
     this.metadata = {
       totalCount,

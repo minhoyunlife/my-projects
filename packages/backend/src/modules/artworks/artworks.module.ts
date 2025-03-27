@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { ArtworksController } from '@/src/modules/artworks/artworks.controller';
+import { ArtworksMapper } from '@/src/modules/artworks/artworks.mapper';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
@@ -17,6 +18,7 @@ import { StorageService } from '@/src/modules/storage/storage.service';
   providers: [
     ArtworksRepository,
     ArtworksService,
+    ArtworksMapper,
     GenresRepository,
     StatusValidator,
     StorageService,

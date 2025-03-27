@@ -1,20 +1,17 @@
 import { Injectable } from '@nestjs/common';
 
-import { EntityManager } from 'typeorm';
-
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { EntityList } from '@/src/common/interfaces/entity-list.interface';
 import { CreateGenreDto } from '@/src/modules/genres/dtos/create-genre.dto';
 import { GetGenresByNameQueryDto } from '@/src/modules/genres/dtos/get-genres-by-name-query.dto';
 import { GetGenresQueryDto } from '@/src/modules/genres/dtos/get-genres-query.dto';
 import { UpdateGenreDto } from '@/src/modules/genres/dtos/update-genre.dto';
-import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 import {
   GenreErrorCode,
   GenreException,
 } from '@/src/modules/genres/exceptions/genres.exception';
+import { GenresMapper } from '@/src/modules/genres/genres.mapper';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { TransactionService } from '@/src/modules/transaction/transaction.service';
 
@@ -23,7 +20,7 @@ export class GenresService {
   constructor(
     private readonly genresRepository: GenresRepository,
     private readonly transactionService: TransactionService,
-    // private readonly entityManager: EntityManager,
+    private readonly genresMapper: GenresMapper,
   ) {}
 
   async getGenres(query: GetGenresQueryDto): Promise<EntityList<Genre>> {
@@ -47,7 +44,7 @@ export class GenresService {
   async createGenre(dto: CreateGenreDto): Promise<Genre> {
     return this.transactionService.executeInTransaction(async (manager) => {
       const genresTxRepo = this.genresRepository.withTransaction(manager);
-      const genreData = this.buildGenreDataFromDto(dto, null);
+      const genreData = this.genresMapper.toEntityForCreate(dto);
       return await genresTxRepo.createOne(genreData);
     });
   }
@@ -57,7 +54,7 @@ export class GenresService {
 
     return this.transactionService.executeInTransaction(async (manager) => {
       const genresTxRepo = this.genresRepository.withTransaction(manager);
-      const genreData = this.buildGenreDataFromDto(dto, id);
+      const genreData = this.genresMapper.toEntityForUpdate(dto, id);
       return await genresTxRepo.updateOne(genreData);
     });
   }
@@ -67,33 +64,6 @@ export class GenresService {
       const genresTxRepo = this.genresRepository.withTransaction(manager);
       await genresTxRepo.deleteMany(ids);
     });
-  }
-
-  private buildGenreDataFromDto(
-    dto: UpdateGenreDto,
-    id?: string,
-  ): Partial<Genre> {
-    return {
-      id: id ? id : undefined,
-      translations: this.buildTranslationsFromDto(dto),
-    };
-  }
-
-  private buildTranslationsFromDto(dto: UpdateGenreDto): GenreTranslation[] {
-    const translations = [];
-    this.addTranslationIfProvided(translations, Language.KO, dto.koName);
-    this.addTranslationIfProvided(translations, Language.EN, dto.enName);
-    this.addTranslationIfProvided(translations, Language.JA, dto.jaName);
-    return translations;
-  }
-
-  private addTranslationIfProvided(
-    translations: Partial<GenreTranslation>[],
-    language: Language,
-    name: string,
-  ): void {
-    if (!name) return;
-    translations.push({ language, name });
   }
 
   private assertAllTranslationNamesExist(dto: UpdateGenreDto) {
