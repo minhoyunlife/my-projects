@@ -15,12 +15,9 @@ import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Sort } from '@/src/modules/artworks/enums/sort-type.enum';
 import { StatusError } from '@/src/modules/artworks/enums/status-error.enum';
 import { Status } from '@/src/modules/artworks/enums/status.enum';
-import {
-  ArtworkErrorCode,
-  ArtworkException,
-} from '@/src/modules/artworks/exceptions/artworks.exception';
 import { ArtworkFilter } from '@/src/modules/artworks/interfaces/filter.interface';
-import { StatusValidator } from '@/src/modules/artworks/validators/artwork-status.validator';
+import { ArtworksValidator } from '@/src/modules/artworks/validators/artworks.validator';
+import { StatusValidator } from '@/src/modules/artworks/validators/status.validator';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { ImageStatus } from '@/src/modules/storage/enums/status.enum';
@@ -34,6 +31,7 @@ export class ArtworksService {
     private readonly genresRepository: GenresRepository,
     private readonly storageService: StorageService,
     private readonly statusValidator: StatusValidator,
+    private readonly artworksValidator: ArtworksValidator,
     private readonly transactionService: TransactionService,
     private readonly artworksMapper: ArtworksMapper,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
@@ -70,28 +68,31 @@ export class ArtworksService {
   }
 
   async updateArtwork(id: string, dto: UpdateArtworkDto): Promise<Artwork> {
-    this.assertAtLeastOneFieldProvided(dto);
+    this.artworksValidator.assertAtLeastOneFieldProvided(dto);
 
     return this.transactionService.executeInTransaction(async (manager) => {
       const artworksTxRepo = this.artworksRepository.withTransaction(manager);
       const genresTxRepo = this.genresRepository.withTransaction(manager);
 
+      const artwork = await artworksTxRepo.findOneWithDetails(id);
+      this.artworksValidator.assertArtworkExists(artwork);
+      this.artworksValidator.assertArtworkDraft(artwork);
+
       const genres = dto.genreIds
         ? await this.findAndValidateGenres(genresTxRepo, dto.genreIds)
         : undefined;
-
       const artworkData = this.artworksMapper.toEntityForUpdate(dto, id);
       if (genres) {
         artworkData.genres = genres;
       }
 
-      return artworksTxRepo.updateOne(artworkData);
+      return artworksTxRepo.updateOne(artworkData, artwork);
     });
   }
 
   async updateStatuses(ids: string[], setPublished: boolean): Promise<void> {
     const artworks = await this.artworksRepository.findManyWithDetails(ids);
-    const { idsToUpdate, errors } = this.validateStatusChange(
+    const { idsToUpdate, errors } = this.statusValidator.validateStatusChange(
       ids,
       artworks,
       setPublished,
@@ -99,14 +100,18 @@ export class ArtworksService {
 
     await this.tryUpdateStatuses(idsToUpdate, setPublished, errors);
 
-    this.assertNoErrorsExist(errors);
+    this.artworksValidator.assertNoErrorsExist(errors);
   }
 
   async deleteArtworks(ids: string[]): Promise<void> {
     return this.transactionService.executeInTransaction(async (manager) => {
       const artworksTxRepo = this.artworksRepository.withTransaction(manager);
-      const deletedArtworks = await artworksTxRepo.deleteMany(ids);
 
+      const artworks = await artworksTxRepo.findManyWithDetails(ids);
+      this.artworksValidator.assertAllProvidedArtworksExist(artworks, ids);
+      this.artworksValidator.assertAllArtworksDraft(artworks);
+
+      const deletedArtworks = await artworksTxRepo.deleteMany(artworks);
       this.markArtworkAsDeleted(deletedArtworks);
     });
   }
@@ -143,79 +148,9 @@ export class ArtworksService {
     if (genreIds.length === 0) return [];
 
     const genres = await genresRepo.findByIds(genreIds);
-    this.assertAllGenresExist(genres, genreIds);
+    this.artworksValidator.assertAllGenresExist(genres, genreIds);
 
     return genres;
-  }
-
-  private validateStatusChange(
-    requestedIds: string[],
-    artworks: Artwork[],
-    setPublished: boolean,
-  ): { idsToUpdate: string[]; errors: Record<string, string[]> } {
-    const errors: Record<string, string[]> = {};
-    const invalidIds = new Set<string>();
-
-    this.detectMissingArtworkIds(requestedIds, artworks, invalidIds, errors);
-
-    const artworksToUpdate = artworks.filter(
-      (artwork) => artwork.isDraft === setPublished,
-    );
-
-    this.validateForPublishing(
-      setPublished,
-      artworksToUpdate,
-      invalidIds,
-      errors,
-    );
-
-    const idsToUpdate = artworksToUpdate
-      .filter((artwork) => !invalidIds.has(artwork.id))
-      .map((artwork) => artwork.id);
-
-    return { idsToUpdate, errors };
-  }
-
-  private detectMissingArtworkIds(
-    requestedIds: string[],
-    artworks: Artwork[],
-    invalidIds: Set<string>,
-    errors: Record<string, string[]>,
-  ): void {
-    const foundIds = new Set(artworks.map((artwork) => artwork.id));
-
-    for (const id of requestedIds) {
-      if (!foundIds.has(id)) {
-        invalidIds.add(id);
-        addErrorMessages(errors, StatusError.NOT_FOUND, [`${id}|id`]);
-      }
-    }
-  }
-
-  private validateForPublishing(
-    setPublished: boolean,
-    artworks: Artwork[],
-    invalidIds: Set<string>,
-    errors: Record<string, string[]>,
-  ): void {
-    if (!setPublished) return;
-
-    for (const artwork of artworks) {
-      const validationErrors = this.statusValidator.validate(artwork);
-
-      if (validationErrors.length > 0) {
-        invalidIds.add(artwork.id);
-
-        const formattedErrors = this.statusValidator.formatErrors(
-          artwork,
-          validationErrors,
-        );
-
-        for (const [code, messages] of Object.entries(formattedErrors)) {
-          addErrorMessages(errors, code, messages);
-        }
-      }
-    }
   }
 
   private async tryUpdateStatuses(
@@ -254,42 +189,6 @@ export class ArtworksService {
           });
         }
       }),
-    );
-  }
-
-  private assertAllGenresExist(genres: Genre[], genreIds: string[]): void {
-    if (genres.length === genreIds.length) return;
-
-    throw new ArtworkException(
-      ArtworkErrorCode.NOT_EXISTING_GENRES_INCLUDED,
-      "Some of the provided genres don't exist in DB",
-      {
-        genreIds: genreIds.filter(
-          (id) => !new Set(genres.map((genre) => genre.id)).has(id),
-        ),
-      },
-    );
-  }
-
-  private assertAtLeastOneFieldProvided(dto: UpdateArtworkDto): void {
-    if (Object.values(dto).some((value) => value !== undefined)) return;
-
-    throw new ArtworkException(
-      ArtworkErrorCode.NO_DATA_PROVIDED,
-      'At least one field must be provided to update artwork',
-      {
-        fields: ['At least one field is required to update artwork'],
-      },
-    );
-  }
-
-  private assertNoErrorsExist(errors: Record<string, string[]>): void {
-    if (Object.keys(errors).length === 0) return;
-
-    throw new ArtworkException(
-      ArtworkErrorCode.SOME_FAILED,
-      'Some status changes failed',
-      errors,
     );
   }
 }

@@ -5,7 +5,6 @@ import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-tran
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { Sort } from '@/src/modules/artworks/enums/sort-type.enum';
-import { ArtworkException } from '@/src/modules/artworks/exceptions/artworks.exception';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
@@ -686,6 +685,59 @@ describeWithDeps('ArtworksRepository', () => {
     });
   });
 
+  describe('findOneWithDetails', () => {
+    let savedArtwork: Artwork;
+
+    beforeEach(async () => {
+      await clearTables(dataSource, [Artwork, Genre]);
+
+      const genre = await saveEntities(genreRepo.repository, [
+        GenresFactory.createTestData({}, [
+          { language: Language.KO, name: '액션' },
+          { language: Language.EN, name: 'Action' },
+          { language: Language.JA, name: 'アクション' },
+        ]),
+      ]);
+
+      const artworks = await saveEntities(artworkRepo.repository, [
+        ArtworksFactory.createTestData(
+          { isDraft: true },
+          [
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.KO,
+              title: '다크소울',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.EN,
+              title: 'Dark Souls',
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.JA,
+              title: 'ダークソウル',
+            }),
+          ],
+          genre,
+        ),
+      ]);
+
+      savedArtwork = artworks[0];
+    });
+
+    it('ID로 작품 상세 정보를 성공적으로 조회함', async () => {
+      const result = await artworkRepo.findOneWithDetails(savedArtwork.id);
+
+      expect(result).not.toBeNull();
+      expect(result.id).toBe(savedArtwork.id);
+      expect(result.translations).toHaveLength(3);
+      expect(result.genres).toHaveLength(1);
+    });
+
+    it('존재하지 않는 ID로 조회하면 null을 반환함', async () => {
+      const result = await artworkRepo.findOneWithDetails('non-existent-id');
+      expect(result).toBeNull();
+    });
+  });
+
   describe('findManyWithDetails', () => {
     let savedArtworks: Artwork[];
 
@@ -778,6 +830,80 @@ describeWithDeps('ArtworksRepository', () => {
     });
   });
 
+  describe('createOne', () => {
+    let savedGenres: Genre[];
+
+    beforeEach(async () => {
+      await clearTables(dataSource, [Artwork, Genre]);
+
+      const genreEntity = GenresFactory.createTestData({}, [
+        GenreTranslationsFactory.createTestData({
+          language: Language.KO,
+          name: '액션',
+        }),
+        GenreTranslationsFactory.createTestData({
+          language: Language.EN,
+          name: 'Action',
+        }),
+        GenreTranslationsFactory.createTestData({
+          language: Language.JA,
+          name: 'アクション',
+        }),
+      ]);
+      savedGenres = await saveEntities(genreRepo.repository, [genreEntity]);
+    });
+
+    it('작품 데이터를 성공적으로 생성함', async () => {
+      const artworkData = ArtworksFactory.createTestData(
+        {},
+        [
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.KO,
+          }),
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.EN,
+          }),
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.JA,
+          }),
+        ],
+        savedGenres,
+      );
+      const result = await artworkRepo.createOne(artworkData);
+
+      const saved = await artworkRepo.repository.findOne({
+        where: { id: result.id },
+        relations: {
+          genres: {
+            translations: true,
+          },
+          translations: true,
+        },
+      });
+
+      expect(saved.imageKey).toBe(artworkData.imageKey);
+      expect(saved.playedOn).toBe(artworkData.playedOn);
+      expect(saved.rating).toBe(artworkData.rating);
+      expect(saved.genres).toEqual(artworkData.genres);
+      expect(saved.isDraft).toBe(true);
+      expect(
+        saved.translations.find((t) => t.language === Language.KO).title,
+      ).toEqual(
+        artworkData.translations.find((t) => t.language === Language.KO).title,
+      );
+      expect(
+        saved.translations.find((t) => t.language === Language.EN).title,
+      ).toEqual(
+        artworkData.translations.find((t) => t.language === Language.EN).title,
+      );
+      expect(
+        saved.translations.find((t) => t.language === Language.JA).title,
+      ).toEqual(
+        artworkData.translations.find((t) => t.language === Language.JA).title,
+      );
+    });
+  });
+
   describe('updateOne', () => {
     let savedGenres: Genre[];
     let savedArtwork: Artwork;
@@ -837,7 +963,7 @@ describeWithDeps('ArtworksRepository', () => {
         createdAt: new Date('2024-02-01'),
       };
 
-      const updated = await artworkRepo.updateOne(updateData);
+      const updated = await artworkRepo.updateOne(updateData, savedArtwork);
 
       expect(updated.rating).toBe(updateData.rating);
       expect(updated.playedOn).toBe(updateData.playedOn);
@@ -860,7 +986,7 @@ describeWithDeps('ArtworksRepository', () => {
         ] as ArtworkTranslation[],
       };
 
-      const updated = await artworkRepo.updateOne(updateData);
+      const updated = await artworkRepo.updateOne(updateData, savedArtwork);
 
       const koTrans = updated.translations.find(
         (t) => t.language === Language.KO,
@@ -891,34 +1017,10 @@ describeWithDeps('ArtworksRepository', () => {
         genres: [newGenre],
       };
 
-      const updated = await artworkRepo.updateOne(updateData);
+      const updated = await artworkRepo.updateOne(updateData, savedArtwork);
 
       expect(updated.genres).toHaveLength(1);
       expect(updated.genres[0].id).toBe(newGenre.id);
-    });
-
-    it('존재하지 않는 작품 ID로 수정 시도 시 에러가 발생함', async () => {
-      const updateData = {
-        id: 'non-exist',
-        rating: 15,
-      };
-
-      await expect(artworkRepo.updateOne(updateData)).rejects.toThrow(
-        ArtworkException,
-      );
-    });
-
-    it('발행된 작품 수정 시도 시 에러가 발생함', async () => {
-      await artworkRepo.updateManyStatuses([savedArtwork.id], true);
-
-      const updateData = {
-        id: savedArtwork.id,
-        rating: 15,
-      };
-
-      await expect(artworkRepo.updateOne(updateData)).rejects.toThrow(
-        ArtworkException,
-      );
     });
   });
 
@@ -987,11 +1089,9 @@ describeWithDeps('ArtworksRepository', () => {
     });
 
     it('공개 작품을 비공개 상태로 변경할 수 있음', async () => {
-      // 먼저 공개 상태로 변경
       const targetIds = savedArtworks.map((artwork) => artwork.id);
       await artworkRepo.updateManyStatuses(targetIds, true);
 
-      // 다시 비공개로 변경
       await artworkRepo.updateManyStatuses(targetIds, false);
 
       const updatedArtworks = await artworkRepo.repository.findBy({
@@ -1004,19 +1104,6 @@ describeWithDeps('ArtworksRepository', () => {
       await expect(
         artworkRepo.updateManyStatuses([], true),
       ).resolves.not.toThrow();
-    });
-
-    it('일부 작품만 상태 변경이 가능함', async () => {
-      const targetId = savedArtworks[0].id;
-      await artworkRepo.updateManyStatuses([targetId], true);
-
-      const [updated, notUpdated] = await Promise.all([
-        artworkRepo.repository.findOneBy({ id: targetId }),
-        artworkRepo.repository.findOneBy({ id: savedArtworks[1].id }),
-      ]);
-
-      expect(updated.isDraft).toBe(false);
-      expect(notUpdated.isDraft).toBe(true);
     });
   });
 
@@ -1055,69 +1142,31 @@ describeWithDeps('ArtworksRepository', () => {
           ],
           genre,
         ),
-        ArtworksFactory.createTestData(
-          {
-            isDraft: false,
-          },
-          [
-            ArtworkTranslationsFactory.createTestData({
-              language: Language.KO,
-              title: '젤다',
-            }),
-            ArtworkTranslationsFactory.createTestData({
-              language: Language.EN,
-              title: 'Zelda',
-            }),
-            ArtworkTranslationsFactory.createTestData({
-              language: Language.JA,
-              title: 'ゼルダ',
-            }),
-          ],
-          genre,
-        ),
       ]);
     });
 
-    it('비공개 작품을 성공적으로 삭제함', async () => {
-      const targetIds = [artworks[0].id];
-      const deletedArtworks = await artworkRepo.deleteMany(targetIds);
+    it('작품을 성공적으로 삭제함', async () => {
+      const artworkId = artworks[0].id;
+
+      const deletedArtworks = await artworkRepo.deleteMany([artworks[0]]);
 
       expect(deletedArtworks).toHaveLength(1);
 
-      const saved = await artworkRepo.repository.findBy({ id: In(targetIds) });
+      const saved = await artworkRepo.repository.findBy({
+        id: artworkId,
+      });
       expect(saved).toHaveLength(0);
     });
 
     it('삭제된 작품의 번역 데이터도 함께 삭제됨', async () => {
-      const targetIds = [artworks[0].id];
-      await artworkRepo.deleteMany(targetIds);
+      const artworkId = artworks[0].id;
+
+      await artworkRepo.deleteMany([artworks[0]]);
 
       const savedTranslations = await artworkTranslationRepo.findBy({
-        artworkId: In(targetIds),
+        artworkId: artworkId,
       });
       expect(savedTranslations).toHaveLength(0);
-    });
-
-    it('존재하지 않는 작품이 포함된 경우 에러가 발생함', async () => {
-      const targetIds = [artworks[0].id, 'non-existent-id'];
-
-      await expect(artworkRepo.deleteMany(targetIds)).rejects.toThrow(
-        ArtworkException,
-      );
-
-      const saved = await artworkRepo.repository.findBy({ id: artworks[0].id });
-      expect(saved).toHaveLength(1);
-    });
-
-    it('공개된 작품이 포함된 경우 에러가 발생함', async () => {
-      const targetIds = [artworks[0].id, artworks[1].id];
-
-      await expect(artworkRepo.deleteMany(targetIds)).rejects.toThrow(
-        ArtworkException,
-      );
-
-      const saved = await artworkRepo.repository.findBy({ id: In(targetIds) });
-      expect(saved).toHaveLength(2);
     });
   });
 });

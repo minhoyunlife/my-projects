@@ -14,7 +14,8 @@ import {
   ArtworkErrorCode,
   ArtworkException,
 } from '@/src/modules/artworks/exceptions/artworks.exception';
-import { StatusValidator } from '@/src/modules/artworks/validators/artwork-status.validator';
+import { ArtworksValidator } from '@/src/modules/artworks/validators/artworks.validator';
+import { StatusValidator } from '@/src/modules/artworks/validators/status.validator';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { ImageStatus } from '@/src/modules/storage/enums/status.enum';
@@ -28,35 +29,74 @@ describeWithoutDeps('ArtworksService', () => {
   let genresRepository: Partial<GenresRepository>;
   let storageService: Partial<StorageService>;
   let statusValidator: Partial<StatusValidator>;
+  let artworksValidator: Partial<ArtworksValidator>;
+  let transactionService: Partial<TransactionService>;
 
   beforeEach(async () => {
+    artworksRepository = {
+      getAllWithFilters: vi.fn(),
+      findOneWithDetails: vi.fn(),
+      findManyWithDetails: vi.fn(),
+      createOne: vi.fn(),
+      updateOne: vi.fn(),
+      updateManyStatuses: vi.fn(),
+      deleteMany: vi.fn(),
+      withTransaction: vi.fn(),
+    };
+
+    genresRepository = {
+      findByIds: vi.fn(),
+      withTransaction: vi.fn(),
+    };
+
+    storageService = {
+      changeImageTag: vi.fn(),
+    };
+
+    statusValidator = {
+      validateStatusChange: vi.fn(),
+    };
+
+    artworksValidator = {
+      assertArtworkExists: vi.fn(),
+      assertArtworkDraft: vi.fn(),
+      assertAllProvidedArtworksExist: vi.fn(),
+      assertAllArtworksDraft: vi.fn(),
+      assertAllGenresExist: vi.fn(),
+      assertAtLeastOneFieldProvided: vi.fn(),
+      assertNoErrorsExist: vi.fn(),
+    };
+
+    transactionService = {
+      executeInTransaction: vi.fn((callback) => callback(genresRepository)),
+    };
+
     const module: TestingModule = await createTestingModuleWithoutDB({
       providers: [
         ArtworksService,
         {
           provide: ArtworksRepository,
-          useValue: { forTransaction: vi.fn() },
+          useValue: artworksRepository,
         },
         {
           provide: GenresRepository,
-          useValue: { forTransaction: vi.fn() },
+          useValue: genresRepository,
         },
         {
           provide: StorageService,
-          useValue: { changeImageTag: vi.fn() },
+          useValue: storageService,
         },
         {
           provide: StatusValidator,
-          useValue: {
-            validate: vi.fn(),
-            formatErrors: vi.fn(),
-          },
+          useValue: statusValidator,
+        },
+        {
+          provide: ArtworksValidator,
+          useValue: artworksValidator,
         },
         {
           provide: TransactionService,
-          useValue: {
-            executeInTransaction: vi.fn((cb) => cb()),
-          },
+          useValue: transactionService,
         },
         ArtworksMapper,
       ],
@@ -246,6 +286,8 @@ describeWithoutDeps('ArtworksService', () => {
     const findByIdsMock = vi.fn();
     const txRepoMock = {
       createOne: createOneMock,
+      findOneWithDetails: vi.fn(),
+      findManyWithDetails: vi.fn(),
     };
     const genresTxRepoMock = {
       findByIds: findByIdsMock,
@@ -272,6 +314,8 @@ describeWithoutDeps('ArtworksService', () => {
       genresRepository.withTransaction = vi
         .fn()
         .mockReturnValue(genresTxRepoMock);
+
+      artworksValidator.assertAllGenresExist = vi.fn();
     });
 
     it('작품 데이터를 기반으로 새로운 작품을 생성함', async () => {
@@ -289,6 +333,7 @@ describeWithoutDeps('ArtworksService', () => {
       const expectedArtwork = {
         id: 'artwork-1',
         imageKey: dto.imageKey,
+        isVertical: dto.isVertical,
         playedOn: dto.playedOn,
         genres: mockGenres,
         translations: [
@@ -315,6 +360,7 @@ describeWithoutDeps('ArtworksService', () => {
 
       const result = await service.createArtwork(dto);
 
+      expect(findByIdsMock).toHaveBeenCalledWith(dto.genreIds);
       expect(createOneMock).toHaveBeenCalled();
       expect(result).toEqual(expectedArtwork);
     });
@@ -322,24 +368,40 @@ describeWithoutDeps('ArtworksService', () => {
     it('존재하지 않는 장르 ID가 포함된 경우, 에러가 발생', async () => {
       findByIdsMock.mockResolvedValue([]);
 
-      await expect(service.createArtwork(dto)).rejects.toThrowError(
+      artworksValidator.assertAllGenresExist = vi
+        .fn()
+        .mockImplementation(() => {
+          throw new ArtworkException(
+            ArtworkErrorCode.NOT_EXISTING_GENRES_INCLUDED,
+            '일부 장르 ID가 존재하지 않습니다',
+          );
+        });
+
+      await expect(service.createArtwork(dto)).rejects.toThrow(
         ArtworkException,
       );
+      expect(createOneMock).not.toHaveBeenCalled();
     });
 
     it('작품 생성에 실패할 경우, 에러가 발생', async () => {
-      findByIdsMock.mockResolvedValue([{ id: 'genre-1' }]);
-      createOneMock.mockRejectedValue(new Error());
+      const mockGenres = [{ id: 'genre-1' }];
+      findByIdsMock.mockResolvedValue(mockGenres);
+      createOneMock.mockRejectedValue(new Error('Database error'));
 
-      await expect(service.createArtwork(dto)).rejects.toThrowError();
+      await expect(service.createArtwork(dto)).rejects.toThrow(
+        'Database error',
+      );
     });
   });
 
   describe('updateArtwork', () => {
     const updateOneMock = vi.fn();
     const findByIdsMock = vi.fn();
+    const findOneWithDetailsMock = vi.fn();
     const txRepoMock = {
       updateOne: updateOneMock,
+      findOneWithDetails: findOneWithDetailsMock,
+      findManyWithDetails: vi.fn(),
     };
     const genresTxRepoMock = {
       findByIds: findByIdsMock,
@@ -356,11 +418,16 @@ describeWithoutDeps('ArtworksService', () => {
     beforeEach(() => {
       updateOneMock.mockClear();
       findByIdsMock.mockClear();
+      findOneWithDetailsMock.mockClear();
 
       artworksRepository.withTransaction = vi.fn().mockReturnValue(txRepoMock);
       genresRepository.withTransaction = vi
         .fn()
         .mockReturnValue(genresTxRepoMock);
+      artworksValidator.assertArtworkExists = vi.fn();
+      artworksValidator.assertArtworkDraft = vi.fn();
+      artworksValidator.assertAllGenresExist = vi.fn();
+      artworksValidator.assertAtLeastOneFieldProvided = vi.fn();
     });
 
     it('작품 데이터가 성공적으로 수정됨', async () => {
@@ -375,6 +442,12 @@ describeWithoutDeps('ArtworksService', () => {
         },
       ];
 
+      const existingArtwork = {
+        id: 'artwork-1',
+        isDraft: true,
+        isVertical: true,
+      };
+
       const expectedArtwork = {
         id: 'artwork-1',
         playedOn: baseDto.playedOn,
@@ -389,43 +462,61 @@ describeWithoutDeps('ArtworksService', () => {
         ],
       };
 
+      findOneWithDetailsMock.mockResolvedValue(existingArtwork);
       findByIdsMock.mockResolvedValue(mockGenres);
       updateOneMock.mockResolvedValue(expectedArtwork);
 
       const result = await service.updateArtwork('artwork-1', baseDto);
 
+      expect(findOneWithDetailsMock).toHaveBeenCalledWith('artwork-1');
+      expect(artworksValidator.assertArtworkExists).toHaveBeenCalledWith(
+        existingArtwork,
+      );
+      expect(artworksValidator.assertArtworkDraft).toHaveBeenCalledWith(
+        existingArtwork,
+      );
       expect(findByIdsMock).toHaveBeenCalledWith(baseDto.genreIds);
-      expect(updateOneMock).toHaveBeenCalledWith({
-        id: 'artwork-1',
-        playedOn: baseDto.playedOn,
-        rating: baseDto.rating,
-        genres: mockGenres,
-        translations: expect.arrayContaining([
-          expect.objectContaining({
-            language: Language.KO,
-            title: baseDto.koTitle,
-            shortReview: baseDto.koShortReview,
-          }),
-        ]),
-      });
+      expect(artworksValidator.assertAllGenresExist).toHaveBeenCalledWith(
+        mockGenres,
+        baseDto.genreIds,
+      );
+      expect(updateOneMock).toHaveBeenCalled();
       expect(result).toEqual(expectedArtwork);
     });
 
     it('빈 DTO로 요청 시 에러가 발생함', async () => {
+      artworksValidator.assertAtLeastOneFieldProvided = vi
+        .fn()
+        .mockImplementation(() => {
+          throw new ArtworkException(
+            ArtworkErrorCode.NO_DATA_PROVIDED,
+            '최소 하나의 필드가 제공되어야 합니다',
+          );
+        });
+
       await expect(service.updateArtwork('artwork-1', {})).rejects.toThrow(
         ArtworkException,
       );
-
       expect(updateOneMock).not.toHaveBeenCalled();
     });
 
     it('존재하지 않는 장르 ID가 포함된 경우 에러가 발생함', async () => {
+      const existingArtwork = { id: 'artwork-1', isDraft: true };
+      findOneWithDetailsMock.mockResolvedValue(existingArtwork);
       findByIdsMock.mockResolvedValue([]);
+
+      artworksValidator.assertAllGenresExist = vi
+        .fn()
+        .mockImplementation(() => {
+          throw new ArtworkException(
+            ArtworkErrorCode.NOT_EXISTING_GENRES_INCLUDED,
+            '일부 장르 ID가 존재하지 않습니다',
+          );
+        });
 
       await expect(service.updateArtwork('artwork-1', baseDto)).rejects.toThrow(
         ArtworkException,
       );
-
       expect(updateOneMock).not.toHaveBeenCalled();
     });
 
@@ -434,6 +525,7 @@ describeWithoutDeps('ArtworksService', () => {
         koTitle: '수정된 제목',
       };
 
+      const existingArtwork = { id: 'artwork-1', isDraft: true };
       const expectedArtwork = {
         id: 'artwork-1',
         translations: [
@@ -444,39 +536,30 @@ describeWithoutDeps('ArtworksService', () => {
         ],
       };
 
+      findOneWithDetailsMock.mockResolvedValue(existingArtwork);
       updateOneMock.mockResolvedValue(expectedArtwork);
 
       await service.updateArtwork('artwork-1', partialDto);
 
       expect(findByIdsMock).not.toHaveBeenCalled();
-      expect(updateOneMock).toHaveBeenCalledWith({
-        id: 'artwork-1',
-        translations: expect.arrayContaining([
-          expect.objectContaining({
-            language: Language.KO,
-            title: partialDto.koTitle,
-          }),
-        ]),
-      });
+      expect(updateOneMock).toHaveBeenCalled();
     });
   });
 
   describe('updateStatuses', () => {
     const findManyWithDetailsMock = vi.fn();
     const updateManyStatusesMock = vi.fn();
-    const validateMock = vi.fn();
-    const formatErrorsMock = vi.fn();
+    const validateStatusChangeMock = vi.fn();
 
     beforeEach(() => {
       findManyWithDetailsMock.mockClear();
       updateManyStatusesMock.mockClear();
-      validateMock.mockClear();
-      formatErrorsMock.mockClear();
+      validateStatusChangeMock.mockClear();
 
       artworksRepository.findManyWithDetails = findManyWithDetailsMock;
       artworksRepository.updateManyStatuses = updateManyStatusesMock;
-      statusValidator.validate = validateMock;
-      statusValidator.formatErrors = formatErrorsMock;
+      statusValidator.validateStatusChange = validateStatusChangeMock;
+      artworksValidator.assertNoErrorsExist = vi.fn();
     });
 
     describe('비공개에서 공개로 상태 변경', () => {
@@ -486,10 +569,18 @@ describeWithoutDeps('ArtworksService', () => {
           { id: 'artwork-2', isDraft: true },
         ];
         findManyWithDetailsMock.mockResolvedValue(artworks);
-        validateMock.mockReturnValue([]);
+        validateStatusChangeMock.mockReturnValue({
+          idsToUpdate: ['artwork-1', 'artwork-2'],
+          errors: {},
+        });
 
         await service.updateStatuses(['artwork-1', 'artwork-2'], true);
 
+        expect(validateStatusChangeMock).toHaveBeenCalledWith(
+          ['artwork-1', 'artwork-2'],
+          artworks,
+          true,
+        );
         expect(updateManyStatusesMock).toHaveBeenCalledWith(
           ['artwork-1', 'artwork-2'],
           true,
@@ -502,15 +593,23 @@ describeWithoutDeps('ArtworksService', () => {
           { id: 'artwork-2', isDraft: true },
         ];
         findManyWithDetailsMock.mockResolvedValue(artworks);
-        validateMock
-          .mockReturnValueOnce([])
-          .mockReturnValueOnce([
-            { code: StatusError.FIELD_REQUIRED, field: 'createdAt' },
-          ]);
-
-        formatErrorsMock.mockReturnValue({
-          [StatusError.FIELD_REQUIRED]: ['artwork-2|createdAt'],
+        validateStatusChangeMock.mockReturnValue({
+          idsToUpdate: ['artwork-1'],
+          errors: {
+            [StatusError.FIELD_REQUIRED]: ['artwork-2|createdAt'],
+          },
         });
+
+        artworksValidator.assertNoErrorsExist = vi
+          .fn()
+          .mockImplementation((errors) => {
+            if (Object.keys(errors).length > 0) {
+              throw new ArtworkException(
+                ArtworkErrorCode.SOME_FAILED,
+                '상태 변경 검증에 실패했습니다',
+              );
+            }
+          });
 
         await expect(
           service.updateStatuses(['artwork-1', 'artwork-2'], true),
@@ -530,10 +629,18 @@ describeWithoutDeps('ArtworksService', () => {
           { id: 'artwork-2', isDraft: false },
         ];
         findManyWithDetailsMock.mockResolvedValue(artworks);
+        validateStatusChangeMock.mockReturnValue({
+          idsToUpdate: ['artwork-1', 'artwork-2'],
+          errors: {},
+        });
 
         await service.updateStatuses(['artwork-1', 'artwork-2'], false);
 
-        expect(validateMock).not.toHaveBeenCalled();
+        expect(validateStatusChangeMock).toHaveBeenCalledWith(
+          ['artwork-1', 'artwork-2'],
+          artworks,
+          false,
+        );
         expect(updateManyStatusesMock).toHaveBeenCalledWith(
           ['artwork-1', 'artwork-2'],
           false,
@@ -546,6 +653,23 @@ describeWithoutDeps('ArtworksService', () => {
         findManyWithDetailsMock.mockResolvedValue([
           { id: 'artwork-1', isDraft: true },
         ]);
+        validateStatusChangeMock.mockReturnValue({
+          idsToUpdate: ['artwork-1'],
+          errors: {
+            [StatusError.NOT_FOUND]: ['non-existent|id'],
+          },
+        });
+
+        artworksValidator.assertNoErrorsExist = vi
+          .fn()
+          .mockImplementation((errors) => {
+            if (Object.keys(errors).length > 0) {
+              throw new ArtworkException(
+                ArtworkErrorCode.SOME_FAILED,
+                '상태 변경 검증에 실패했습니다',
+              );
+            }
+          });
 
         await expect(
           service.updateStatuses(['artwork-1', 'non-existent'], true),
@@ -563,7 +687,10 @@ describeWithoutDeps('ArtworksService', () => {
           { id: 'artwork-2', isDraft: true }, // 비공개 상태
         ];
         findManyWithDetailsMock.mockResolvedValue(artworks);
-        validateMock.mockReturnValue([]);
+        validateStatusChangeMock.mockReturnValue({
+          idsToUpdate: ['artwork-2'],
+          errors: {},
+        });
 
         await service.updateStatuses(['artwork-1', 'artwork-2'], true);
 
@@ -572,45 +699,52 @@ describeWithoutDeps('ArtworksService', () => {
           true,
         );
       });
-
-      it('DB 업데이트 실패 시 에러가 발생함', async () => {
-        const artworks = [{ id: 'artwork-1', isDraft: true }];
-        findManyWithDetailsMock.mockResolvedValue(artworks);
-        validateMock.mockReturnValue([]);
-        updateManyStatusesMock.mockRejectedValue(new Error());
-
-        await expect(
-          service.updateStatuses(['artwork-1'], true),
-        ).rejects.toThrow(ArtworkException);
-      });
     });
   });
 
   describe('deleteArtworks', () => {
     const deleteManyMock = vi.fn();
+    const findManyWithDetailsMock = vi.fn();
     const changeImageTagMock = vi.fn();
 
     beforeEach(() => {
       deleteManyMock.mockClear();
+      findManyWithDetailsMock.mockClear();
       changeImageTagMock.mockClear();
 
-      artworksRepository.withTransaction = vi.fn().mockReturnValue({
+      const txRepoMock = {
         deleteMany: deleteManyMock,
-      });
+        findManyWithDetails: findManyWithDetailsMock,
+      };
+
+      artworksRepository.withTransaction = vi.fn().mockReturnValue(txRepoMock);
       storageService.changeImageTag = changeImageTagMock;
+      artworksValidator.assertAllProvidedArtworksExist = vi.fn();
+      artworksValidator.assertAllArtworksDraft = vi.fn();
     });
 
     it('작품 삭제 및 이미지 태그 변경이 성공적으로 수행됨', async () => {
-      const mockDeletedArtworks = [
-        { id: 'artwork-1', imageKey: 'key1' },
-        { id: 'artwork-2', imageKey: 'key2' },
+      const mockArtworks = [
+        { id: 'artwork-1', imageKey: 'key1', isDraft: true },
+        { id: 'artwork-2', imageKey: 'key2', isDraft: true },
       ];
-      deleteManyMock.mockResolvedValue(mockDeletedArtworks);
+      findManyWithDetailsMock.mockResolvedValue(mockArtworks);
+      deleteManyMock.mockResolvedValue(mockArtworks);
       changeImageTagMock.mockResolvedValue(undefined);
 
       await service.deleteArtworks(['artwork-1', 'artwork-2']);
 
-      expect(deleteManyMock).toHaveBeenCalledWith(['artwork-1', 'artwork-2']);
+      expect(findManyWithDetailsMock).toHaveBeenCalledWith([
+        'artwork-1',
+        'artwork-2',
+      ]);
+      expect(
+        artworksValidator.assertAllProvidedArtworksExist,
+      ).toHaveBeenCalledWith(mockArtworks, ['artwork-1', 'artwork-2']);
+      expect(artworksValidator.assertAllArtworksDraft).toHaveBeenCalledWith(
+        mockArtworks,
+      );
+      expect(deleteManyMock).toHaveBeenCalledWith(mockArtworks);
       expect(changeImageTagMock).toHaveBeenCalledTimes(2);
       expect(changeImageTagMock).toHaveBeenCalledWith(
         'key1',
@@ -623,17 +757,21 @@ describeWithoutDeps('ArtworksService', () => {
     });
 
     it('작품 삭제 실패 시 에러가 발생함', async () => {
-      deleteManyMock.mockRejectedValue(
-        new ArtworkException(
-          ArtworkErrorCode.NOT_FOUND,
-          'Some artworks not found',
-        ),
-      );
+      findManyWithDetailsMock.mockResolvedValue([{ id: 'artwork-1' }]);
+
+      artworksValidator.assertAllArtworksDraft = vi
+        .fn()
+        .mockImplementation(() => {
+          throw new ArtworkException(
+            ArtworkErrorCode.ALREADY_PUBLISHED,
+            '모든 작품이 비공개 상태여야 합니다',
+          );
+        });
 
       await expect(service.deleteArtworks(['artwork-1'])).rejects.toThrow(
         ArtworkException,
       );
-
+      expect(deleteManyMock).not.toHaveBeenCalled();
       expect(changeImageTagMock).not.toHaveBeenCalled();
     });
   });

@@ -5,6 +5,7 @@ import { ArtworksController } from '@/src/modules/artworks/artworks.controller';
 import { ArtworksMapper } from '@/src/modules/artworks/artworks.mapper';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
+import { ArtworksValidator } from '@/src/modules/artworks/artworks.validator';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { StatusValidator } from '@/src/modules/artworks/validators/artwork-status.validator';
 import { AuthModule } from '@/src/modules/auth/auth.module';
@@ -21,6 +22,7 @@ import { StorageService } from '@/src/modules/storage/storage.service';
     ArtworksMapper,
     GenresRepository,
     StatusValidator,
+    ArtworksValidator,
     StorageService,
   ],
 })

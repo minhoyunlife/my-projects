@@ -17,7 +17,8 @@ import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { ImageFileType } from '@/src/modules/artworks/enums/file-type.enum';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { Sort } from '@/src/modules/artworks/enums/sort-type.enum';
-import { StatusValidator } from '@/src/modules/artworks/validators/artwork-status.validator';
+import { ArtworksValidator } from '@/src/modules/artworks/validators/artworks.validator';
+import { StatusValidator } from '@/src/modules/artworks/validators/status.validator';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
@@ -57,6 +58,7 @@ describeWithDeps('ArtworksController', () => {
       providers: [
         ArtworksService,
         StatusValidator,
+        ArtworksValidator,
         StorageService,
         ArtworksRepository,
         GenresRepository,
