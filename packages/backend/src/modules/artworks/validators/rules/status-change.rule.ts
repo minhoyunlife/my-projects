@@ -1,6 +1,6 @@
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { StatusError } from '@/src/modules/artworks/enums/status-error.enum';
-import { ValidationResult } from '@/src/modules/artworks/validators/artwork-status.validator';
+import { ValidationResult } from '@/src/modules/artworks/validators/status.validator';
 
 interface StatusChangeRule {
   validate(artwork: Artwork): ValidationResult;
