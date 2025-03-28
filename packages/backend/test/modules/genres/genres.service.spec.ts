@@ -3,6 +3,8 @@ import { TestingModule } from '@nestjs/testing';
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { CreateGenreDto } from '@/src/modules/genres/dtos/create-genre.dto';
 import { UpdateGenreDto } from '@/src/modules/genres/dtos/update-genre.dto';
+import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
+import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import {
   GenreErrorCode,
@@ -11,50 +13,78 @@ import {
 import { GenresMapper } from '@/src/modules/genres/genres.mapper';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { GenresService } from '@/src/modules/genres/genres.service';
+import { GenresValidator } from '@/src/modules/genres/genres.validator';
 import { TransactionService } from '@/src/modules/transaction/transaction.service';
 import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
 
 describeWithoutDeps('GenresService', () => {
   let service: GenresService;
   let genresRepository: Partial<GenresRepository>;
+  let genresValidator: Partial<GenresValidator>;
+  let transactionService: Partial<TransactionService>;
 
   beforeEach(async () => {
+    genresRepository = {
+      getAllWithFilters: vi.fn(),
+      findByName: vi.fn(),
+      findOneWithDetails: vi.fn(),
+      findManyWithDetails: vi.fn(),
+      findDuplicateNameOfGenres: vi.fn(),
+      createOne: vi.fn(),
+      updateOne: vi.fn(),
+      deleteMany: vi.fn(),
+      withTransaction: vi.fn(),
+    };
+
+    genresValidator = {
+      assertAllTranslationNamesExist: vi.fn(),
+      assertTranslationsExist: vi.fn(),
+      assertGenreExist: vi.fn(),
+      assertAllGenresExist: vi.fn(),
+      assertGenresNotInUse: vi.fn(),
+      assertDuplicatesNotExist: vi.fn(),
+    };
+
+    transactionService = {
+      executeInTransaction: vi.fn((callback) => callback(genresRepository)),
+    };
+
+    (genresRepository.withTransaction as any).mockImplementation(
+      () => genresRepository,
+    );
+
     const module: TestingModule = await createTestingModuleWithoutDB({
       providers: [
         GenresService,
         {
           provide: GenresRepository,
-          useValue: { withTransction: vi.fn() },
+          useValue: genresRepository,
         },
         {
           provide: TransactionService,
-          useValue: {
-            executeInTransaction: vi.fn((cb) => cb()),
-          },
+          useValue: transactionService,
+        },
+        {
+          provide: GenresValidator,
+          useValue: genresValidator,
         },
         GenresMapper,
       ],
     });
 
     service = module.get<GenresService>(GenresService);
-    genresRepository = module.get<GenresRepository>(GenresRepository);
   });
 
   describe('getGenres', () => {
-    const getAllWithFiltersMock = vi.fn();
-
     beforeEach(() => {
-      getAllWithFiltersMock.mockClear();
-
-      genresRepository.getAllWithFilters = getAllWithFiltersMock;
-      getAllWithFiltersMock.mockResolvedValue([[], 0]);
+      (genresRepository.getAllWithFilters as any).mockResolvedValue([[], 0]);
     });
 
     describe('페이지 번호 검증', () => {
       it('쿼리 파라미터에 page 가 지정된 경우, 해당 값으로 지정됨', async () => {
         await service.getGenres({ page: 2 });
 
-        expect(getAllWithFiltersMock).toHaveBeenCalledWith(
+        expect(genresRepository.getAllWithFilters).toHaveBeenCalledWith(
           expect.objectContaining({
             page: 2,
           }),
@@ -64,7 +94,7 @@ describeWithoutDeps('GenresService', () => {
       it('쿼리 파라미터에 page 가 미지정인 경우, 1 로 고정됨', async () => {
         await service.getGenres({});
 
-        expect(getAllWithFiltersMock).toHaveBeenCalledWith(
+        expect(genresRepository.getAllWithFilters).toHaveBeenCalledWith(
           expect.objectContaining({
             page: 1,
           }),
@@ -76,7 +106,7 @@ describeWithoutDeps('GenresService', () => {
       it('컨트롤러에 정의된 페이지 수로 고정됨', async () => {
         await service.getGenres({});
 
-        expect(getAllWithFiltersMock).toHaveBeenCalledWith(
+        expect(genresRepository.getAllWithFilters).toHaveBeenCalledWith(
           expect.objectContaining({ pageSize: PAGE_SIZE.CMS }),
         );
       });
@@ -86,7 +116,7 @@ describeWithoutDeps('GenresService', () => {
       it('쿼리 파라미터에 search 가 지정된 경우, 해당 값으로 지정됨', async () => {
         await service.getGenres({ search: '테스트' });
 
-        expect(getAllWithFiltersMock).toHaveBeenCalledWith(
+        expect(genresRepository.getAllWithFilters).toHaveBeenCalledWith(
           expect.objectContaining({ search: '테스트' }),
         );
       });
@@ -94,7 +124,7 @@ describeWithoutDeps('GenresService', () => {
       it('쿼리 파라미터에 search 가 미지정인 경우, undefined 로 지정됨', async () => {
         await service.getGenres({});
 
-        expect(getAllWithFiltersMock).toHaveBeenCalledWith(
+        expect(genresRepository.getAllWithFilters).toHaveBeenCalledWith(
           expect.objectContaining({ search: undefined }),
         );
       });
@@ -102,184 +132,221 @@ describeWithoutDeps('GenresService', () => {
   });
 
   describe('getGenresByName', () => {
-    const findByNameMock = vi.fn();
-
     beforeEach(() => {
-      findByNameMock.mockClear();
-
-      genresRepository.findByName = findByNameMock;
-      findByNameMock.mockResolvedValue([]);
+      (genresRepository.findByName as any).mockResolvedValue([]);
     });
 
     it('검색어를 바탕으로 장르를 조회함', async () => {
       await service.getGenresByName({ search: '테스트' });
 
-      expect(findByNameMock).toHaveBeenCalledWith('테스트');
+      expect(genresRepository.findByName).toHaveBeenCalledWith('테스트');
     });
   });
 
   describe('createGenre', () => {
-    const createOneMock = vi.fn();
-
     const createGenreDto: CreateGenreDto = {
       koName: '액션',
       enName: 'Action',
       jaName: 'アクション',
     };
 
-    beforeEach(() => {
-      createOneMock.mockClear();
+    const mockGenre: Partial<Genre> = {
+      id: 'genre-1',
+      translations: [
+        { language: Language.KO, name: '액션' },
+        { language: Language.EN, name: 'Action' },
+        { language: Language.JA, name: 'アクション' },
+      ] as GenreTranslation[],
+    };
 
-      genresRepository.withTransaction = vi.fn().mockReturnThis();
-      genresRepository.createOne = createOneMock;
+    beforeEach(() => {
+      (genresRepository.createOne as any).mockResolvedValue(mockGenre);
+      (genresRepository.findDuplicateNameOfGenres as any).mockResolvedValue([]);
     });
 
     it('장르가 성공적으로 생성됨', async () => {
-      const expectedGenre = {
-        id: 'genre-1',
-        translations: [
-          { language: Language.KO, name: '액션' },
-          { language: Language.EN, name: 'Action' },
-          { language: Language.JA, name: 'アクション' },
-        ],
-      };
-
-      createOneMock.mockResolvedValue(expectedGenre);
-
       const result = await service.createGenre(createGenreDto);
 
-      expect(createOneMock).toHaveBeenCalledWith({
-        translations: [
-          { language: Language.KO, name: '액션' },
-          { language: Language.EN, name: 'Action' },
-          { language: Language.JA, name: 'アクション' },
-        ],
-      });
-      expect(result).toEqual(expectedGenre);
+      expect(genresValidator.assertTranslationsExist).toHaveBeenCalled();
+      expect(genresRepository.findDuplicateNameOfGenres).toHaveBeenCalled();
+      expect(genresValidator.assertDuplicatesNotExist).toHaveBeenCalled();
+      expect(genresRepository.createOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          translations: expect.arrayContaining([
+            expect.objectContaining({ language: Language.KO, name: '액션' }),
+            expect.objectContaining({ language: Language.EN, name: 'Action' }),
+            expect.objectContaining({
+              language: Language.JA,
+              name: 'アクション',
+            }),
+          ]),
+        }),
+      );
+      expect(result).toEqual(mockGenre);
     });
 
-    it('리포지토리에서 에러가 발생하면 그대로 전파됨', async () => {
+    it('중복 이름이 있으면 검증 에러가 발생함', async () => {
+      const duplicates = [{ id: 'existing-genre' }];
+      (genresRepository.findDuplicateNameOfGenres as any).mockResolvedValue(
+        duplicates,
+      );
+
       const error = new GenreException(
         GenreErrorCode.DUPLICATE_NAME,
-        'Duplicate name error',
+        "Some of the provided genre's names are duplicated",
       );
-      createOneMock.mockRejectedValue(error);
+      (genresValidator.assertDuplicatesNotExist as any).mockImplementation(
+        () => {
+          throw error;
+        },
+      );
 
-      await expect(service.createGenre(createGenreDto)).rejects.toThrowError(
-        error,
-      );
+      await expect(service.createGenre(createGenreDto)).rejects.toThrow(error);
+      expect(genresRepository.createOne).not.toHaveBeenCalled();
     });
   });
 
   describe('updateGenre', () => {
-    const updateOneMock = vi.fn();
+    const updateGenreDto: UpdateGenreDto = {
+      koName: '롤플레잉',
+    };
+
+    const mockGenre: Partial<Genre> = {
+      id: 'genre-1',
+      translations: [
+        { language: Language.KO, name: '액션' },
+        { language: Language.EN, name: 'Action' },
+        { language: Language.JA, name: 'アクション' },
+      ] as GenreTranslation[],
+    };
+
+    const updatedMockGenre: Partial<Genre> = {
+      id: 'genre-1',
+      translations: [
+        { language: Language.KO, name: '롤플레잉' },
+        { language: Language.EN, name: 'Action' },
+        { language: Language.JA, name: 'アクション' },
+      ] as GenreTranslation[],
+    };
 
     beforeEach(() => {
-      updateOneMock.mockClear();
-
-      genresRepository.withTransaction = vi.fn().mockReturnThis();
-      genresRepository.updateOne = updateOneMock;
+      (genresRepository.findOneWithDetails as any).mockResolvedValue(mockGenre);
+      (genresRepository.findDuplicateNameOfGenres as any).mockResolvedValue([]);
+      (genresRepository.updateOne as any).mockResolvedValue(updatedMockGenre);
     });
 
-    it('장르의 ID 와 수정할 번역 정보를 바탕으로 해당 장르를 수정함', async () => {
-      const updateGenreDto: UpdateGenreDto = {
-        koName: '액션',
-      };
-
-      const expectedGenre = {
-        id: 'genre-1',
-        translations: [
-          { language: Language.KO, name: '액션' },
-          { language: Language.EN, name: 'Action' },
-          { language: Language.JA, name: 'アクション' },
-        ],
-      };
-
-      updateOneMock.mockResolvedValue(expectedGenre);
-
+    it('장르를 성공적으로 수정함', async () => {
       const result = await service.updateGenre('genre-1', updateGenreDto);
 
-      expect(updateOneMock).toHaveBeenCalledWith({
-        id: 'genre-1',
-        translations: [{ language: Language.KO, name: '액션' }],
-      });
-      expect(result).toEqual(expectedGenre);
-    });
-
-    it('여러 언어의 번역을 동시에 수정할 수 있음', async () => {
-      const updateGenreDto: UpdateGenreDto = {
-        koName: '롤플레잉',
-        enName: 'RPG',
-      };
-
-      const expectedGenre = {
-        id: 'genre-1',
-        translations: [
-          { language: Language.KO, name: '롤플레잉' },
-          { language: Language.EN, name: 'RPG' },
-        ],
-      };
-
-      updateOneMock.mockResolvedValue(expectedGenre);
-
-      const result = await service.updateGenre('genre-1', updateGenreDto);
-
-      expect(updateOneMock).toHaveBeenCalledWith({
-        id: 'genre-1',
-        translations: [
-          { language: Language.KO, name: '롤플레잉' },
-          { language: Language.EN, name: 'RPG' },
-        ],
-      });
-      expect(result).toEqual(expectedGenre);
-    });
-
-    it('수정할 번역 정보가 하나도 주어지지 않은 경우, 에러가 발생함', async () => {
-      const updateGenreDto: UpdateGenreDto = {};
-
-      await expect(
-        service.updateGenre('genre-1', updateGenreDto),
-      ).rejects.toThrowError(GenreException);
-    });
-
-    it('리포지토리에서 에러가 발생하면 그대로 전파됨', async () => {
-      const error = new GenreException(
-        GenreErrorCode.DUPLICATE_NAME,
-        'Duplicate name error',
+      expect(
+        genresValidator.assertAllTranslationNamesExist,
+      ).toHaveBeenCalledWith(updateGenreDto);
+      expect(genresRepository.findOneWithDetails).toHaveBeenCalledWith(
+        'genre-1',
       );
-      updateOneMock.mockRejectedValue(error);
+      expect(genresValidator.assertGenreExist).toHaveBeenCalledWith(mockGenre);
+      expect(genresRepository.findDuplicateNameOfGenres).toHaveBeenCalled();
+      expect(genresValidator.assertDuplicatesNotExist).toHaveBeenCalled();
+      expect(genresRepository.updateOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'genre-1',
+          translations: expect.arrayContaining([
+            expect.objectContaining({
+              language: Language.KO,
+              name: '롤플레잉',
+            }),
+          ]),
+        }),
+        mockGenre,
+      );
+      expect(result).toEqual(updatedMockGenre);
+    });
+
+    it('장르가 존재하지 않으면 검증 에러가 발생함', async () => {
+      (genresRepository.findOneWithDetails as any).mockResolvedValue(null);
+
+      const error = new GenreException(
+        GenreErrorCode.NOT_FOUND,
+        'The genre with the provided ID does not exist',
+      );
+      (genresValidator.assertGenreExist as any).mockImplementation(() => {
+        throw error;
+      });
 
       await expect(
-        service.updateGenre('genre-1', { koName: '액션' }),
+        service.updateGenre('non-existent', updateGenreDto),
       ).rejects.toThrow(error);
+      expect(genresRepository.updateOne).not.toHaveBeenCalled();
+    });
+
+    it('수정할 번역 정보가 없으면 검증 에러가 발생함', async () => {
+      const error = new GenreException(
+        GenreErrorCode.NO_TRANSLATIONS_PROVIDED,
+        'At least one translation must be provided',
+      );
+      (
+        genresValidator.assertAllTranslationNamesExist as any
+      ).mockImplementation(() => {
+        throw error;
+      });
+
+      await expect(service.updateGenre('genre-1', {})).rejects.toThrow(error);
+      expect(transactionService.executeInTransaction).not.toHaveBeenCalled();
     });
   });
 
   describe('deleteGenres', () => {
-    const deleteManyMock = vi.fn();
+    const ids = ['genre-1', 'genre-2'];
+    const mockGenres = [
+      { id: 'genre-1', translations: [], artworks: [] },
+      { id: 'genre-2', translations: [], artworks: [] },
+    ];
 
     beforeEach(() => {
-      deleteManyMock.mockClear();
-
-      genresRepository.withTransaction = vi.fn().mockReturnThis();
-      genresRepository.deleteMany = deleteManyMock;
+      (genresRepository.findManyWithDetails as any).mockResolvedValue(
+        mockGenres,
+      );
+      (genresRepository.deleteMany as any).mockResolvedValue(undefined);
     });
 
-    it('전달받은 ID 목록의 장르들을 삭제함', async () => {
-      const ids = ['genre-1', 'genre-2'];
+    it('장르들을 성공적으로 삭제함', async () => {
       await service.deleteGenres(ids);
 
-      expect(deleteManyMock).toHaveBeenCalledWith(ids);
+      expect(genresRepository.findManyWithDetails).toHaveBeenCalledWith(ids);
+      expect(genresValidator.assertAllGenresExist).toHaveBeenCalledWith(
+        mockGenres,
+        ids,
+      );
+      expect(genresValidator.assertGenresNotInUse).toHaveBeenCalledWith(
+        mockGenres,
+      );
+      expect(genresRepository.deleteMany).toHaveBeenCalledWith(mockGenres);
     });
 
-    it('리포지토리에서 에러가 발생하면 그대로 전파됨', async () => {
+    it('장르가 존재하지 않으면 검증 에러가 발생함', async () => {
+      const error = new GenreException(
+        GenreErrorCode.NOT_FOUND,
+        'Some of the provided genres do not exist',
+      );
+      (genresValidator.assertAllGenresExist as any).mockImplementation(() => {
+        throw error;
+      });
+
+      await expect(service.deleteGenres(ids)).rejects.toThrow(error);
+      expect(genresRepository.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('장르가 아트워크에서 사용 중이면 검증 에러가 발생함', async () => {
       const error = new GenreException(
         GenreErrorCode.IN_USE,
-        'Some genres are in use',
+        'Some of the genres are in use by artworks',
       );
-      deleteManyMock.mockRejectedValue(error);
+      (genresValidator.assertGenresNotInUse as any).mockImplementation(() => {
+        throw error;
+      });
 
-      await expect(service.deleteGenres(['genre-1'])).rejects.toThrow(error);
+      await expect(service.deleteGenres(ids)).rejects.toThrow(error);
+      expect(genresRepository.deleteMany).not.toHaveBeenCalled();
     });
   });
 });

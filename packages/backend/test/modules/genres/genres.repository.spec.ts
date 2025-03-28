@@ -5,7 +5,6 @@ import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
-import { GenreException } from '@/src/modules/genres/exceptions/genres.exception';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { ArtworkTranslationsFactory } from '@/test/factories/artwork-translations.factory';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
@@ -297,6 +296,167 @@ describeWithDeps('GenresRepository', () => {
     });
   });
 
+  describe('findOneWithDetails', () => {
+    let genre: Genre;
+
+    beforeEach(async () => {
+      await clearTables(dataSource, [Genre, Artwork]);
+
+      const genres = await saveEntities(genreRepo.repository, [
+        GenresFactory.createTestData({}, [
+          { language: Language.KO, name: '액션' },
+          { language: Language.EN, name: 'Action' },
+          { language: Language.JA, name: 'アクション' },
+        ]),
+      ]);
+
+      genre = genres[0];
+
+      await saveEntities(artworkRepo, [
+        ArtworksFactory.createTestData(
+          {},
+          [
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.KO,
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.EN,
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.JA,
+            }),
+          ],
+          [genre],
+        ),
+      ]);
+    });
+
+    it('ID로 장르 상세 정보를 성공적으로 조회함', async () => {
+      const result = await genreRepo.findOneWithDetails(genre.id);
+
+      expect(result).not.toBeNull();
+      expect(result.id).toBe(genre.id);
+      expect(result.translations).toHaveLength(3);
+      expect(result.artworks).toHaveLength(1);
+    });
+
+    it('존재하지 않는 ID로 조회하면 null을 반환함', async () => {
+      const result = await genreRepo.findOneWithDetails('non-existent-id');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('findManyWithDetails', () => {
+    let genres: Genre[];
+
+    beforeEach(async () => {
+      await clearTables(dataSource, [Genre, Artwork]);
+
+      genres = await saveEntities(genreRepo.repository, [
+        GenresFactory.createTestData({}, [
+          { language: Language.KO, name: '액션' },
+          { language: Language.EN, name: 'Action' },
+          { language: Language.JA, name: 'アクション' },
+        ]),
+        GenresFactory.createTestData({}, [
+          { language: Language.KO, name: '롤플레잉' },
+          { language: Language.EN, name: 'RPG' },
+          { language: Language.JA, name: 'ロールプレイング' },
+        ]),
+      ]);
+
+      await saveEntities(artworkRepo, [
+        ArtworksFactory.createTestData(
+          {},
+          [
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.KO,
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.EN,
+            }),
+            ArtworkTranslationsFactory.createTestData({
+              language: Language.JA,
+            }),
+          ],
+          [genres[0]],
+        ),
+      ]);
+    });
+
+    it('ID 목록으로 장르 상세 정보를 성공적으로 조회함', async () => {
+      const targetIds = [genres[0].id, genres[1].id];
+      const result = await genreRepo.findManyWithDetails(targetIds);
+
+      expect(result).toHaveLength(2);
+      expect(result.map((g) => g.id)).toEqual(
+        expect.arrayContaining(targetIds),
+      );
+
+      expect(result.find((g) => g.id === genres[0].id).artworks).toHaveLength(
+        1,
+      );
+      expect(result.find((g) => g.id === genres[1].id).artworks).toHaveLength(
+        0,
+      );
+    });
+
+    it('존재하지 않는 ID가 포함된 경우, 존재하는 장르만 조회됨', async () => {
+      const targetIds = [genres[0].id, 'non-existent-id'];
+      const result = await genreRepo.findManyWithDetails(targetIds);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe(genres[0].id);
+    });
+
+    it('빈 ID 목록이 주어진 경우, 빈 배열이 반환됨', async () => {
+      const result = await genreRepo.findManyWithDetails([]);
+      expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('findDuplicateNameOfGenres', () => {
+    beforeEach(async () => {
+      await clearTables(dataSource, [Genre]);
+
+      await saveEntities(genreRepo.repository, [
+        GenresFactory.createTestData({ id: 'genre-1' }, [
+          { language: Language.KO, name: '액션' },
+          { language: Language.EN, name: 'Action' },
+          { language: Language.JA, name: 'アクション' },
+        ]),
+        GenresFactory.createTestData({ id: 'genre-2' }, [
+          { language: Language.KO, name: '롤플레잉' },
+          { language: Language.EN, name: 'RPG' },
+          { language: Language.JA, name: 'ロールプレイング' },
+        ]),
+      ]);
+    });
+
+    it('중복된 이름이 있으면 해당 장르들을 반환함', async () => {
+      const result = await genreRepo.findDuplicateNameOfGenres(['액션', 'RPG']);
+
+      expect(result).toHaveLength(2);
+      expect(result.map((g) => g.id)).toContain('genre-1');
+      expect(result.map((g) => g.id)).toContain('genre-2');
+    });
+
+    it('제외할 ID를 지정하면 해당 장르를 제외한 결과를 반환함', async () => {
+      const result = await genreRepo.findDuplicateNameOfGenres(
+        ['액션'],
+        'genre-1',
+      );
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('중복된 이름이 없으면 빈 배열을 반환함', async () => {
+      const result = await genreRepo.findDuplicateNameOfGenres(['새로운이름']);
+
+      expect(result).toHaveLength(0);
+    });
+  });
+
   describe('createOne', () => {
     beforeEach(async () => {
       await clearTables(dataSource, [Genre]);
@@ -331,43 +491,6 @@ describeWithDeps('GenresRepository', () => {
         expect.objectContaining({ language: Language.JA, name: 'アクション' }),
       );
     });
-
-    it('번역이 누락된 경우 에러가 발생함', async () => {
-      const genreData = GenresFactory.createTestData({
-        translations: [
-          { language: Language.KO, name: '액션' },
-          { language: Language.EN, name: 'Action' },
-        ] as GenreTranslation[],
-      });
-
-      await expect(genreRepo.createOne(genreData)).rejects.toThrowError(
-        GenreException,
-      );
-    });
-
-    it('중복된 장르명이 있는 경우 에러가 발생함', async () => {
-      await saveEntities(genreRepo.repository, [
-        GenresFactory.createTestData({
-          translations: [
-            { language: Language.KO, name: '액션' },
-            { language: Language.EN, name: 'Action' },
-            { language: Language.JA, name: 'アクション' },
-          ] as GenreTranslation[],
-        }),
-      ]);
-
-      const duplicateGenre = GenresFactory.createTestData({
-        translations: [
-          { language: Language.KO, name: '액션' }, // 중복된 장르명
-          { language: Language.EN, name: 'RPG' },
-          { language: Language.JA, name: 'ロールプレイング' },
-        ] as GenreTranslation[],
-      });
-
-      await expect(genreRepo.createOne(duplicateGenre)).rejects.toThrowError(
-        GenreException,
-      );
-    });
   });
 
   describe('updateOne', () => {
@@ -378,14 +501,9 @@ describeWithDeps('GenresRepository', () => {
 
       const genres = await saveEntities(genreRepo.repository, [
         GenresFactory.createTestData({}, [
-          { language: Language.KO, name: '액' },
+          { language: Language.KO, name: '액션' },
           { language: Language.EN, name: 'Action' },
           { language: Language.JA, name: 'アクション' },
-        ]),
-        GenresFactory.createTestData({}, [
-          { language: Language.KO, name: '롤플레잉' },
-          { language: Language.EN, name: 'RPG' },
-          { language: Language.JA, name: 'ロールプレイング' },
         ]),
       ]);
 
@@ -396,11 +514,11 @@ describeWithDeps('GenresRepository', () => {
       const genreData = GenresFactory.createTestData({
         id: genre.id,
         translations: [
-          { language: Language.KO, name: '액션' },
+          { language: Language.KO, name: '롤플레잉' },
         ] as GenreTranslation[],
       });
 
-      const result = await genreRepo.updateOne(genreData);
+      const result = await genreRepo.updateOne(genreData, genre);
 
       const saved = await genreRepo.repository.findOne({
         where: { id: result.id },
@@ -411,44 +529,7 @@ describeWithDeps('GenresRepository', () => {
 
       expect(
         saved.translations.find((t) => t.language === Language.KO)?.name,
-      ).toBe('액션');
-    });
-
-    it('갱신하려는 장르명이 데이터베이스에 이미 등록되어 있으나 수정 대상의 소유인 경우, 에러가 발생하지 않음', async () => {
-      const genreData = GenresFactory.createTestData({
-        id: genre.id,
-        translations: [
-          { language: Language.EN, name: 'Action' },
-        ] as GenreTranslation[],
-      });
-
-      await expect(genreRepo.updateOne(genreData)).resolves.not.toThrowError();
-    });
-
-    it('대상 장르를 찾을 수 없는 경우, 에러가 발생함', async () => {
-      const genreData = GenresFactory.createTestData({
-        id: 'not-existing',
-        translations: [
-          { language: Language.KO, name: '액션' },
-        ] as GenreTranslation[],
-      });
-
-      await expect(genreRepo.updateOne(genreData)).rejects.toThrowError(
-        GenreException,
-      );
-    });
-
-    it('갱신하려는 장르명이 데이터베이스에 이미 등록되어 있는 경우, 에러가 발생함', async () => {
-      const genreData = GenresFactory.createTestData({
-        id: genre.id,
-        translations: [
-          { language: Language.KO, name: '롤플레잉' },
-        ] as GenreTranslation[],
-      });
-
-      await expect(genreRepo.updateOne(genreData)).rejects.toThrowError(
-        GenreException,
-      );
+      ).toBe('롤플레잉');
     });
   });
 
@@ -469,72 +550,25 @@ describeWithDeps('GenresRepository', () => {
           { language: Language.EN, name: 'RPG' },
           { language: Language.JA, name: 'ロールプレイング' },
         ]),
-        GenresFactory.createTestData({}, [
-          { language: Language.KO, name: '시뮬레이션' },
-          { language: Language.EN, name: 'Simulation' },
-          { language: Language.JA, name: 'シミュレーション' },
-        ]),
-      ]);
-
-      await saveEntities(artworkRepo, [
-        ArtworksFactory.createTestData(
-          {},
-          [
-            ArtworkTranslationsFactory.createTestData({
-              language: Language.KO,
-            }),
-            ArtworkTranslationsFactory.createTestData({
-              language: Language.EN,
-            }),
-            ArtworkTranslationsFactory.createTestData({
-              language: Language.JA,
-            }),
-          ],
-          [genres[2]],
-        ),
       ]);
     });
 
-    describe('삭제할 장르가 존재하는 경우', async () => {
-      it('해당되는 삭제들을 모두 삭제함', async () => {
-        const ids = [genres[0].id, genres[1].id];
-        await genreRepo.deleteMany(ids);
+    it('장르들을 성공적으로 삭제함', async () => {
+      await genreRepo.deleteMany(genres);
 
-        const saved = await genreRepo.repository.findBy({ id: In(ids) });
-        expect(saved).toHaveLength(0);
+      const saved = await genreRepo.repository.findBy({
+        id: In(genres.map((g) => g.id)),
       });
-
-      it('삭제할 장르와 연관된 번역 데이터도 함께 삭제됨', async () => {
-        const ids = [genres[0].id, genres[1].id];
-        await genreRepo.deleteMany(ids);
-
-        const savedTranslations = await genreTranslationRepo.findBy({
-          genreId: In(ids),
-        });
-        expect(savedTranslations).toHaveLength(0);
-      });
+      expect(saved).toHaveLength(0);
     });
 
-    it('삭제 대상 장르 중 일부가 존재하지 않는 경우, 에러가 발생함', async () => {
-      const ids = [genres[0].id, 'not-existing'];
+    it('삭제할 장르와 연관된 번역 데이터도 함께 삭제됨', async () => {
+      await genreRepo.deleteMany(genres);
 
-      await expect(genreRepo.deleteMany(ids)).rejects.toThrowError(
-        GenreException,
-      );
-
-      const saved = await genreRepo.repository.findBy({ id: genres[0].id });
-      expect(saved).toHaveLength(1);
-    });
-
-    it('삭제 대상 장르 중 작품에 의해 참조되고 있는 경우, 에러가 발생함', async () => {
-      const ids = [genres[0].id, genres[2].id];
-
-      await expect(genreRepo.deleteMany(ids)).rejects.toThrowError(
-        GenreException,
-      );
-
-      const saved = await genreRepo.repository.findBy({ id: genres[0].id });
-      expect(saved).toHaveLength(1);
+      const savedTranslations = await genreTranslationRepo.findBy({
+        genreId: In(genres.map((g) => g.id)),
+      });
+      expect(savedTranslations).toHaveLength(0);
     });
   });
 });

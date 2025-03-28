@@ -7,12 +7,7 @@ import { Transactional } from '@/src/common/interfaces/transactional.interface';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { Sort } from '@/src/modules/artworks/enums/sort-type.enum';
-import {
-  ArtworkErrorCode,
-  ArtworkException,
-} from '@/src/modules/artworks/exceptions/artworks.exception';
 import { ArtworkFilter } from '@/src/modules/artworks/interfaces/filter.interface';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 
 @Injectable()
 export class ArtworksRepository implements Transactional<ArtworksRepository> {
@@ -40,28 +35,28 @@ export class ArtworksRepository implements Transactional<ArtworksRepository> {
     return await query.getManyAndCount();
   }
 
+  async findOneWithDetails(id: string): Promise<Artwork> {
+    return this.repository.findOne({
+      where: { id },
+      relations: ['translations', 'genres'],
+    });
+  }
+
   async findManyWithDetails(ids: string[]): Promise<Artwork[]> {
-    if (ids.length === 0) {
-      return [];
-    }
-    return this.createBaseArtworkQuery()
-      .where('artwork.id IN (:...ids)', { ids })
-      .getMany();
+    return this.repository.find({
+      where: { id: In(ids) },
+      relations: ['translations', 'genres'],
+    });
   }
 
   async createOne(artworkData: Partial<Artwork>): Promise<Artwork> {
     return this.repository.save(this.repository.create(artworkData));
   }
 
-  async updateOne(artworkData: Partial<Artwork>): Promise<Artwork> {
-    const artwork = await this.repository.findOne({
-      where: { id: artworkData.id },
-      relations: ['translations', 'genres'],
-    });
-
-    this.assertArtworkExists(artwork);
-    this.assertArtworkDraft(artwork);
-
+  async updateOne(
+    artworkData: Partial<Artwork>,
+    artwork: Artwork,
+  ): Promise<Artwork> {
     this.updateArtworkFields(artworkData, artwork);
     this.replaceTranslations(artworkData, artwork);
 
@@ -76,15 +71,7 @@ export class ArtworksRepository implements Transactional<ArtworksRepository> {
     await this.repository.update({ id: In(ids) }, { isDraft: !setPublished });
   }
 
-  async deleteMany(ids: string[]): Promise<Artwork[]> {
-    const artworks = await this.repository.find({
-      where: { id: In(ids) },
-      relations: ['translations'],
-    });
-
-    this.assertAllProvidedArtworksExist(artworks, ids);
-    this.assertAllArtworksDraft(artworks);
-
+  async deleteMany(artworks: Artwork[]): Promise<Artwork[]> {
     return this.repository.remove(artworks);
   }
 
@@ -187,55 +174,5 @@ export class ArtworksRepository implements Transactional<ArtworksRepository> {
       existingTranslation.shortReview =
         newTranslation.shortReview ?? existingTranslation.shortReview;
     });
-  }
-
-  private assertArtworkExists(artwork: Artwork): void {
-    if (artwork) return;
-
-    throw new ArtworkException(
-      ArtworkErrorCode.NOT_FOUND,
-      'The artwork with the provided ID does not exist',
-    );
-  }
-
-  private assertArtworkDraft(artwork: Artwork): void {
-    if (artwork.isDraft) return;
-
-    throw new ArtworkException(
-      ArtworkErrorCode.ALREADY_PUBLISHED,
-      'Cannot update published artwork',
-    );
-  }
-
-  private assertAllProvidedArtworksExist(
-    artworks: Artwork[],
-    ids: string[],
-  ): void {
-    if (artworks.length === ids.length) return;
-
-    throw new ArtworkException(
-      ArtworkErrorCode.NOT_FOUND,
-      'Some of the provided artworks do not exist',
-      {
-        ids: ids.filter((id) => !new Set(artworks.map((a) => a.id)).has(id)),
-      },
-    );
-  }
-
-  private assertAllArtworksDraft(artworks: Artwork[]): void {
-    if (artworks.every((artwork) => artwork.isDraft)) return;
-
-    throw new ArtworkException(
-      ArtworkErrorCode.ALREADY_PUBLISHED,
-      'Cannot delete published artworks',
-      {
-        titles: artworks
-          .filter((artwork) => !artwork.isDraft)
-          .map(
-            (a) =>
-              a.translations.find((t) => t.language === Language.KO)?.title,
-          ),
-      },
-    );
   }
 }

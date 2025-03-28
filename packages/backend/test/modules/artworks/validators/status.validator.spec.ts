@@ -1,5 +1,5 @@
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
-import { StatusValidator } from '@/src/modules/artworks/validators/artwork-status.validator';
+import { StatusValidator } from '@/src/modules/artworks/validators/status.validator';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import { ArtworkTranslationsFactory } from '@/test/factories/artwork-translations.factory';
