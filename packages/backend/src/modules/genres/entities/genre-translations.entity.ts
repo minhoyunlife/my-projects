@@ -5,9 +5,10 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryColumn,
+  type Relation,
 } from 'typeorm';
 
-import type { Genre } from '@/src/modules/genres/entities/genres.entity';
+import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 
 /**
@@ -37,9 +38,9 @@ export class GenreTranslation {
   /**
    * 관계
    */
-  @ManyToOne('Genre', (genre: Genre) => genre.translations, {
+  @ManyToOne(() => Genre, (genre: Genre) => genre.translations, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'genreId' })
-  genre: Genre;
+  genre: Relation<Genre>;
 }

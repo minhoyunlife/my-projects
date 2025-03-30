@@ -1,4 +1,4 @@
-import { Entity, Index, ManyToMany, OneToMany } from 'typeorm';
+import { Entity, Index, ManyToMany, OneToMany, type Relation } from 'typeorm';
 
 import { NanoId } from '@/src/common/decorators/id.decorator';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
@@ -20,7 +20,7 @@ export class Genre {
    * 장르를 참조하는 작품들
    */
   @ManyToMany(() => Artwork, (artwork) => artwork.genres)
-  artworks: Artwork[];
+  artworks: Relation<Artwork[]>;
 
   /**
    * 장르명을 다언어로 관리하기 위한 번역 정보
@@ -28,5 +28,5 @@ export class Genre {
   @OneToMany(() => GenreTranslation, (translation) => translation.genre, {
     cascade: true,
   })
-  translations: GenreTranslation[];
+  translations: Relation<GenreTranslation[]>;
 }

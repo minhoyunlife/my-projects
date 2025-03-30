@@ -7,6 +7,9 @@ import { Administrator } from '@/src/modules/auth/entities/administrator.entity'
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { SeedService } from '@/src/modules/seed/seed.service';
+import { SeriesArtwork } from '@/src/modules/series/entities/series-artworks.entity';
+import { SeriesTranslation } from '@/src/modules/series/entities/series-translations.entity';
+import { Series } from '@/src/modules/series/entities/series.entity';
 
 @Module({
   imports: [
@@ -16,6 +19,9 @@ import { SeedService } from '@/src/modules/seed/seed.service';
       Genre,
       GenreTranslation,
       Administrator,
+      Series,
+      SeriesTranslation,
+      SeriesArtwork,
     ]),
   ],
   providers: [SeedService],

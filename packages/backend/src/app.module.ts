@@ -25,6 +25,7 @@ import { AppLoggerModule } from '@/src/modules/logger/logger.module';
 import { LoggingInterceptor } from '@/src/modules/logger/logging.interceptor';
 import { SeedModule } from '@/src/modules/seed/seed.module';
 import { SeedService } from '@/src/modules/seed/seed.service';
+import { SeriesModule } from '@/src/modules/series/series.module';
 import { TerminationMiddleware } from '@/src/modules/termination/termination.middleware';
 import { TerminationService } from '@/src/modules/termination/termination.service';
 import { TransactionModule } from '@/src/modules/transaction/transaction.module';
@@ -41,6 +42,7 @@ import { TransactionModule } from '@/src/modules/transaction/transaction.module'
     AuthModule,
     ArtworksModule,
     GenresModule,
+    SeriesModule,
   ],
   providers: [
     TerminationService,
