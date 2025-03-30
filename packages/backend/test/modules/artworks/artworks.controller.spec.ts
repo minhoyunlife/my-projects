@@ -12,7 +12,6 @@ import { ArtworksService } from '@/src/modules/artworks/artworks.service';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { UpdateArtworkStatusesDto } from '@/src/modules/artworks/dtos/update-artwork-statuses.dto';
 import { UpdateArtworkDto } from '@/src/modules/artworks/dtos/update-artwork.dto';
-import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { ImageFileType } from '@/src/modules/artworks/enums/file-type.enum';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
@@ -47,13 +46,7 @@ describeWithDeps('ArtworksController', () => {
 
   beforeAll(async () => {
     app = await createTestingApp({
-      entities: [
-        Artwork,
-        ArtworkTranslation,
-        Genre,
-        GenreTranslation,
-        Administrator,
-      ],
+      entities: [Artwork, Genre, Administrator],
       controllers: [ArtworksController],
       providers: [
         ArtworksService,

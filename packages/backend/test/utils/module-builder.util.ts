@@ -56,7 +56,6 @@ export async function createTestingModuleWithDB({
       testConfigModule,
       TypeOrmModule.forRoot({
         ...TEST_DB_CONFIG,
-        entities,
         synchronize: true,
       }),
       TypeOrmModule.forFeature(entities),
@@ -96,7 +95,6 @@ export async function createTestingApp({
       TransactionModule,
       TypeOrmModule.forRoot({
         ...TEST_DB_CONFIG,
-        entities,
         synchronize: true,
       }),
       TypeOrmModule.forFeature(entities),

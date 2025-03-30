@@ -1,16 +1,14 @@
 import { DataSource, Repository } from 'typeorm';
 
-import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
-import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import { TransactionService } from '@/src/modules/transaction/transaction.service';
 import { ArtworkTranslationsFactory } from '@/test/factories/artwork-translations.factory';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
-import { clearTables, saveEntities } from '@/test/utils/database.util';
+import { clearTables } from '@/test/utils/database.util';
 import { createTestingModuleWithDB } from '@/test/utils/module-builder.util';
 
 describeWithDeps('TransactionService', () => {
@@ -21,7 +19,7 @@ describeWithDeps('TransactionService', () => {
 
   beforeAll(async () => {
     const module = await createTestingModuleWithDB({
-      entities: [Artwork, ArtworkTranslation, Genre, GenreTranslation],
+      entities: [Artwork, Genre],
       providers: [TransactionService],
     });
 

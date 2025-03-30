@@ -5,7 +5,6 @@ import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-tran
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { Sort } from '@/src/modules/artworks/enums/sort-type.enum';
-import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
@@ -24,7 +23,7 @@ describeWithDeps('ArtworksRepository', () => {
 
   beforeAll(async () => {
     const module = await createTestingModuleWithDB({
-      entities: [Artwork, ArtworkTranslation, Genre, GenreTranslation],
+      entities: [Artwork, ArtworkTranslation, Genre],
       providers: [ArtworksRepository, GenresRepository],
     });
 
