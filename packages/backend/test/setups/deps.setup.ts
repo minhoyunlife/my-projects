@@ -68,7 +68,6 @@ async function initializeDatabase(retries = 3): Promise<DataSource> {
     try {
       const ds = new DataSource({
         ...TEST_DB_CONFIG,
-        entities: [],
         synchronize: false, // 일단 셋업 단계에서는 동기화를 비활성화
       });
 

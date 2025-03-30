@@ -4,7 +4,6 @@ import request from 'supertest';
 import { DataSource, In, Repository } from 'typeorm';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
-import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
@@ -43,13 +42,7 @@ describeWithDeps('GenresController', () => {
 
   beforeAll(async () => {
     app = await createTestingApp({
-      entities: [
-        Genre,
-        GenreTranslation,
-        Artwork,
-        ArtworkTranslation,
-        Administrator,
-      ],
+      entities: [Genre, GenreTranslation, Artwork, Administrator],
       controllers: [GenresController],
       providers: [
         GenresService,

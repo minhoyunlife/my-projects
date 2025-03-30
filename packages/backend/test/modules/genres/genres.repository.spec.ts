@@ -1,6 +1,5 @@
 import { DataSource, In, Repository } from 'typeorm';
 
-import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
@@ -21,7 +20,7 @@ describeWithDeps('GenresRepository', () => {
 
   beforeAll(async () => {
     const module = await createTestingModuleWithDB({
-      entities: [Genre, GenreTranslation, Artwork, ArtworkTranslation],
+      entities: [Genre, GenreTranslation, Artwork],
       providers: [GenresRepository],
     });
 

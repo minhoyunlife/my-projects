@@ -6,12 +6,14 @@ import {
   JoinTable,
   ManyToMany,
   OneToMany,
+  type Relation,
 } from 'typeorm';
 
 import { NanoId } from '@/src/common/decorators/id.decorator';
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
+import { SeriesArtwork } from '@/src/modules/series/entities/series-artworks.entity';
 
 /**
  * 작품 정보를 DB에서 관리하기 위한 엔티티
@@ -74,7 +76,13 @@ export class Artwork {
    */
   @ManyToMany(() => Genre, (genre) => genre.artworks)
   @JoinTable()
-  genres: Genre[];
+  genres: Relation<Genre[]>;
+
+  /**
+   * 작품이 속한 시리즈 정보
+   */
+  @OneToMany(() => SeriesArtwork, (seriesArtwork) => seriesArtwork.artwork)
+  seriesArtworks: Relation<SeriesArtwork[]>;
 
   /**
    * 작품 정보를 다언어로 관리하기 위한 번역 정보
@@ -82,5 +90,5 @@ export class Artwork {
   @OneToMany(() => ArtworkTranslation, (translation) => translation.artwork, {
     cascade: true,
   })
-  translations: ArtworkTranslation[];
+  translations: Relation<ArtworkTranslation[]>;
 }
