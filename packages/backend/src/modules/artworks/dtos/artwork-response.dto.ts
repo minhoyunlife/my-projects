@@ -16,6 +16,7 @@ export class ArtworkResponseDto {
   isVertical: boolean;
   translations: ArtworkTranslation[];
   genres: GenreResponseDto[];
+  series: string | null; // TODO: SeriesArtworkResponseDto 구현 시 수정할 것
 
   constructor(storageService: StorageService, artwork: Artwork) {
     this.id = artwork.id;
@@ -28,6 +29,7 @@ export class ArtworkResponseDto {
     this.translations = artwork.translations ?? [];
     this.genres =
       artwork.genres?.map((genre) => new GenreResponseDto(genre)) ?? [];
+    this.series = null; // TODO: SeriesArtworkResponseDto 구현 시 수정할 것
   }
 }
 
