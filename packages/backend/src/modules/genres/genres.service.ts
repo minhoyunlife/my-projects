@@ -56,7 +56,7 @@ export class GenresService {
   }
 
   async updateGenre(id: string, dto: UpdateGenreDto): Promise<Genre> {
-    this.genresValidator.assertAllTranslationNamesExist(dto);
+    this.genresValidator.assertAtLeastOneTranslationNameExist(dto);
 
     return this.transactionService.executeInTransaction(async (manager) => {
       const genresTxRepo = this.genresRepository.withTransaction(manager);
