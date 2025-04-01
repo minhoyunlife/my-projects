@@ -124,7 +124,12 @@ describeWithoutDeps('SeriesResponse', () => {
   describe('SeriesListResponse', () => {
     const seriesList = [series];
 
-    const response = new SeriesListResponseDto(seriesList, 1, 1, 20);
+    const response = new SeriesListResponseDto(
+      seriesList.map((s) => new SeriesResponseDto(s)),
+      1,
+      1,
+      20,
+    );
 
     it('엔티티의 속성 값대로 items 가 반환됨', () => {
       for (const s of seriesList) {

@@ -3,6 +3,8 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { DataSource, Repository } from 'typeorm';
 
+import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
 import { TokenErrorCode } from '@/src/modules/auth/exceptions/token.exception';
@@ -19,6 +21,9 @@ import { SeriesRepository } from '@/src/modules/series/series.repository';
 import { SeriesService } from '@/src/modules/series/series.service';
 import { SeriesValidator } from '@/src/modules/series/series.validator';
 import { AdministratorsFactory } from '@/test/factories/administrator.factory';
+import { ArtworkTranslationsFactory } from '@/test/factories/artwork-translations.factory';
+import { ArtworksFactory } from '@/test/factories/artworks.factory';
+import { SeriesArtworksFactory } from '@/test/factories/series-artworks.factory';
 import { SeriesTranslationsFactory } from '@/test/factories/series-translations.factory';
 import { SeriesFactory } from '@/test/factories/series.factory';
 import { createTestAccessToken } from '@/test/utils/auth.util';
@@ -31,13 +36,21 @@ describeWithDeps('SeriesController', () => {
 
   let authService: AuthService;
   let seriesRepository: Repository<Series>;
+  let artworkRepository: Repository<Artwork>;
+  let seriesArtworkRepository: Repository<SeriesArtwork>;
   let administratorRepository: Repository<Administrator>;
 
   let administrator: Administrator;
 
   beforeAll(async () => {
     app = await createTestingApp({
-      entities: [Series, SeriesTranslation, SeriesArtwork, Administrator],
+      entities: [
+        Series,
+        SeriesTranslation,
+        SeriesArtwork,
+        Artwork,
+        Administrator,
+      ],
       controllers: [SeriesController],
       providers: [
         SeriesService,
@@ -49,15 +62,17 @@ describeWithDeps('SeriesController', () => {
 
     authService = app.get(AuthService);
 
-    dataSource = app.get(DataSource);
+    dataSource = app.get<DataSource>(DataSource);
     seriesRepository = dataSource.getRepository(Series);
+    artworkRepository = dataSource.getRepository(Artwork);
+    seriesArtworkRepository = dataSource.getRepository(SeriesArtwork);
     administratorRepository = dataSource.getRepository(Administrator);
 
     await app.init();
   });
 
   beforeEach(async () => {
-    await clearTables(dataSource, [Series, Administrator]);
+    await clearTables(dataSource, [Series, Artwork, Administrator]);
 
     administrator = (
       await saveEntities(administratorRepository, [
@@ -69,6 +84,165 @@ describeWithDeps('SeriesController', () => {
   afterAll(async () => {
     await dataSource.destroy();
     await app.close();
+  });
+
+  describe('GET /series', () => {
+    let series: Series[];
+    let artworks: Artwork[];
+
+    beforeEach(async () => {
+      // 시리즈 데이터 생성
+      series = await saveEntities(seriesRepository, [
+        SeriesFactory.createTestData({}, [
+          SeriesTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '파이널 판타지',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.EN,
+            title: 'Final Fantasy',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.JA,
+            title: 'ファイナルファンタジー',
+          }),
+        ]),
+        SeriesFactory.createTestData({}, [
+          SeriesTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '젤다의 전설',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.EN,
+            title: 'The Legend of Zelda',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.JA,
+            title: 'ゼルダの伝説',
+          }),
+        ]),
+      ]);
+
+      // 작품 데이터 생성
+      artworks = await saveEntities(artworkRepository, [
+        ArtworksFactory.createTestData({}, [
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '파이널 판타지 7',
+          }),
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.EN,
+            title: 'Final Fantasy VII',
+          }),
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.JA,
+            title: 'ファイナルファンタジーVII',
+          }),
+        ]),
+      ]);
+
+      // 시리즈와 작품 연결
+      await saveEntities(seriesArtworkRepository, [
+        SeriesArtworksFactory.createTestData(
+          { order: 0 },
+          series[0],
+          artworks[0],
+        ),
+      ]);
+    });
+
+    it('모든 시리즈를 조회할 수 있음', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .get('/series')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      const { items, metadata } = response.body;
+
+      expect(items).toHaveLength(2);
+      expect(metadata.pageSize).toBe(PAGE_SIZE.CMS);
+
+      // 시리즈와 연결된 작품 정보 확인
+      const ffSeries = items.find((item) =>
+        item.translations.some((t) => t.title === '파이널 판타지'),
+      );
+      expect(ffSeries).toBeDefined();
+      expect(ffSeries.seriesArtworks).toHaveLength(1);
+      expect(ffSeries.seriesArtworks[0].order).toBe(0);
+      expect(ffSeries.seriesArtworks[0].id).toBe(artworks[0].id);
+
+      // 작품이 연결되지 않은 시리즈 확인
+      const zeldaSeries = items.find((item) =>
+        item.translations.some((t) => t.title === '젤다의 전설'),
+      );
+      expect(zeldaSeries).toBeDefined();
+      expect(zeldaSeries.seriesArtworks).toHaveLength(0);
+    });
+
+    it('검색어로 제목 필터링이 정상적으로 동작함', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .get('/series')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ search: 'fantasy' })
+        .expect(200);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      const { items } = response.body;
+
+      expect(
+        items.every((item) =>
+          item.translations.some((translation) =>
+            translation.title.toLowerCase().includes('fantasy'),
+          ),
+        ),
+      ).toBe(true);
+    });
+
+    it('페이지네이션이 정상적으로 동작함', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .get('/series')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ page: 1 })
+        .expect(200);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      const { metadata } = response.body;
+
+      expect(metadata.currentPage).toBe(1);
+      expect(metadata.totalPages).toBeDefined();
+      expect(metadata.totalCount).toBeDefined();
+    });
+
+    it('유효하지 않은 쿼리를 전달할 경우, 400이 발생함', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .get('/series')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ page: 'a' })
+        .expect(400);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
+
+    it('잘못된 토큰으로 요청할 경우, 401이 발생함', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/series')
+        .set('Authorization', 'Bearer invalid-token')
+        .expect(401);
+
+      await expect(response).toMatchOpenAPISpec();
+    });
   });
 
   describe('POST /series', () => {
