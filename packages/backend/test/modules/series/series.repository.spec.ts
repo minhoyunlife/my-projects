@@ -1,9 +1,15 @@
 import { DataSource, Repository } from 'typeorm';
 
+import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
+import { SeriesArtwork } from '@/src/modules/series/entities/series-artworks.entity';
 import { SeriesTranslation } from '@/src/modules/series/entities/series-translations.entity';
 import { Series } from '@/src/modules/series/entities/series.entity';
 import { SeriesRepository } from '@/src/modules/series/series.repository';
+import { ArtworkTranslationsFactory } from '@/test/factories/artwork-translations.factory';
+import { ArtworksFactory } from '@/test/factories/artworks.factory';
+import { SeriesArtworksFactory } from '@/test/factories/series-artworks.factory';
 import { SeriesTranslationsFactory } from '@/test/factories/series-translations.factory';
 import { SeriesFactory } from '@/test/factories/series.factory';
 import { clearTables, saveEntities } from '@/test/utils/database.util';
@@ -14,10 +20,18 @@ describeWithDeps('SeriesRepository', () => {
 
   let seriesRepo: SeriesRepository;
   let seriesTranslationRepo: Repository<SeriesTranslation>;
+  let artworkRepo: Repository<Artwork>;
+  let seriesArtworkRepo: Repository<SeriesArtwork>;
 
   beforeAll(async () => {
     const module = await createTestingModuleWithDB({
-      entities: [Series, SeriesTranslation],
+      entities: [
+        Series,
+        SeriesTranslation,
+        Artwork,
+        ArtworkTranslation,
+        SeriesArtwork,
+      ],
       providers: [SeriesRepository],
     });
 
@@ -25,10 +39,248 @@ describeWithDeps('SeriesRepository', () => {
 
     seriesRepo = module.get<SeriesRepository>(SeriesRepository);
     seriesTranslationRepo = dataSource.getRepository(SeriesTranslation);
+    artworkRepo = dataSource.getRepository(Artwork);
+    seriesArtworkRepo = dataSource.getRepository(SeriesArtwork);
   });
 
   afterAll(async () => {
     await dataSource.destroy();
+  });
+
+  describe('getAllWithFilters', () => {
+    let series: Series[];
+    let artworks: Artwork[];
+
+    beforeEach(async () => {
+      await clearTables(dataSource, [Series, Artwork]);
+
+      // 시리즈 데이터 생성
+      series = await saveEntities(seriesRepo.repository, [
+        SeriesFactory.createTestData({}, [
+          SeriesTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '파이널 판타지',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.EN,
+            title: 'Final Fantasy',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.JA,
+            title: 'ファイナルファンタジー',
+          }),
+        ]),
+        SeriesFactory.createTestData({}, [
+          SeriesTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '젤다의 전설',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.EN,
+            title: 'The Legend of Zelda',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.JA,
+            title: 'ゼルダの伝説',
+          }),
+        ]),
+        SeriesFactory.createTestData({}, [
+          SeriesTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '메탈 기어',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.EN,
+            title: 'Metal Gear',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.JA,
+            title: 'メタルギア',
+          }),
+        ]),
+      ]);
+
+      // 작품 데이터 생성
+      artworks = await saveEntities(artworkRepo, [
+        ArtworksFactory.createTestData({}, [
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '파이널 판타지 7',
+          }),
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.EN,
+            title: 'Final Fantasy VII',
+          }),
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.JA,
+            title: 'ファイナルファンタジーVII',
+          }),
+        ]),
+        ArtworksFactory.createTestData({}, [
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '파이널 판타지 10',
+          }),
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.EN,
+            title: 'Final Fantasy X',
+          }),
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.JA,
+            title: 'ファイナルファンタジーX',
+          }),
+        ]),
+      ]);
+
+      // 시리즈와 작품 연결
+      await saveEntities(seriesArtworkRepo, [
+        SeriesArtworksFactory.createTestData(
+          { order: 0 },
+          series[0],
+          artworks[0],
+        ),
+        SeriesArtworksFactory.createTestData(
+          { order: 1 },
+          series[0],
+          artworks[1],
+        ),
+      ]);
+    });
+
+    describe('검색어 필터링 검증', () => {
+      it('한국어 타이틀로 검색 시 해당 시리즈가 조회됨', async () => {
+        const [result, totalCount] = await seriesRepo.getAllWithFilters({
+          page: 1,
+          pageSize: 20,
+          search: '젤다',
+        });
+
+        expect(totalCount).toBe(1);
+        expect(result).toHaveLength(1);
+        expect(result[0].translations).toContainEqual(
+          expect.objectContaining({
+            language: Language.KO,
+            title: '젤다의 전설',
+          }),
+        );
+      });
+
+      it('영어 타이틀로 검색 시 해당 시리즈가 조회됨', async () => {
+        const [result, totalCount] = await seriesRepo.getAllWithFilters({
+          page: 1,
+          pageSize: 20,
+          search: 'Final',
+        });
+
+        expect(totalCount).toBe(1);
+        expect(result).toHaveLength(1);
+        expect(result[0].translations).toContainEqual(
+          expect.objectContaining({
+            language: Language.EN,
+            title: 'Final Fantasy',
+          }),
+        );
+      });
+
+      it('일본어 타이틀로 검색 시 해당 시리즈가 조회됨', async () => {
+        const [result, totalCount] = await seriesRepo.getAllWithFilters({
+          page: 1,
+          pageSize: 20,
+          search: 'メタル',
+        });
+
+        expect(totalCount).toBe(1);
+        expect(result).toHaveLength(1);
+        expect(result[0].translations).toContainEqual(
+          expect.objectContaining({
+            language: Language.JA,
+            title: 'メタルギア',
+          }),
+        );
+      });
+
+      it('검색어가 타이틀의 일부와 일치하는 경우에도 해당 시리즈가 조회됨', async () => {
+        const [result, totalCount] = await seriesRepo.getAllWithFilters({
+          page: 1,
+          pageSize: 20,
+          search: '전설',
+        });
+
+        expect(totalCount).toBe(1);
+        expect(result).toHaveLength(1);
+        expect(result[0].translations).toContainEqual(
+          expect.objectContaining({
+            language: Language.KO,
+            title: '젤다의 전설',
+          }),
+        );
+      });
+
+      it('검색어를 지정하지 않은 경우, 모든 시리즈가 조회됨', async () => {
+        const [result, totalCount] = await seriesRepo.getAllWithFilters({
+          page: 1,
+          pageSize: 20,
+        });
+
+        expect(totalCount).toBe(3);
+        expect(result).toHaveLength(3);
+      });
+    });
+
+    describe('페이지네이션 검증', () => {
+      it('지정한 페이지 크기만큼 시리즈가 조회됨', async () => {
+        const [result, totalCount] = await seriesRepo.getAllWithFilters({
+          page: 1,
+          pageSize: 2,
+        });
+
+        expect(totalCount).toBe(3);
+        expect(result).toHaveLength(2);
+      });
+
+      it('지정한 페이지의 시리즈가 조회됨', async () => {
+        const [result, totalCount] = await seriesRepo.getAllWithFilters({
+          page: 2,
+          pageSize: 2,
+        });
+
+        expect(totalCount).toBe(3);
+        expect(result).toHaveLength(1);
+      });
+    });
+
+    describe('연관 데이터 로딩 검증', () => {
+      it('시리즈와 연결된 작품 정보가 함께 로딩됨', async () => {
+        const [result, _] = await seriesRepo.getAllWithFilters({
+          page: 1,
+          pageSize: 20,
+          search: '파이널',
+        });
+
+        expect(result).toHaveLength(1);
+        expect(result[0].seriesArtworks).toHaveLength(2);
+
+        // 작품과의 연결 정보 검증
+        const seriesArtworks = result[0].seriesArtworks;
+        expect(seriesArtworks[0].artworkId).toBe(artworks[0].id);
+        expect(seriesArtworks[1].artworkId).toBe(artworks[1].id);
+
+        // 순서 정보 검증
+        expect(seriesArtworks[0].order).toBe(0);
+        expect(seriesArtworks[1].order).toBe(1);
+      });
+
+      it('작품이 연결되지 않은 시리즈도 정상적으로 조회됨', async () => {
+        const [result, _] = await seriesRepo.getAllWithFilters({
+          page: 1,
+          pageSize: 20,
+          search: '젤다',
+        });
+
+        expect(result).toHaveLength(1);
+        expect(result[0].seriesArtworks).toHaveLength(0);
+      });
+    });
   });
 
   describe('findDuplicateTitleOfSeries', () => {
