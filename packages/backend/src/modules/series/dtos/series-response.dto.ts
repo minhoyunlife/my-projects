@@ -13,3 +13,28 @@ export class SeriesResponseDto {
     this.seriesArtworks = series.seriesArtworks ?? [];
   }
 }
+
+export class SeriesListResponseDto {
+  items: SeriesResponseDto[];
+  metadata: {
+    totalCount: number;
+    totalPages: number;
+    currentPage: number;
+    pageSize: number;
+  };
+
+  constructor(
+    items: SeriesResponseDto[],
+    totalCount: number,
+    currentPage: number,
+    pageSize: number,
+  ) {
+    this.items = items;
+    this.metadata = {
+      totalCount,
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage,
+      pageSize,
+    };
+  }
+}
