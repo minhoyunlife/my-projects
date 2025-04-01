@@ -1,6 +1,9 @@
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
-import { SeriesResponseDto } from '@/src/modules/series/dtos/series-response.dto';
+import {
+  SeriesListResponseDto,
+  SeriesResponseDto,
+} from '@/src/modules/series/dtos/series-response.dto';
 import { SeriesArtwork } from '@/src/modules/series/entities/series-artworks.entity';
 import { Series } from '@/src/modules/series/entities/series.entity';
 import { ArtworkTranslationsFactory } from '@/test/factories/artwork-translations.factory';
@@ -114,6 +117,27 @@ describeWithoutDeps('SeriesResponse', () => {
         );
 
         expect(responseWithNullArtworks.seriesArtworks).toEqual([]);
+      });
+    });
+  });
+
+  describe('SeriesListResponse', () => {
+    const seriesList = [series];
+
+    const response = new SeriesListResponseDto(seriesList, 1, 1, 20);
+
+    it('엔티티의 속성 값대로 items 가 반환됨', () => {
+      for (const s of seriesList) {
+        expect(response.items).toEqual([new SeriesResponseDto(s)]);
+      }
+    });
+
+    it('엔티티의 속성 값대로 metadata 가 반환됨', () => {
+      expect(response.metadata).toEqual({
+        totalCount: 1,
+        totalPages: 1, // 1/10의 결과값을 올림
+        currentPage: 1,
+        pageSize: 20,
       });
     });
   });
