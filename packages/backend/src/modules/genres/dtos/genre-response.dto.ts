@@ -27,12 +27,12 @@ export class GenreListResponseDto {
   };
 
   constructor(
-    items: GenreResponseDto[],
+    genres: Genre[],
     totalCount: number,
     currentPage: number,
     pageSize: number,
   ) {
-    this.items = items;
+    this.items = genres.map((genre) => new GenreResponseDto(genre));
     this.metadata = {
       totalCount,
       totalPages: Math.ceil(totalCount / pageSize),
@@ -48,7 +48,7 @@ export class GenreListResponseDto {
 export class GenreSearchResponseDto {
   items: GenreResponseDto[];
 
-  constructor(items: GenreResponseDto[]) {
-    this.items = items;
+  constructor(genres: Genre[]) {
+    this.items = genres.map((genre) => new GenreResponseDto(genre));
   }
 }

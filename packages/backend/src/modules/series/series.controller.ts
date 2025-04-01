@@ -31,7 +31,7 @@ export class SeriesController {
   ): Promise<SeriesListResponseDto> {
     const result = await this.seriesService.getSeries(dto);
     return new SeriesListResponseDto(
-      result.items.map((series) => new SeriesResponseDto(series)),
+      result.items,
       result.totalCount,
       dto.page ?? 1,
       PAGE_SIZE.CMS,

@@ -51,7 +51,6 @@ export class GenresController {
   @HttpCode(HttpStatus.OK)
   async getGenresByName(@Query() query: GetGenresByNameQueryDto) {
     const result = await this.genresService.getGenresByName(query);
-
     return new GenreSearchResponseDto(result);
   }
 

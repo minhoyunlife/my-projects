@@ -39,12 +39,12 @@ export class SeriesListResponseDto {
   };
 
   constructor(
-    items: SeriesResponseDto[],
+    series: Series[],
     totalCount: number,
     currentPage: number,
     pageSize: number,
   ) {
-    this.items = items;
+    this.items = series.map((s) => new SeriesResponseDto(s));
     this.metadata = {
       totalCount,
       totalPages: Math.ceil(totalCount / pageSize),
