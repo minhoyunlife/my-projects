@@ -10,7 +10,7 @@ import {
 
 @Injectable()
 export class GenresValidator {
-  assertAllTranslationNamesExist(dto: UpdateGenreDto) {
+  assertAtLeastOneTranslationNameExist(dto: UpdateGenreDto) {
     if (dto.koName || dto.enName || dto.jaName) return;
     throw new GenreException(
       GenreErrorCode.NO_TRANSLATIONS_PROVIDED,

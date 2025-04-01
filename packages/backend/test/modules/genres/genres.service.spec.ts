@@ -37,7 +37,7 @@ describeWithoutDeps('GenresService', () => {
     };
 
     genresValidator = {
-      assertAllTranslationNamesExist: vi.fn(),
+      assertAtLeastOneTranslationNameExist: vi.fn(),
       assertTranslationsExist: vi.fn(),
       assertGenreExist: vi.fn(),
       assertAllGenresExist: vi.fn(),
@@ -239,7 +239,7 @@ describeWithoutDeps('GenresService', () => {
       const result = await service.updateGenre('genre-1', updateGenreDto);
 
       expect(
-        genresValidator.assertAllTranslationNamesExist,
+        genresValidator.assertAtLeastOneTranslationNameExist,
       ).toHaveBeenCalledWith(updateGenreDto);
       expect(genresRepository.findOneWithDetails).toHaveBeenCalledWith(
         'genre-1',
@@ -285,7 +285,7 @@ describeWithoutDeps('GenresService', () => {
         'At least one translation must be provided',
       );
       (
-        genresValidator.assertAllTranslationNamesExist as any
+        genresValidator.assertAtLeastOneTranslationNameExist as any
       ).mockImplementation(() => {
         throw error;
       });

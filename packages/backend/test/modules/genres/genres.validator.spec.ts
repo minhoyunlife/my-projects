@@ -17,22 +17,24 @@ describeWithoutDeps('GenresValidator', () => {
     validator = new GenresValidator();
   });
 
-  describe('assertAllTranslationNamesExist', () => {
+  describe('assertAtLeastOneTranslationNameExist', () => {
     it('번역 이름이 하나 이상 존재하면 예외를 발생시키지 않음', () => {
       expect(() =>
-        validator.assertAllTranslationNamesExist({ koName: '액션' }),
+        validator.assertAtLeastOneTranslationNameExist({ koName: '액션' }),
       ).not.toThrow();
 
       expect(() =>
-        validator.assertAllTranslationNamesExist({ enName: 'Action' }),
+        validator.assertAtLeastOneTranslationNameExist({ enName: 'Action' }),
       ).not.toThrow();
 
       expect(() =>
-        validator.assertAllTranslationNamesExist({ jaName: 'アクション' }),
+        validator.assertAtLeastOneTranslationNameExist({
+          jaName: 'アクション',
+        }),
       ).not.toThrow();
 
       expect(() =>
-        validator.assertAllTranslationNamesExist({
+        validator.assertAtLeastOneTranslationNameExist({
           koName: '액션',
           enName: 'Action',
           jaName: 'アクション',
@@ -41,12 +43,12 @@ describeWithoutDeps('GenresValidator', () => {
     });
 
     it('번역 이름이 하나도 없으면 예외를 발생시킴', () => {
-      expect(() => validator.assertAllTranslationNamesExist({})).toThrow(
+      expect(() => validator.assertAtLeastOneTranslationNameExist({})).toThrow(
         GenreException,
       );
 
       try {
-        validator.assertAllTranslationNamesExist({});
+        validator.assertAtLeastOneTranslationNameExist({});
       } catch (e) {
         expect(e).toBeInstanceOf(GenreException);
         expect(e.getCode()).toBe(GenreErrorCode.NO_TRANSLATIONS_PROVIDED);

@@ -6,6 +6,10 @@ import { SeriesArtwork } from '@/src/modules/series/entities/series-artworks.ent
 import { SeriesTranslation } from '@/src/modules/series/entities/series-translations.entity';
 import { Series } from '@/src/modules/series/entities/series.entity';
 import { SeriesController } from '@/src/modules/series/series.controller';
+import { SeriesMapper } from '@/src/modules/series/series.mapper';
+import { SeriesRepository } from '@/src/modules/series/series.repository';
+import { SeriesService } from '@/src/modules/series/series.service';
+import { SeriesValidator } from '@/src/modules/series/series.validator';
 
 @Module({
   imports: [
@@ -13,6 +17,6 @@ import { SeriesController } from '@/src/modules/series/series.controller';
     AuthModule,
   ],
   controllers: [SeriesController],
-  providers: [],
+  providers: [SeriesService, SeriesMapper, SeriesValidator, SeriesRepository],
 })
 export class SeriesModule {}
