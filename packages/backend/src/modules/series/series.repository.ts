@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { EntityManager, Repository, SelectQueryBuilder } from 'typeorm';
+import { EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
 
 import { Transactional } from '@/src/common/interfaces/transactional.interface';
 import { Series } from '@/src/modules/series/entities/series.entity';
@@ -31,6 +31,15 @@ export class SeriesRepository implements Transactional<SeriesRepository> {
     return query.getManyAndCount();
   }
 
+  async findManyWithDetails(ids: string[]): Promise<Series[]> {
+    if (ids.length === 0) return [];
+
+    return this.repository.find({
+      where: { id: In(ids) },
+      relations: ['translations', 'seriesArtworks'],
+    });
+  }
+
   async findDuplicateTitleOfSeries(
     titles: string[],
     excludingId?: string,
@@ -42,6 +51,10 @@ export class SeriesRepository implements Transactional<SeriesRepository> {
 
   async createOne(seriesData: Partial<Series>): Promise<Series> {
     return this.repository.save(this.repository.create(seriesData));
+  }
+
+  async deleteMany(series: Series[]): Promise<void> {
+    await this.repository.remove(series);
   }
 
   private createBaseSeriesQuery(): SelectQueryBuilder<Series> {
