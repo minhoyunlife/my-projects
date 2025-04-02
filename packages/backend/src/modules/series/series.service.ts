@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { EntityList } from '@/src/common/interfaces/entity-list.interface';
 import { CreateSeriesDto } from '@/src/modules/series/dtos/create-series.dto';
+import { DeleteSeriesDto } from '@/src/modules/series/dtos/delete-series.dto';
 import { GetSeriesQueryDto } from '@/src/modules/series/dtos/get-series-query.dto';
 import { Series } from '@/src/modules/series/entities/series.entity';
 import { SeriesMapper } from '@/src/modules/series/series.mapper';
@@ -46,6 +47,18 @@ export class SeriesService {
       this.seriesValidator.assertDuplicatesNotExist(duplicates);
 
       return seriesTxRepo.createOne(seriesData);
+    });
+  }
+
+  async deleteSeries(dto: DeleteSeriesDto): Promise<void> {
+    return this.transactionService.executeInTransaction(async (manager) => {
+      const seriesTxRepo = this.seriesRepository.withTransaction(manager);
+
+      const series = await seriesTxRepo.findManyWithDetails(dto.ids);
+      this.seriesValidator.assertAllSeriesExist(series, dto.ids);
+      this.seriesValidator.assertSeriesNotInUse(series);
+
+      await seriesTxRepo.deleteMany(series);
     });
   }
 }
