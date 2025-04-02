@@ -61,13 +61,14 @@ export class GenresValidator {
   }
 
   assertGenresNotInUse(genres: Genre[]): void {
-    if (genres.every((g) => g.artworks.length === 0)) return;
+    const genresInUse = genres.filter((g) => g.artworks.length > 0);
+    if (genresInUse.length === 0) return;
 
     throw new GenreException(
       GenreErrorCode.IN_USE,
       'Some of the genres are in use by artworks',
       {
-        koNames: genres.map(
+        koNames: genresInUse.map(
           (g) => g.translations.find((t) => t.language === Language.KO)?.name,
         ),
       },

@@ -16,7 +16,9 @@ export class Series {
   /**
    * 시리즈에 포함된 작품들의 연결 정보
    */
-  @OneToMany(() => SeriesArtwork, (seriesArtwork) => seriesArtwork.series)
+  @OneToMany(() => SeriesArtwork, (seriesArtwork) => seriesArtwork.series, {
+    cascade: true,
+  })
   seriesArtworks: Relation<SeriesArtwork[]>;
 
   /**

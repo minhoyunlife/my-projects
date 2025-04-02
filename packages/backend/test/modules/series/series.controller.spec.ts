@@ -86,6 +86,149 @@ describeWithDeps('SeriesController', () => {
     await app.close();
   });
 
+  describe('DELETE /series', () => {
+    let deleteSeriesList: Series[];
+    let deleteArtworks: Artwork[];
+
+    beforeEach(async () => {
+      deleteSeriesList = await saveEntities(seriesRepository, [
+        SeriesFactory.createTestData({}, [
+          SeriesTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '파이널 판타지',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.EN,
+            title: 'Final Fantasy',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.JA,
+            title: 'ファイナルファンタジー',
+          }),
+        ]),
+        SeriesFactory.createTestData({}, [
+          SeriesTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '젤다의 전설',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.EN,
+            title: 'The Legend of Zelda',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.JA,
+            title: 'ゼルダの伝説',
+          }),
+        ]),
+      ]);
+
+      deleteArtworks = await saveEntities(artworkRepository, [
+        ArtworksFactory.createTestData({}, [
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '파이널 판타지 7',
+          }),
+        ]),
+      ]);
+
+      await saveEntities(seriesArtworkRepository, [
+        SeriesArtworksFactory.createTestData(
+          { order: 0 },
+          deleteSeriesList[0],
+          deleteArtworks[0],
+        ),
+      ]);
+    });
+
+    it('유효한 ID 목록으로 시리즈 삭제 시 204 응답으로 성공함', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const deleteDto = {
+        ids: [deleteSeriesList[1].id], // 젤다의 전설 (작품과 연결되지 않은 시리즈)
+      };
+
+      const response = await request(app.getHttpServer())
+        .delete('/series')
+        .set('Authorization', `Bearer ${token}`)
+        .send(deleteDto)
+        .expect(204);
+
+      expect(response.body).toEqual({});
+
+      const remainingSeries = await seriesRepository.find({
+        where: { id: deleteSeriesList[1].id },
+      });
+      expect(remainingSeries).toHaveLength(0);
+    });
+
+    it('리퀘스트 바디가 부적절할 경우, 400 오류가 발생함', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .delete('/series')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ids: [] }) // 빈 ID 배열
+        .expect(400);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      expect(response.body.code).toBe(INVALID_INPUT_DATA);
+    });
+
+    it('인증에 실패한 경우, 401 오류가 발생함', async () => {
+      const deleteDto = {
+        ids: [deleteSeriesList[1].id],
+      };
+
+      const response = await request(app.getHttpServer())
+        .delete('/series')
+        .set('Authorization', 'Bearer invalid-token')
+        .send(deleteDto)
+        .expect(401);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      expect(response.body.code).toBe(TokenErrorCode.INVALID_TOKEN);
+    });
+
+    it('삭제할 시리즈 ID가 존재하지 않을 경우 404 오류가 발생함', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const deleteDto = {
+        ids: ['non-existent-id'],
+      };
+
+      const response = await request(app.getHttpServer())
+        .delete('/series')
+        .set('Authorization', `Bearer ${token}`)
+        .send(deleteDto)
+        .expect(404);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      expect(response.body.code).toBe(SeriesErrorCode.NOT_FOUND);
+    });
+
+    it('사용 중인 시리즈를 삭제하려고 할 경우 409 오류가 발생함', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const deleteDto = {
+        ids: [deleteSeriesList[0].id], // 파이널 판타지 (작품과 연결된 시리즈)
+      };
+
+      const response = await request(app.getHttpServer())
+        .delete('/series')
+        .set('Authorization', `Bearer ${token}`)
+        .send(deleteDto)
+        .expect(409);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      expect(response.body.code).toBe(SeriesErrorCode.IN_USE);
+      expect(response.body.errors).toHaveProperty('koTitles');
+    });
+  });
+
   describe('GET /series', () => {
     let series: Series[];
     let artworks: Artwork[];

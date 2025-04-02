@@ -3,6 +3,7 @@ import { TestingModule } from '@nestjs/testing';
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import { CreateSeriesDto } from '@/src/modules/series/dtos/create-series.dto';
+import { DeleteSeriesDto } from '@/src/modules/series/dtos/delete-series.dto';
 import { GetSeriesQueryDto } from '@/src/modules/series/dtos/get-series-query.dto';
 import { SeriesTranslation } from '@/src/modules/series/entities/series-translations.entity';
 import { Series } from '@/src/modules/series/entities/series.entity';
@@ -28,12 +29,16 @@ describeWithoutDeps('SeriesService', () => {
       getAllWithFilters: vi.fn(),
       findDuplicateTitleOfSeries: vi.fn(),
       createOne: vi.fn(),
+      findManyWithDetails: vi.fn(),
+      deleteMany: vi.fn(),
       withTransaction: vi.fn(),
     };
 
     seriesValidator = {
       assertTranslationsExist: vi.fn(),
       assertDuplicatesNotExist: vi.fn(),
+      assertAllSeriesExist: vi.fn(),
+      assertSeriesNotInUse: vi.fn(),
     };
 
     transactionService = {
@@ -264,6 +269,93 @@ describeWithoutDeps('SeriesService', () => {
 
     it('트랜잭션 내에서 시리즈가 생성됨', async () => {
       await service.createSeries(createSeriesDto);
+
+      expect(transactionService.executeInTransaction).toHaveBeenCalled();
+      expect(seriesRepository.withTransaction).toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteSeries', () => {
+    const deleteSeriesDto: DeleteSeriesDto = {
+      ids: ['series-1', 'series-2'],
+    };
+
+    const mockSeries: Partial<Series>[] = [
+      {
+        id: 'series-1',
+        translations: [
+          { language: Language.KO, title: '파이널 판타지' },
+        ] as SeriesTranslation[],
+        seriesArtworks: [],
+      },
+      {
+        id: 'series-2',
+        translations: [
+          { language: Language.KO, title: '젤다의 전설' },
+        ] as SeriesTranslation[],
+        seriesArtworks: [],
+      },
+    ];
+
+    beforeEach(() => {
+      (seriesRepository.findManyWithDetails as any).mockResolvedValue(
+        mockSeries,
+      );
+      (seriesRepository.deleteMany as any).mockResolvedValue(undefined);
+    });
+
+    it('시리즈가 성공적으로 삭제됨', async () => {
+      await service.deleteSeries(deleteSeriesDto);
+
+      expect(seriesRepository.findManyWithDetails).toHaveBeenCalledWith(
+        deleteSeriesDto.ids,
+      );
+      expect(seriesValidator.assertAllSeriesExist).toHaveBeenCalledWith(
+        mockSeries,
+        deleteSeriesDto.ids,
+      );
+      expect(seriesValidator.assertSeriesNotInUse).toHaveBeenCalledWith(
+        mockSeries,
+      );
+      expect(seriesRepository.deleteMany).toHaveBeenCalledWith(mockSeries);
+    });
+
+    it('존재하지 않는 시리즈 ID가 있으면 검증 에러가 발생함', async () => {
+      (seriesValidator.assertAllSeriesExist as any).mockImplementation(() => {
+        throw new SeriesException(
+          SeriesErrorCode.NOT_FOUND,
+          'Some of the provided series do not exist',
+          {
+            ids: ['non-existent-id'],
+          },
+        );
+      });
+
+      await expect(service.deleteSeries(deleteSeriesDto)).rejects.toThrow(
+        SeriesException,
+      );
+      expect(seriesRepository.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('사용 중인 시리즈가 있으면 검증 에러가 발생함', async () => {
+      (seriesValidator.assertSeriesNotInUse as any).mockImplementation(() => {
+        throw new SeriesException(
+          SeriesErrorCode.IN_USE,
+          'Some of the series are in use by artworks',
+          {
+            koTitles: ['파이널 판타지'],
+          },
+        );
+      });
+
+      await expect(service.deleteSeries(deleteSeriesDto)).rejects.toThrow(
+        SeriesException,
+      );
+      expect(seriesRepository.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('트랜잭션 내에서 시리즈가 삭제됨', async () => {
+      await service.deleteSeries(deleteSeriesDto);
 
       expect(transactionService.executeInTransaction).toHaveBeenCalled();
       expect(seriesRepository.withTransaction).toHaveBeenCalled();

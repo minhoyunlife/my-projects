@@ -401,4 +401,176 @@ describeWithDeps('SeriesRepository', () => {
       );
     });
   });
+
+  describe('findManyWithDetails', () => {
+    let series: Series[];
+    let artworks: Artwork[];
+
+    beforeEach(async () => {
+      await clearTables(dataSource, [Series, Artwork]);
+
+      series = await saveEntities(seriesRepo.repository, [
+        SeriesFactory.createTestData({ id: 'series-1' }, [
+          SeriesTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '파이널 판타지',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.EN,
+            title: 'Final Fantasy',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.JA,
+            title: 'ファイナルファンタジー',
+          }),
+        ]),
+        SeriesFactory.createTestData({ id: 'series-2' }, [
+          SeriesTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '젤다의 전설',
+          }),
+        ]),
+      ]);
+
+      artworks = await saveEntities(artworkRepo, [
+        ArtworksFactory.createTestData({ id: 'artwork-1' }),
+      ]);
+
+      await saveEntities(seriesArtworkRepo, [
+        SeriesArtworksFactory.createTestData(
+          { order: 0 },
+          series[0],
+          artworks[0],
+        ),
+      ]);
+    });
+
+    it('지정된 ID의 시리즈들과 관련 정보를 모두 불러옴', async () => {
+      const result = await seriesRepo.findManyWithDetails([
+        'series-1',
+        'series-2',
+      ]);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].id).toBe('series-1');
+      expect(result[1].id).toBe('series-2');
+      expect(result[0].translations).toHaveLength(3);
+      expect(result[1].translations).toHaveLength(1);
+      expect(result[0].seriesArtworks).toHaveLength(1);
+      expect(result[0].seriesArtworks[0].artworkId).toBe('artwork-1');
+      expect(result[1].seriesArtworks).toHaveLength(0);
+    });
+
+    it('존재하지 않는 ID를 포함할 경우 찾은 시리즈만 반환', async () => {
+      const result = await seriesRepo.findManyWithDetails([
+        'series-1',
+        'non-existent',
+      ]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('series-1');
+    });
+
+    it('빈 배열을 전달하면 빈 배열 반환', async () => {
+      const result = await seriesRepo.findManyWithDetails([]);
+
+      expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('deleteMany', () => {
+    let series: Series[];
+    let artworks: Artwork[];
+
+    beforeEach(async () => {
+      await clearTables(dataSource, [Series, Artwork]);
+
+      series = await saveEntities(seriesRepo.repository, [
+        SeriesFactory.createTestData({ id: 'series-1' }, [
+          SeriesTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '파이널 판타지',
+          }),
+        ]),
+        SeriesFactory.createTestData({ id: 'series-2' }, [
+          SeriesTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '젤다의 전설',
+          }),
+        ]),
+      ]);
+
+      artworks = await saveEntities(artworkRepo, [
+        ArtworksFactory.createTestData({ id: 'artwork-1' }),
+      ]);
+
+      await saveEntities(seriesArtworkRepo, [
+        SeriesArtworksFactory.createTestData(
+          { order: 0 },
+          series[0],
+          artworks[0],
+        ),
+      ]);
+    });
+
+    it('시리즈를 성공적으로 삭제함', async () => {
+      const beforeCount = await seriesRepo.repository.count();
+      expect(beforeCount).toBe(2);
+
+      await seriesRepo.deleteMany([series[1]]);
+
+      const afterCount = await seriesRepo.repository.count();
+      expect(afterCount).toBe(1);
+
+      const remaining = await seriesRepo.repository.findOne({
+        where: { id: 'series-1' },
+      });
+      expect(remaining).not.toBeNull();
+
+      const deleted = await seriesRepo.repository.findOne({
+        where: { id: 'series-2' },
+      });
+      expect(deleted).toBeNull();
+    });
+
+    it('시리즈 삭제 시 관련 번역 정보도 같이 삭제됨', async () => {
+      const beforeCount = await seriesTranslationRepo.count();
+      expect(beforeCount).toBe(2);
+
+      await seriesRepo.deleteMany([series[1]]);
+
+      const afterCount = await seriesTranslationRepo.count();
+      expect(afterCount).toBe(1);
+
+      const remaining = await seriesTranslationRepo.findOne({
+        where: { seriesId: 'series-1' },
+      });
+      expect(remaining).not.toBeNull();
+
+      const deleted = await seriesTranslationRepo.findOne({
+        where: { seriesId: 'series-2' },
+      });
+      expect(deleted).toBeNull();
+    });
+
+    it('시리즈 삭제 시 연결된 시리즈-작품 정보도 같이 삭제됨', async () => {
+      const beforeCount = await seriesArtworkRepo.count();
+      expect(beforeCount).toBe(1);
+
+      await seriesRepo.deleteMany([series[0]]);
+
+      const afterCount = await seriesArtworkRepo.count();
+      expect(afterCount).toBe(0);
+    });
+
+    it('빈 배열을 전달하면 아무 시리즈도 삭제하지 않음', async () => {
+      const beforeCount = await seriesRepo.repository.count();
+      expect(beforeCount).toBe(2);
+
+      await seriesRepo.deleteMany([]);
+
+      const afterCount = await seriesRepo.repository.count();
+      expect(afterCount).toBe(2);
+    });
+  });
 });
