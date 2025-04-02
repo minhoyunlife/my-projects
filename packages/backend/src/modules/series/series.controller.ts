@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -12,6 +13,7 @@ import {
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { BearerAuthGuard } from '@/src/modules/auth/guards/token.auth.guard';
 import { CreateSeriesDto } from '@/src/modules/series/dtos/create-series.dto';
+import { DeleteSeriesDto } from '@/src/modules/series/dtos/delete-series.dto';
 import { GetSeriesQueryDto } from '@/src/modules/series/dtos/get-series-query.dto';
 import {
   SeriesListResponseDto,
@@ -44,5 +46,12 @@ export class SeriesController {
   async createSeries(@Body() dto: CreateSeriesDto): Promise<SeriesResponseDto> {
     const series = await this.seriesService.createSeries(dto);
     return new SeriesResponseDto(series);
+  }
+
+  @Delete()
+  @UseGuards(BearerAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteSeries(@Body() dto: DeleteSeriesDto): Promise<void> {
+    await this.seriesService.deleteSeries(dto);
   }
 }
