@@ -44,4 +44,31 @@ export class SeriesValidator {
       },
     );
   }
+
+  assertAllSeriesExist(series: Series[], ids: string[]): void {
+    if (series.length === ids.length) return;
+
+    throw new SeriesException(
+      SeriesErrorCode.NOT_FOUND,
+      'Some of the provided series do not exist',
+      {
+        ids: ids.filter((id) => !new Set(series.map((s) => s.id)).has(id)),
+      },
+    );
+  }
+
+  assertSeriesNotInUse(series: Series[]): void {
+    const seriesInUse = series.filter((s) => s.seriesArtworks.length > 0);
+    if (seriesInUse.length === 0) return;
+
+    throw new SeriesException(
+      SeriesErrorCode.IN_USE,
+      'Some of the series are in use by artworks',
+      {
+        koTitles: seriesInUse.map(
+          (s) => s.translations.find((t) => t.language === Language.KO)?.title,
+        ),
+      },
+    );
+  }
 }
