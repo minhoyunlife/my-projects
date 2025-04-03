@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { Language } from '@/src/modules/genres/enums/language.enum';
+import { UpdateSeriesDto } from '@/src/modules/series/dtos/update-series.dto';
 import { Series } from '@/src/modules/series/entities/series.entity';
 import {
   SeriesErrorCode,
@@ -69,6 +70,27 @@ export class SeriesValidator {
           (s) => s.translations.find((t) => t.language === Language.KO)?.title,
         ),
       },
+    );
+  }
+
+  assertAtLeastOneTranslationTitleExist(dto: UpdateSeriesDto): void {
+    if (dto.koTitle || dto.enTitle || dto.jaTitle) return;
+
+    throw new SeriesException(
+      SeriesErrorCode.NO_TRANSLATIONS_PROVIDED,
+      'At least one translation must be provided',
+      {
+        translations: ['At least one translation is required to update series'],
+      },
+    );
+  }
+
+  assertSeriesExists(series: Series): void {
+    if (series) return;
+
+    throw new SeriesException(
+      SeriesErrorCode.NOT_FOUND,
+      'The series with the provided ID does not exist',
     );
   }
 }
