@@ -22,8 +22,22 @@ export class SeriesMapper
     };
   }
 
-  // TODO: 미구현 단계로, 시리즈 업데이트 구현 시 작업할 것.
   toEntityForUpdate(updateDto: UpdateSeriesDto, id: string): Partial<Series> {
-    return {};
+    const translations: SeriesTranslation[] = [];
+    this.addTranslationIfNeeded(translations, Language.KO, updateDto.koTitle);
+    this.addTranslationIfNeeded(translations, Language.EN, updateDto.enTitle);
+    this.addTranslationIfNeeded(translations, Language.JA, updateDto.jaTitle);
+
+    return { id, translations };
+  }
+
+  private addTranslationIfNeeded(
+    translations: Partial<SeriesTranslation>[],
+    language: Language,
+    title?: string,
+  ): void {
+    if (title === undefined) return;
+
+    translations.push({ language, title });
   }
 }

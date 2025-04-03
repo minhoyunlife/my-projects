@@ -1,5 +1,6 @@
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Language } from '@/src/modules/genres/enums/language.enum';
+import { UpdateSeriesDto } from '@/src/modules/series/dtos/update-series.dto';
 import { SeriesArtwork } from '@/src/modules/series/entities/series-artworks.entity';
 import { SeriesTranslation } from '@/src/modules/series/entities/series-translations.entity';
 import { Series } from '@/src/modules/series/entities/series.entity';
@@ -177,6 +178,48 @@ describeWithoutDeps('SeriesValidator', () => {
         expect(e.getCode()).toBe(SeriesErrorCode.IN_USE);
         expect(e.getErrors()).toHaveProperty('koTitles');
         expect(e.getErrors().koTitles).toContain('시리즈 타이틀');
+      }
+    });
+  });
+
+  describe('assertAtLeastOneTranslationTitleExist', () => {
+    it('적어도 하나의 번역이 있으면 예외를 발생시키지 않음', () => {
+      const dto = new UpdateSeriesDto();
+      dto.koTitle = '한국어 타이틀';
+
+      expect(() =>
+        validator.assertAtLeastOneTranslationTitleExist(dto),
+      ).not.toThrow();
+    });
+
+    it('번역이 하나도 없으면 예외를 발생시킴', () => {
+      const dto = new UpdateSeriesDto();
+
+      try {
+        validator.assertAtLeastOneTranslationTitleExist(dto);
+      } catch (e) {
+        expect(e).toBeInstanceOf(SeriesException);
+        expect(e.getCode()).toBe(SeriesErrorCode.NO_TRANSLATIONS_PROVIDED);
+        expect(e.getErrors()).toHaveProperty('translations');
+      }
+    });
+  });
+
+  describe('assertSeriesExists', () => {
+    it('시리즈가 존재하면 예외를 발생시키지 않음', () => {
+      const series = SeriesFactory.createTestData();
+
+      expect(() =>
+        validator.assertSeriesExists(series as Series),
+      ).not.toThrow();
+    });
+
+    it('시리즈가 존재하지 않으면 예외를 발생시킴', () => {
+      try {
+        validator.assertSeriesExists(null);
+      } catch (e) {
+        expect(e).toBeInstanceOf(SeriesException);
+        expect(e.getCode()).toBe(SeriesErrorCode.NOT_FOUND);
       }
     });
   });

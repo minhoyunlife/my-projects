@@ -46,7 +46,7 @@ export class GenresController {
     );
   }
 
-  @Get('/names')
+  @Get('names')
   @UseGuards(BearerAuthGuard)
   @HttpCode(HttpStatus.OK)
   async getGenresByName(@Query() query: GetGenresByNameQueryDto) {
@@ -62,7 +62,7 @@ export class GenresController {
     return new GenreResponseDto(genre);
   }
 
-  @Patch('/:id')
+  @Patch(':id')
   @UseGuards(BearerAuthGuard)
   @HttpCode(HttpStatus.OK)
   async updateGenre(

@@ -357,48 +357,81 @@ describeWithDeps('SeriesRepository', () => {
     });
   });
 
-  describe('createOne', () => {
+  describe('findOneWithDetails', () => {
+    let series: Series[];
+    let artworks: Artwork[];
+
     beforeEach(async () => {
-      await clearTables(dataSource, [Series]);
+      await clearTables(dataSource, [Series, Artwork]);
+
+      series = await saveEntities(seriesRepo.repository, [
+        SeriesFactory.createTestData({ id: 'series-1' }, [
+          SeriesTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '파이널 판타지',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.EN,
+            title: 'Final Fantasy',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.JA,
+            title: 'ファイナルファンタジー',
+          }),
+        ]),
+        SeriesFactory.createTestData({ id: 'series-2' }, [
+          SeriesTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '젤다의 전설',
+          }),
+        ]),
+      ]);
+
+      artworks = await saveEntities(artworkRepo, [
+        ArtworksFactory.createTestData({ id: 'artwork-1' }),
+        ArtworksFactory.createTestData({ id: 'artwork-2' }),
+      ]);
+
+      await saveEntities(seriesArtworkRepo, [
+        SeriesArtworksFactory.createTestData(
+          { order: 0 },
+          series[0],
+          artworks[0],
+        ),
+        SeriesArtworksFactory.createTestData(
+          { order: 1 },
+          series[0],
+          artworks[1],
+        ),
+      ]);
     });
 
-    it('시리즈 데이터를 성공적으로 생성함', async () => {
-      const seriesData = SeriesFactory.createTestData({
-        translations: [
-          { language: Language.KO, title: '파이널 판타지' },
-          { language: Language.EN, title: 'Final Fantasy' },
-          { language: Language.JA, title: 'ファイナルファンタジー' },
-        ] as SeriesTranslation[],
-      });
+    it('지정된 ID의 시리즈와 관련 정보를 모두 불러옴', async () => {
+      const result = await seriesRepo.findOneWithDetails('series-1');
 
-      const result = await seriesRepo.createOne(seriesData);
+      expect(result).not.toBeNull();
+      expect(result.id).toBe('series-1');
+      expect(result.translations).toHaveLength(3);
+      expect(result.seriesArtworks).toHaveLength(2);
+      expect(result.seriesArtworks[0].artworkId).toBe('artwork-1');
+      expect(result.seriesArtworks[1].artworkId).toBe('artwork-2');
+      expect(result.seriesArtworks[0].order).toBe(0);
+      expect(result.seriesArtworks[1].order).toBe(1);
+    });
 
-      const saved = await seriesRepo.repository.findOne({
-        where: { id: result.id },
-        relations: {
-          translations: true,
-        },
-      });
+    it('작품이 연결되지 않은 시리즈도 정상적으로 불러옴', async () => {
+      const result = await seriesRepo.findOneWithDetails('series-2');
 
-      expect(saved.translations).toHaveLength(3);
-      expect(saved.translations).toContainEqual(
-        expect.objectContaining({
-          language: Language.KO,
-          title: '파이널 판타지',
-        }),
-      );
-      expect(saved.translations).toContainEqual(
-        expect.objectContaining({
-          language: Language.EN,
-          title: 'Final Fantasy',
-        }),
-      );
-      expect(saved.translations).toContainEqual(
-        expect.objectContaining({
-          language: Language.JA,
-          title: 'ファイナルファンタジー',
-        }),
-      );
+      expect(result).not.toBeNull();
+      expect(result.id).toBe('series-2');
+      expect(result.translations).toHaveLength(1);
+      expect(result.seriesArtworks).toHaveLength(0);
+    });
+
+    it('존재하지 않는 ID를 조회하면 null 을 반환함', async () => {
+      const result = await seriesRepo.findOneWithDetails('non-existent');
+
+      expect(result).toBeNull();
     });
   });
 
@@ -475,6 +508,111 @@ describeWithDeps('SeriesRepository', () => {
       const result = await seriesRepo.findManyWithDetails([]);
 
       expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('createOne', () => {
+    beforeEach(async () => {
+      await clearTables(dataSource, [Series]);
+    });
+
+    it('시리즈 데이터를 성공적으로 생성함', async () => {
+      const seriesData = SeriesFactory.createTestData({
+        translations: [
+          { language: Language.KO, title: '파이널 판타지' },
+          { language: Language.EN, title: 'Final Fantasy' },
+          { language: Language.JA, title: 'ファイナルファンタジー' },
+        ] as SeriesTranslation[],
+      });
+
+      const result = await seriesRepo.createOne(seriesData);
+
+      const saved = await seriesRepo.repository.findOne({
+        where: { id: result.id },
+        relations: {
+          translations: true,
+        },
+      });
+
+      expect(saved.translations).toHaveLength(3);
+      expect(saved.translations).toContainEqual(
+        expect.objectContaining({
+          language: Language.KO,
+          title: '파이널 판타지',
+        }),
+      );
+      expect(saved.translations).toContainEqual(
+        expect.objectContaining({
+          language: Language.EN,
+          title: 'Final Fantasy',
+        }),
+      );
+      expect(saved.translations).toContainEqual(
+        expect.objectContaining({
+          language: Language.JA,
+          title: 'ファイナルファンタジー',
+        }),
+      );
+    });
+  });
+
+  describe('updateOne', () => {
+    let series: Series;
+
+    beforeEach(async () => {
+      await clearTables(dataSource, [Series]);
+
+      const seriesData = SeriesFactory.createTestData({ id: 'series-1' }, [
+        SeriesTranslationsFactory.createTestData({
+          language: Language.KO,
+          title: '파이널 판타지',
+        }),
+        SeriesTranslationsFactory.createTestData({
+          language: Language.EN,
+          title: 'Final Fantasy',
+        }),
+        SeriesTranslationsFactory.createTestData({
+          language: Language.JA,
+          title: 'ファイナルファンタジー',
+        }),
+      ]);
+
+      [series] = await saveEntities(seriesRepo.repository, [seriesData]);
+    });
+
+    it('언어 번역을 수정했을 때 해당 번역이 업데이트됨', async () => {
+      const newSeriesData = {
+        id: 'series-1',
+        translations: [
+          { language: Language.KO, title: '완전히 새로운 타이틀' },
+          { language: Language.EN, title: 'Completely New Title' },
+          { language: Language.JA, title: '完全に新しいタイトル' },
+        ] as SeriesTranslation[],
+      };
+
+      await seriesRepo.updateOne(newSeriesData, series);
+
+      const updated = await seriesRepo.repository.findOne({
+        where: { id: 'series-1' },
+        relations: { translations: true },
+      });
+
+      expect(updated.translations).toHaveLength(3);
+
+      const koTranslation = updated.translations.find(
+        (t) => t.language === Language.KO,
+      );
+      expect(koTranslation.title).toBe('완전히 새로운 타이틀');
+
+      const enTranslation = updated.translations.find(
+        (t) => t.language === Language.EN,
+      );
+      expect(enTranslation.title).toBe('Completely New Title');
+
+      const jaTranslation = updated.translations.find(
+        (t) => t.language === Language.JA,
+      );
+      expect(jaTranslation.title).toBe('完全に新しいタイトル');
     });
   });
 

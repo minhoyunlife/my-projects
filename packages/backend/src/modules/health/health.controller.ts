@@ -23,7 +23,7 @@ export class HealthController {
     private readonly github: GithubHealthIndicator,
   ) {}
 
-  @Get('/liveness')
+  @Get('liveness')
   @HealthCheck()
   check() {
     const config = this.configService.get('health');
@@ -44,7 +44,7 @@ export class HealthController {
     ]);
   }
 
-  @Get('/readiness')
+  @Get('readiness')
   @HealthCheck()
   async checkReadiness() {
     return this.health.check([

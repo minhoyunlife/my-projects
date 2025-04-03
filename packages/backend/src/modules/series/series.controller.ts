@@ -5,6 +5,8 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -19,6 +21,7 @@ import {
   SeriesListResponseDto,
   SeriesResponseDto,
 } from '@/src/modules/series/dtos/series-response.dto';
+import { UpdateSeriesDto } from '@/src/modules/series/dtos/update-series.dto';
 import { SeriesService } from '@/src/modules/series/series.service';
 
 @Controller('series')
@@ -45,6 +48,17 @@ export class SeriesController {
   @HttpCode(HttpStatus.CREATED)
   async createSeries(@Body() dto: CreateSeriesDto): Promise<SeriesResponseDto> {
     const series = await this.seriesService.createSeries(dto);
+    return new SeriesResponseDto(series);
+  }
+
+  @Patch(':id')
+  @UseGuards(BearerAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async updateSeries(
+    @Param('id') id: string,
+    @Body() dto: UpdateSeriesDto,
+  ): Promise<SeriesResponseDto> {
+    const series = await this.seriesService.updateSeries(id, dto);
     return new SeriesResponseDto(series);
   }
 

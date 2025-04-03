@@ -11,6 +11,7 @@ import { TokenErrorCode } from '@/src/modules/auth/exceptions/token.exception';
 import { INVALID_INPUT_DATA } from '@/src/modules/config/settings/validation-pipe.config';
 import { Language } from '@/src/modules/genres/enums/language.enum';
 import { CreateSeriesDto } from '@/src/modules/series/dtos/create-series.dto';
+import { UpdateSeriesDto } from '@/src/modules/series/dtos/update-series.dto';
 import { SeriesArtwork } from '@/src/modules/series/entities/series-artworks.entity';
 import { SeriesTranslation } from '@/src/modules/series/entities/series-translations.entity';
 import { Series } from '@/src/modules/series/entities/series.entity';
@@ -84,149 +85,6 @@ describeWithDeps('SeriesController', () => {
   afterAll(async () => {
     await dataSource.destroy();
     await app.close();
-  });
-
-  describe('DELETE /series', () => {
-    let deleteSeriesList: Series[];
-    let deleteArtworks: Artwork[];
-
-    beforeEach(async () => {
-      deleteSeriesList = await saveEntities(seriesRepository, [
-        SeriesFactory.createTestData({}, [
-          SeriesTranslationsFactory.createTestData({
-            language: Language.KO,
-            title: '파이널 판타지',
-          }),
-          SeriesTranslationsFactory.createTestData({
-            language: Language.EN,
-            title: 'Final Fantasy',
-          }),
-          SeriesTranslationsFactory.createTestData({
-            language: Language.JA,
-            title: 'ファイナルファンタジー',
-          }),
-        ]),
-        SeriesFactory.createTestData({}, [
-          SeriesTranslationsFactory.createTestData({
-            language: Language.KO,
-            title: '젤다의 전설',
-          }),
-          SeriesTranslationsFactory.createTestData({
-            language: Language.EN,
-            title: 'The Legend of Zelda',
-          }),
-          SeriesTranslationsFactory.createTestData({
-            language: Language.JA,
-            title: 'ゼルダの伝説',
-          }),
-        ]),
-      ]);
-
-      deleteArtworks = await saveEntities(artworkRepository, [
-        ArtworksFactory.createTestData({}, [
-          ArtworkTranslationsFactory.createTestData({
-            language: Language.KO,
-            title: '파이널 판타지 7',
-          }),
-        ]),
-      ]);
-
-      await saveEntities(seriesArtworkRepository, [
-        SeriesArtworksFactory.createTestData(
-          { order: 0 },
-          deleteSeriesList[0],
-          deleteArtworks[0],
-        ),
-      ]);
-    });
-
-    it('유효한 ID 목록으로 시리즈 삭제 시 204 응답으로 성공함', async () => {
-      const token = await createTestAccessToken(authService, administrator);
-
-      const deleteDto = {
-        ids: [deleteSeriesList[1].id], // 젤다의 전설 (작품과 연결되지 않은 시리즈)
-      };
-
-      const response = await request(app.getHttpServer())
-        .delete('/series')
-        .set('Authorization', `Bearer ${token}`)
-        .send(deleteDto)
-        .expect(204);
-
-      expect(response.body).toEqual({});
-
-      const remainingSeries = await seriesRepository.find({
-        where: { id: deleteSeriesList[1].id },
-      });
-      expect(remainingSeries).toHaveLength(0);
-    });
-
-    it('리퀘스트 바디가 부적절할 경우, 400 오류가 발생함', async () => {
-      const token = await createTestAccessToken(authService, administrator);
-
-      const response = await request(app.getHttpServer())
-        .delete('/series')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ ids: [] }) // 빈 ID 배열
-        .expect(400);
-
-      await expect(response).toMatchOpenAPISpec();
-
-      expect(response.body.code).toBe(INVALID_INPUT_DATA);
-    });
-
-    it('인증에 실패한 경우, 401 오류가 발생함', async () => {
-      const deleteDto = {
-        ids: [deleteSeriesList[1].id],
-      };
-
-      const response = await request(app.getHttpServer())
-        .delete('/series')
-        .set('Authorization', 'Bearer invalid-token')
-        .send(deleteDto)
-        .expect(401);
-
-      await expect(response).toMatchOpenAPISpec();
-
-      expect(response.body.code).toBe(TokenErrorCode.INVALID_TOKEN);
-    });
-
-    it('삭제할 시리즈 ID가 존재하지 않을 경우 404 오류가 발생함', async () => {
-      const token = await createTestAccessToken(authService, administrator);
-
-      const deleteDto = {
-        ids: ['non-existent-id'],
-      };
-
-      const response = await request(app.getHttpServer())
-        .delete('/series')
-        .set('Authorization', `Bearer ${token}`)
-        .send(deleteDto)
-        .expect(404);
-
-      await expect(response).toMatchOpenAPISpec();
-
-      expect(response.body.code).toBe(SeriesErrorCode.NOT_FOUND);
-    });
-
-    it('사용 중인 시리즈를 삭제하려고 할 경우 409 오류가 발생함', async () => {
-      const token = await createTestAccessToken(authService, administrator);
-
-      const deleteDto = {
-        ids: [deleteSeriesList[0].id], // 파이널 판타지 (작품과 연결된 시리즈)
-      };
-
-      const response = await request(app.getHttpServer())
-        .delete('/series')
-        .set('Authorization', `Bearer ${token}`)
-        .send(deleteDto)
-        .expect(409);
-
-      await expect(response).toMatchOpenAPISpec();
-
-      expect(response.body.code).toBe(SeriesErrorCode.IN_USE);
-      expect(response.body.errors).toHaveProperty('koTitles');
-    });
   });
 
   describe('GET /series', () => {
@@ -513,6 +371,296 @@ describeWithDeps('SeriesController', () => {
       await expect(response).toMatchOpenAPISpec();
 
       expect(response.body.code).toBe(SeriesErrorCode.DUPLICATE_TITLE);
+    });
+  });
+
+  describe('PATCH /series/:id', () => {
+    let existingSeries: Series;
+
+    beforeEach(async () => {
+      existingSeries = (
+        await saveEntities(seriesRepository, [
+          SeriesFactory.createTestData({}, [
+            SeriesTranslationsFactory.createTestData({
+              language: Language.KO,
+              title: '파이널 판타지',
+            }),
+            SeriesTranslationsFactory.createTestData({
+              language: Language.EN,
+              title: 'Final Fantasy',
+            }),
+            SeriesTranslationsFactory.createTestData({
+              language: Language.JA,
+              title: 'ファイナルファンタジー',
+            }),
+          ]),
+          SeriesFactory.createTestData({}, [
+            SeriesTranslationsFactory.createTestData({
+              language: Language.KO,
+              title: '젤다의 전설',
+            }),
+            SeriesTranslationsFactory.createTestData({
+              language: Language.EN,
+              title: 'The Legend of Zelda',
+            }),
+            SeriesTranslationsFactory.createTestData({
+              language: Language.JA,
+              title: 'ゼルダの伝説',
+            }),
+          ]),
+        ])
+      )[0];
+    });
+
+    it('유효한 DTO로 시리즈 수정 시 200 응답으로 성공함', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const updateDto: UpdateSeriesDto = {
+        koTitle: '수정된 파이널 판타지',
+        enTitle: 'Updated Final Fantasy',
+      };
+
+      const response = await request(app.getHttpServer())
+        .patch(`/series/${existingSeries.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateDto)
+        .expect(200);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      const updatedSeries = await seriesRepository.findOne({
+        where: { id: existingSeries.id },
+        relations: { translations: true },
+      });
+
+      expect(updatedSeries.translations).toHaveLength(3);
+      expect(updatedSeries.translations).toContainEqual(
+        expect.objectContaining({
+          language: Language.KO,
+          title: '수정된 파이널 판타지',
+        }),
+      );
+      expect(updatedSeries.translations).toContainEqual(
+        expect.objectContaining({
+          language: Language.EN,
+          title: 'Updated Final Fantasy',
+        }),
+      );
+      expect(updatedSeries.translations).toContainEqual(
+        expect.objectContaining({
+          language: Language.JA,
+          title: 'ファイナルファンタジー', // 수정되지 않음
+        }),
+      );
+    });
+
+    it('리퀘스트 바디가 비어있을 경우, 400 에러가 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .patch(`/series/${existingSeries.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({})
+        .expect(400);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      expect(response.body.code).toBe(SeriesErrorCode.NO_TRANSLATIONS_PROVIDED);
+    });
+
+    it('인증에 실패한 경우, 401 에러가 반환됨', async () => {
+      const updateDto: UpdateSeriesDto = {
+        koTitle: '수정된 파이널 판타지',
+      };
+
+      const response = await request(app.getHttpServer())
+        .patch(`/series/${existingSeries.id}`)
+        .set('Authorization', 'Bearer invalid-token')
+        .send(updateDto)
+        .expect(401);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      expect(response.body.code).toBe(TokenErrorCode.INVALID_TOKEN);
+    });
+
+    it('존재하지 않는 시리즈 ID를 요청할 경우, 404 에러가 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const updateDto: UpdateSeriesDto = {
+        koTitle: '수정된 파이널 판타지',
+      };
+
+      const response = await request(app.getHttpServer())
+        .patch('/series/non-existent-id')
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateDto)
+        .expect(404);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      expect(response.body.code).toBe(SeriesErrorCode.NOT_FOUND);
+    });
+
+    it('이미 존재하는 시리즈 제목으로 수정할 경우, 409 에러가 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const updateDto: UpdateSeriesDto = {
+        koTitle: '젤다의 전설', // 중복 타이틀
+      };
+
+      const response = await request(app.getHttpServer())
+        .patch(`/series/${existingSeries.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateDto)
+        .expect(409);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      expect(response.body.code).toBe(SeriesErrorCode.DUPLICATE_TITLE);
+    });
+  });
+
+  describe('DELETE /series', () => {
+    let deleteSeriesList: Series[];
+    let deleteArtworks: Artwork[];
+
+    beforeEach(async () => {
+      deleteSeriesList = await saveEntities(seriesRepository, [
+        SeriesFactory.createTestData({}, [
+          SeriesTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '파이널 판타지',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.EN,
+            title: 'Final Fantasy',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.JA,
+            title: 'ファイナルファンタジー',
+          }),
+        ]),
+        SeriesFactory.createTestData({}, [
+          SeriesTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '젤다의 전설',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.EN,
+            title: 'The Legend of Zelda',
+          }),
+          SeriesTranslationsFactory.createTestData({
+            language: Language.JA,
+            title: 'ゼルダの伝説',
+          }),
+        ]),
+      ]);
+
+      deleteArtworks = await saveEntities(artworkRepository, [
+        ArtworksFactory.createTestData({}, [
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '파이널 판타지 7',
+          }),
+        ]),
+      ]);
+
+      await saveEntities(seriesArtworkRepository, [
+        SeriesArtworksFactory.createTestData(
+          { order: 0 },
+          deleteSeriesList[0],
+          deleteArtworks[0],
+        ),
+      ]);
+    });
+
+    it('유효한 ID 목록으로 시리즈 삭제 시 204 응답으로 성공함', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const deleteDto = {
+        ids: [deleteSeriesList[1].id], // 젤다의 전설 (작품과 연결되지 않은 시리즈)
+      };
+
+      const response = await request(app.getHttpServer())
+        .delete('/series')
+        .set('Authorization', `Bearer ${token}`)
+        .send(deleteDto)
+        .expect(204);
+
+      expect(response.body).toEqual({});
+
+      const remainingSeries = await seriesRepository.find({
+        where: { id: deleteSeriesList[1].id },
+      });
+      expect(remainingSeries).toHaveLength(0);
+    });
+
+    it('리퀘스트 바디가 부적절할 경우, 400 오류가 발생함', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .delete('/series')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ids: [] }) // 빈 ID 배열
+        .expect(400);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      expect(response.body.code).toBe(INVALID_INPUT_DATA);
+    });
+
+    it('인증에 실패한 경우, 401 오류가 발생함', async () => {
+      const deleteDto = {
+        ids: [deleteSeriesList[1].id],
+      };
+
+      const response = await request(app.getHttpServer())
+        .delete('/series')
+        .set('Authorization', 'Bearer invalid-token')
+        .send(deleteDto)
+        .expect(401);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      expect(response.body.code).toBe(TokenErrorCode.INVALID_TOKEN);
+    });
+
+    it('삭제할 시리즈 ID가 존재하지 않을 경우 404 오류가 발생함', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const deleteDto = {
+        ids: ['non-existent-id'],
+      };
+
+      const response = await request(app.getHttpServer())
+        .delete('/series')
+        .set('Authorization', `Bearer ${token}`)
+        .send(deleteDto)
+        .expect(404);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      expect(response.body.code).toBe(SeriesErrorCode.NOT_FOUND);
+    });
+
+    it('사용 중인 시리즈를 삭제하려고 할 경우 409 오류가 발생함', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const deleteDto = {
+        ids: [deleteSeriesList[0].id], // 파이널 판타지 (작품과 연결된 시리즈)
+      };
+
+      const response = await request(app.getHttpServer())
+        .delete('/series')
+        .set('Authorization', `Bearer ${token}`)
+        .send(deleteDto)
+        .expect(409);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      expect(response.body.code).toBe(SeriesErrorCode.IN_USE);
+      expect(response.body.errors).toHaveProperty('koTitles');
     });
   });
 });
