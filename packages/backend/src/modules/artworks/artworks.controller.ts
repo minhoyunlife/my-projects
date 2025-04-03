@@ -111,7 +111,7 @@ export class ArtworksController {
     return new ArtworkResponseDto(this.storageService, artwork);
   }
 
-  @Post('/images')
+  @Post('images')
   @UseGuards(BearerAuthGuard)
   @UseFilters(UploadImageExceptionFilter)
   @UseInterceptors(FileInterceptor('image', ArtworksController.UPLOAD_OPTIONS))
@@ -126,7 +126,7 @@ export class ArtworksController {
     return this.storageService.uploadImage(image);
   }
 
-  @Patch('/statuses')
+  @Patch('statuses')
   @UseGuards(BearerAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async updateArtworksStatuses(
@@ -135,7 +135,7 @@ export class ArtworksController {
     await this.artworksService.updateStatuses(dto.ids, dto.setPublished);
   }
 
-  @Patch('/:id')
+  @Patch(':id')
   @UseGuards(BearerAuthGuard)
   @HttpCode(HttpStatus.OK)
   async updateArtwork(
