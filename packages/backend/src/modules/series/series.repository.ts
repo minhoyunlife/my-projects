@@ -31,6 +31,13 @@ export class SeriesRepository implements Transactional<SeriesRepository> {
     return query.getManyAndCount();
   }
 
+  async findOneWithDetails(id: string): Promise<Series> {
+    return this.repository.findOne({
+      where: { id },
+      relations: ['translations', 'seriesArtworks'],
+    });
+  }
+
   async findManyWithDetails(ids: string[]): Promise<Series[]> {
     if (ids.length === 0) return [];
 
@@ -51,6 +58,15 @@ export class SeriesRepository implements Transactional<SeriesRepository> {
 
   async createOne(seriesData: Partial<Series>): Promise<Series> {
     return this.repository.save(this.repository.create(seriesData));
+  }
+
+  async updateOne(
+    seriesData: Partial<Series>,
+    series: Series,
+  ): Promise<Series> {
+    this.replaceTranslations(seriesData, series);
+
+    return this.repository.save(series);
   }
 
   async deleteMany(series: Series[]): Promise<void> {
@@ -110,5 +126,20 @@ export class SeriesRepository implements Transactional<SeriesRepository> {
     pageSize: number,
   ): void {
     query.skip((page - 1) * pageSize).take(pageSize);
+  }
+
+  private replaceTranslations(
+    newSeriesData: Partial<Series>,
+    series: Series,
+  ): void {
+    newSeriesData.translations.forEach((newTranslation) => {
+      const existingTranslation = series.translations.find(
+        (t) => t.language === newTranslation.language,
+      );
+
+      if (existingTranslation) {
+        existingTranslation.title = newTranslation.title;
+      }
+    });
   }
 }
