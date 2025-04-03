@@ -5,6 +5,7 @@ import { Language } from '@/src/modules/genres/enums/language.enum';
 import { CreateSeriesDto } from '@/src/modules/series/dtos/create-series.dto';
 import { DeleteSeriesDto } from '@/src/modules/series/dtos/delete-series.dto';
 import { GetSeriesQueryDto } from '@/src/modules/series/dtos/get-series-query.dto';
+import { UpdateSeriesDto } from '@/src/modules/series/dtos/update-series.dto';
 import { SeriesTranslation } from '@/src/modules/series/entities/series-translations.entity';
 import { Series } from '@/src/modules/series/entities/series.entity';
 import {
@@ -28,8 +29,10 @@ describeWithoutDeps('SeriesService', () => {
     seriesRepository = {
       getAllWithFilters: vi.fn(),
       findDuplicateTitleOfSeries: vi.fn(),
-      createOne: vi.fn(),
+      findOneWithDetails: vi.fn(),
       findManyWithDetails: vi.fn(),
+      createOne: vi.fn(),
+      updateOne: vi.fn(),
       deleteMany: vi.fn(),
       withTransaction: vi.fn(),
     };
@@ -39,6 +42,8 @@ describeWithoutDeps('SeriesService', () => {
       assertDuplicatesNotExist: vi.fn(),
       assertAllSeriesExist: vi.fn(),
       assertSeriesNotInUse: vi.fn(),
+      assertAtLeastOneTranslationTitleExist: vi.fn(),
+      assertSeriesExists: vi.fn(),
     };
 
     transactionService = {
@@ -269,6 +274,150 @@ describeWithoutDeps('SeriesService', () => {
 
     it('트랜잭션 내에서 시리즈가 생성됨', async () => {
       await service.createSeries(createSeriesDto);
+
+      expect(transactionService.executeInTransaction).toHaveBeenCalled();
+      expect(seriesRepository.withTransaction).toHaveBeenCalled();
+    });
+  });
+
+  describe('updateSeries', () => {
+    const seriesId = 'series-1';
+    const updateSeriesDto: UpdateSeriesDto = {
+      koTitle: '수정된 파이널 판타지',
+      enTitle: 'Updated Final Fantasy',
+    };
+
+    const existingSeries: Partial<Series> = {
+      id: seriesId,
+      translations: [
+        { language: Language.KO, title: '파이널 판타지' },
+        { language: Language.EN, title: 'Final Fantasy' },
+        { language: Language.JA, title: 'ファイナルファンタジー' },
+      ] as SeriesTranslation[],
+      seriesArtworks: [],
+    };
+
+    const updatedSeries: Partial<Series> = {
+      id: seriesId,
+      translations: [
+        { language: Language.KO, title: '수정된 파이널 판타지' },
+        { language: Language.EN, title: 'Updated Final Fantasy' },
+        { language: Language.JA, title: 'ファイナルファンタジー' },
+      ] as SeriesTranslation[],
+      seriesArtworks: [],
+    };
+
+    beforeEach(() => {
+      (seriesRepository.findOneWithDetails as any).mockResolvedValue(
+        existingSeries,
+      );
+      (seriesRepository.updateOne as any).mockResolvedValue(updatedSeries);
+      (seriesRepository.findDuplicateTitleOfSeries as any).mockResolvedValue(
+        [],
+      );
+    });
+
+    it('시리즈가 성공적으로 수정됨', async () => {
+      const result = await service.updateSeries(seriesId, updateSeriesDto);
+
+      expect(
+        seriesValidator.assertAtLeastOneTranslationTitleExist,
+      ).toHaveBeenCalledWith(updateSeriesDto);
+      expect(seriesRepository.findOneWithDetails).toHaveBeenCalledWith(
+        seriesId,
+      );
+      expect(seriesValidator.assertSeriesExists).toHaveBeenCalledWith(
+        existingSeries,
+      );
+      expect(seriesRepository.findDuplicateTitleOfSeries).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          '수정된 파이널 판타지',
+          'Updated Final Fantasy',
+        ]),
+        seriesId,
+      );
+      expect(seriesValidator.assertDuplicatesNotExist).toHaveBeenCalled();
+      expect(seriesRepository.updateOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: seriesId,
+          translations: expect.arrayContaining([
+            expect.objectContaining({
+              language: Language.KO,
+              title: '수정된 파이널 판타지',
+            }),
+            expect.objectContaining({
+              language: Language.EN,
+              title: 'Updated Final Fantasy',
+            }),
+          ]),
+        }),
+        existingSeries,
+      );
+      expect(result).toEqual(updatedSeries);
+    });
+
+    it('번역이 하나도 없으면 검증 에러가 발생함', async () => {
+      const emptyUpdateDto = {};
+      (
+        seriesValidator.assertAtLeastOneTranslationTitleExist as any
+      ).mockImplementation(() => {
+        throw new SeriesException(
+          SeriesErrorCode.NO_TRANSLATIONS_PROVIDED,
+          'At least one translation must be provided',
+          {
+            translations: [
+              'At least one translation is required to update series',
+            ],
+          },
+        );
+      });
+
+      await expect(
+        service.updateSeries(seriesId, emptyUpdateDto),
+      ).rejects.toThrow(SeriesException);
+      expect(seriesRepository.updateOne).not.toHaveBeenCalled();
+    });
+
+    it('시리즈가 존재하지 않으면 검증 에러가 발생함', async () => {
+      (seriesRepository.findOneWithDetails as any).mockResolvedValue(null);
+      (seriesValidator.assertSeriesExists as any).mockImplementation(() => {
+        throw new SeriesException(
+          SeriesErrorCode.NOT_FOUND,
+          'The series with the provided ID does not exist',
+        );
+      });
+
+      await expect(
+        service.updateSeries(seriesId, updateSeriesDto),
+      ).rejects.toThrow(SeriesException);
+      expect(seriesRepository.updateOne).not.toHaveBeenCalled();
+    });
+
+    it('중복 타이틀이 있으면 검증 에러가 발생함', async () => {
+      const duplicates = [{ id: 'existing-series', translations: [] }];
+      (seriesRepository.findDuplicateTitleOfSeries as any).mockResolvedValue(
+        duplicates,
+      );
+      (seriesValidator.assertDuplicatesNotExist as any).mockImplementation(
+        () => {
+          throw new SeriesException(
+            SeriesErrorCode.DUPLICATE_TITLE,
+            "Some of the provided series' title are duplicated",
+            {
+              titles: ['수정된 파이널 판타지', 'Updated Final Fantasy'],
+            },
+          );
+        },
+      );
+
+      await expect(
+        service.updateSeries(seriesId, updateSeriesDto),
+      ).rejects.toThrow(SeriesException);
+      expect(seriesRepository.updateOne).not.toHaveBeenCalled();
+    });
+
+    it('트랜잭션 내에서 시리즈가 수정됨', async () => {
+      await service.updateSeries(seriesId, updateSeriesDto);
 
       expect(transactionService.executeInTransaction).toHaveBeenCalled();
       expect(seriesRepository.withTransaction).toHaveBeenCalled();

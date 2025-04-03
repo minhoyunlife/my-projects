@@ -5,6 +5,7 @@ import { EntityList } from '@/src/common/interfaces/entity-list.interface';
 import { CreateSeriesDto } from '@/src/modules/series/dtos/create-series.dto';
 import { DeleteSeriesDto } from '@/src/modules/series/dtos/delete-series.dto';
 import { GetSeriesQueryDto } from '@/src/modules/series/dtos/get-series-query.dto';
+import { UpdateSeriesDto } from '@/src/modules/series/dtos/update-series.dto';
 import { Series } from '@/src/modules/series/entities/series.entity';
 import { SeriesMapper } from '@/src/modules/series/series.mapper';
 import { SeriesRepository } from '@/src/modules/series/series.repository';
@@ -47,6 +48,26 @@ export class SeriesService {
       this.seriesValidator.assertDuplicatesNotExist(duplicates);
 
       return seriesTxRepo.createOne(seriesData);
+    });
+  }
+
+  async updateSeries(id: string, dto: UpdateSeriesDto): Promise<Series> {
+    this.seriesValidator.assertAtLeastOneTranslationTitleExist(dto);
+
+    return this.transactionService.executeInTransaction(async (manager) => {
+      const seriesTxRepo = this.seriesRepository.withTransaction(manager);
+
+      const series = await seriesTxRepo.findOneWithDetails(id);
+      this.seriesValidator.assertSeriesExists(series);
+
+      const seriesData = this.seriesMapper.toEntityForUpdate(dto, id);
+      const duplicates = await seriesTxRepo.findDuplicateTitleOfSeries(
+        seriesData.translations.map((t) => t.title),
+        id,
+      );
+      this.seriesValidator.assertDuplicatesNotExist(duplicates);
+
+      return await seriesTxRepo.updateOne(seriesData, series);
     });
   }
 
