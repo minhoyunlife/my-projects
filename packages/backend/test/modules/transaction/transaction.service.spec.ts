@@ -1,9 +1,9 @@
 import { DataSource, Repository } from 'typeorm';
 
+import { Language } from '@/src/common/enums/language.enum';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 import { TransactionService } from '@/src/modules/transaction/transaction.service';
 import { ArtworkTranslationsFactory } from '@/test/factories/artwork-translations.factory';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';

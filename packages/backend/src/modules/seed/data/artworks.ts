@@ -1,5 +1,5 @@
+import { Language } from '@/src/common/enums/language.enum';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 
 type ArtworkTranslation = {
   title: string;

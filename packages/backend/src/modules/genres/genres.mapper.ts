@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 
+import { Language } from '@/src/common/enums/language.enum';
 import { BaseMapper } from '@/src/common/interfaces/base.mapper';
 import { CreateGenreDto } from '@/src/modules/genres/dtos/create-genre.dto';
 import { UpdateGenreDto } from '@/src/modules/genres/dtos/update-genre.dto';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 
 @Injectable()
 export class GenresMapper

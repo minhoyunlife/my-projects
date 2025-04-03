@@ -1,3 +1,4 @@
+import { Language } from '@/src/common/enums/language.enum';
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import {
@@ -6,7 +7,6 @@ import {
 } from '@/src/modules/artworks/exceptions/artworks.exception';
 import { ArtworksValidator } from '@/src/modules/artworks/validators/artworks.validator';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 import { ArtworkTranslationsFactory } from '@/test/factories/artwork-translations.factory';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';

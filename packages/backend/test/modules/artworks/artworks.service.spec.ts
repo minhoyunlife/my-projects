@@ -1,6 +1,7 @@
 import { TestingModule } from '@nestjs/testing';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
+import { Language } from '@/src/common/enums/language.enum';
 import { ArtworksMapper } from '@/src/modules/artworks/artworks.mapper';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { ArtworksService } from '@/src/modules/artworks/artworks.service';
@@ -16,7 +17,6 @@ import {
 } from '@/src/modules/artworks/exceptions/artworks.exception';
 import { ArtworksValidator } from '@/src/modules/artworks/validators/artworks.validator';
 import { StatusValidator } from '@/src/modules/artworks/validators/status.validator';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { ImageStatus } from '@/src/modules/storage/enums/status.enum';
 import { StorageService } from '@/src/modules/storage/storage.service';

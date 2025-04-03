@@ -1,3 +1,4 @@
+import { Language } from '@/src/common/enums/language.enum';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { StatusError } from '@/src/modules/artworks/enums/status-error.enum';
 import {
@@ -9,7 +10,6 @@ import {
   ShortReviewsMustBeSetRule,
 } from '@/src/modules/artworks/validators/rules/status-change.rule';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 import { ArtworkTranslationsFactory } from '@/test/factories/artwork-translations.factory';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenreTranslationsFactory } from '@/test/factories/genre-translations.factory';

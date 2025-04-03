@@ -1,4 +1,4 @@
-import { Language } from '@/src/modules/genres/enums/language.enum';
+import { Language } from '@/src/common/enums/language.enum';
 
 export interface GenreTranslation {
   language: Language;

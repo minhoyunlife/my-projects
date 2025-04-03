@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import { Language } from '@/src/common/enums/language.enum';
 import { UpdateArtworkDto } from '@/src/modules/artworks/dtos/update-artwork.dto';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import {
@@ -7,7 +8,6 @@ import {
   ArtworkException,
 } from '@/src/modules/artworks/exceptions/artworks.exception';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 
 @Injectable()
 export class ArtworksValidator {

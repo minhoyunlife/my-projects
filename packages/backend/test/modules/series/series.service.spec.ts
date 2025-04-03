@@ -1,7 +1,7 @@
 import { TestingModule } from '@nestjs/testing';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
-import { Language } from '@/src/modules/genres/enums/language.enum';
+import { Language } from '@/src/common/enums/language.enum';
 import { CreateSeriesDto } from '@/src/modules/series/dtos/create-series.dto';
 import { DeleteSeriesDto } from '@/src/modules/series/dtos/delete-series.dto';
 import { GetSeriesQueryDto } from '@/src/modules/series/dtos/get-series-query.dto';

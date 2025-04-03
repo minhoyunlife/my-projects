@@ -1,5 +1,5 @@
+import { Language } from '@/src/common/enums/language.enum';
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 
 export class ArtworkTranslationsFactory {
   static createTestData(

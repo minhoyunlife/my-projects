@@ -1,8 +1,8 @@
+import { Language } from '@/src/common/enums/language.enum';
 import { ArtworksMapper } from '@/src/modules/artworks/artworks.mapper';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { UpdateArtworkDto } from '@/src/modules/artworks/dtos/update-artwork.dto';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 
 describeWithoutDeps('ArtworksMapper', () => {
   let mapper: ArtworksMapper;

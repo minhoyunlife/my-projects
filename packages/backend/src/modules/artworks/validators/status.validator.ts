@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import { Language } from '@/src/common/enums/language.enum';
 import { addErrorMessages } from '@/src/common/exceptions/base.exception';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { StatusError } from '@/src/modules/artworks/enums/status-error.enum';
@@ -11,7 +12,6 @@ import {
   RatingMustBeSetRule,
   ShortReviewsMustBeSetRule,
 } from '@/src/modules/artworks/validators/rules/status-change.rule';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 
 export interface ValidationResult {
   isValid: boolean;

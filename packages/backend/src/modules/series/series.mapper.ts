@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
+import { Language } from '@/src/common/enums/language.enum';
 import { BaseMapper } from '@/src/common/interfaces/base.mapper';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 import { CreateSeriesDto } from '@/src/modules/series/dtos/create-series.dto';
 import { UpdateSeriesDto } from '@/src/modules/series/dtos/update-series.dto';
 import { SeriesTranslation } from '@/src/modules/series/entities/series-translations.entity';

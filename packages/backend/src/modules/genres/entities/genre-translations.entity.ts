@@ -8,8 +8,8 @@ import {
   type Relation,
 } from 'typeorm';
 
+import { Language } from '@/src/common/enums/language.enum';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 
 /**
  * 장르명을 다언어로 DB에서 관리하기 위한 엔티티
