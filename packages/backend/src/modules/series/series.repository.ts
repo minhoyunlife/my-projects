@@ -40,7 +40,7 @@ export class SeriesRepository implements Transactional<SeriesRepository> {
   async findOneWithDetails(id: string): Promise<Series> {
     return this.repository.findOne({
       where: { id },
-      relations: ['translations', 'seriesArtworks'],
+      relations: ['translations', 'seriesArtworks', 'seriesArtworks.artwork'],
     });
   }
 
@@ -49,7 +49,7 @@ export class SeriesRepository implements Transactional<SeriesRepository> {
 
     return this.repository.find({
       where: { id: In(ids) },
-      relations: ['translations', 'seriesArtworks'],
+      relations: ['translations', 'seriesArtworks', 'seriesArtworks.artwork'],
     });
   }
 
