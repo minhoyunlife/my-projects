@@ -1,10 +1,10 @@
+import { Language } from '@/src/common/enums/language.enum';
 import {
   GenreListResponseDto,
   GenreResponseDto,
   GenreSearchResponseDto,
 } from '@/src/modules/genres/dtos/genre-response.dto';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenreTranslationsFactory } from '@/test/factories/genre-translations.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
 

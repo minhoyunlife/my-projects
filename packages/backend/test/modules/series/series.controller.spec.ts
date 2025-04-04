@@ -4,12 +4,12 @@ import request from 'supertest';
 import { DataSource, Repository } from 'typeorm';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
+import { Language } from '@/src/common/enums/language.enum';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
 import { TokenErrorCode } from '@/src/modules/auth/exceptions/token.exception';
 import { INVALID_INPUT_DATA } from '@/src/modules/config/settings/validation-pipe.config';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 import { CreateSeriesDto } from '@/src/modules/series/dtos/create-series.dto';
 import { UpdateSeriesDto } from '@/src/modules/series/dtos/update-series.dto';
 import { SeriesArtwork } from '@/src/modules/series/entities/series-artworks.entity';

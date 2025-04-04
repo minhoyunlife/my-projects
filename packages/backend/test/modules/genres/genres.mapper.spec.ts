@@ -1,6 +1,6 @@
+import { Language } from '@/src/common/enums/language.enum';
 import { CreateGenreDto } from '@/src/modules/genres/dtos/create-genre.dto';
 import { UpdateGenreDto } from '@/src/modules/genres/dtos/update-genre.dto';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresMapper } from '@/src/modules/genres/genres.mapper';
 
 describeWithoutDeps('GenresMapper', () => {

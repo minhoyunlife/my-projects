@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
+import { Language } from '@/src/common/enums/language.enum';
 import { UpdateGenreDto } from '@/src/modules/genres/dtos/update-genre.dto';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 import {
   GenreErrorCode,
   GenreException,

@@ -1,11 +1,11 @@
 import { TestingModule } from '@nestjs/testing';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
+import { Language } from '@/src/common/enums/language.enum';
 import { CreateGenreDto } from '@/src/modules/genres/dtos/create-genre.dto';
 import { UpdateGenreDto } from '@/src/modules/genres/dtos/update-genre.dto';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 import {
   GenreErrorCode,
   GenreException,

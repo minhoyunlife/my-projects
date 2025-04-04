@@ -1,5 +1,5 @@
+import { Language } from '@/src/common/enums/language.enum';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 import {
   SeriesListResponseDto,
   SeriesResponseDto,

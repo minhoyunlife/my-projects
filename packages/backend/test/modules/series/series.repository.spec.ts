@@ -1,8 +1,8 @@
 import { DataSource, Repository } from 'typeorm';
 
+import { Language } from '@/src/common/enums/language.enum';
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 import { SeriesArtwork } from '@/src/modules/series/entities/series-artworks.entity';
 import { SeriesTranslation } from '@/src/modules/series/entities/series-translations.entity';
 import { Series } from '@/src/modules/series/entities/series.entity';

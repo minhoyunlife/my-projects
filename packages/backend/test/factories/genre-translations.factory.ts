@@ -1,5 +1,5 @@
+import { Language } from '@/src/common/enums/language.enum';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 
 export class GenreTranslationsFactory {
   static createTestData(

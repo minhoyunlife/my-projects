@@ -1,4 +1,4 @@
-import { Language } from '@/src/modules/genres/enums/language.enum';
+import { Language } from '@/src/common/enums/language.enum';
 import { SeriesTranslation } from '@/src/modules/series/entities/series-translations.entity';
 
 export class SeriesTranslationsFactory {

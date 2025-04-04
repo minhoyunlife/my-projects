@@ -1,3 +1,4 @@
+import { Language } from '@/src/common/enums/language.enum';
 import {
   ArtworkListResponseDto,
   ArtworkResponseDto,
@@ -5,7 +6,6 @@ import {
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { GenreResponseDto } from '@/src/modules/genres/dtos/genre-response.dto';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 import { StorageService } from '@/src/modules/storage/storage.service';
 import { ArtworkTranslationsFactory } from '@/test/factories/artwork-translations.factory';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';

@@ -8,7 +8,7 @@ import {
   type Relation,
 } from 'typeorm';
 
-import { Language } from '@/src/modules/genres/enums/language.enum';
+import { Language } from '@/src/common/enums/language.enum';
 import { Series } from '@/src/modules/series/entities/series.entity';
 
 @Entity()

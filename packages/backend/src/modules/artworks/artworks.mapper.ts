@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 
+import { Language } from '@/src/common/enums/language.enum';
 import { BaseMapper } from '@/src/common/interfaces/base.mapper';
 import { CreateArtworkDto } from '@/src/modules/artworks/dtos/create-artwork.dto';
 import { UpdateArtworkDto } from '@/src/modules/artworks/dtos/update-artwork.dto';
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 
 @Injectable()
 export class ArtworksMapper

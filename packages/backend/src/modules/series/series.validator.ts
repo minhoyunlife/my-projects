@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { Language } from '@/src/modules/genres/enums/language.enum';
+import { Language } from '@/src/common/enums/language.enum';
 import { UpdateSeriesDto } from '@/src/modules/series/dtos/update-series.dto';
 import { Series } from '@/src/modules/series/entities/series.entity';
 import {

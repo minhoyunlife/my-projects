@@ -1,4 +1,4 @@
-import { Language } from '@/src/modules/genres/enums/language.enum';
+import { Language } from '@/src/common/enums/language.enum';
 import { CreateSeriesDto } from '@/src/modules/series/dtos/create-series.dto';
 import { UpdateSeriesDto } from '@/src/modules/series/dtos/update-series.dto';
 import { SeriesMapper } from '@/src/modules/series/series.mapper';

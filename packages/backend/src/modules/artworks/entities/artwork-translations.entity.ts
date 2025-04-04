@@ -7,8 +7,8 @@ import {
   PrimaryColumn,
 } from 'typeorm';
 
+import { Language } from '@/src/common/enums/language.enum';
 import type { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 
 /**
  * 작품 정보를 다언어로 DB에서 관리하기 위한 엔티티

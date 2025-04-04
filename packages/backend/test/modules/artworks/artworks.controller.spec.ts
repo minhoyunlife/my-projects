@@ -5,6 +5,7 @@ import request from 'supertest';
 import { DataSource, In, Repository } from 'typeorm';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
+import { Language } from '@/src/common/enums/language.enum';
 import { ArtworksController } from '@/src/modules/artworks/artworks.controller';
 import { ArtworksMapper } from '@/src/modules/artworks/artworks.mapper';
 import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
@@ -22,7 +23,6 @@ import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
 import { GenreTranslation } from '@/src/modules/genres/entities/genre-translations.entity';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
-import { Language } from '@/src/modules/genres/enums/language.enum';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
 import { StorageService } from '@/src/modules/storage/storage.service';
 import { AdministratorsFactory } from '@/test/factories/administrator.factory';
