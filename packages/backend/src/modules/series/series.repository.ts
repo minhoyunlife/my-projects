@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
 
 import { Transactional } from '@/src/common/interfaces/transactional.interface';
+import { SeriesArtwork } from '@/src/modules/series/entities/series-artworks.entity';
 import { Series } from '@/src/modules/series/entities/series.entity';
 
 @Injectable()
@@ -11,10 +12,15 @@ export class SeriesRepository implements Transactional<SeriesRepository> {
   constructor(
     @InjectRepository(Series)
     public readonly repository: Repository<Series>,
+    @InjectRepository(SeriesArtwork)
+    private readonly seriesArtworkRepository: Repository<SeriesArtwork>,
   ) {}
 
   withTransaction(manager: EntityManager): SeriesRepository {
-    return new SeriesRepository(manager.getRepository(Series));
+    return new SeriesRepository(
+      manager.getRepository(Series),
+      manager.getRepository(SeriesArtwork),
+    );
   }
 
   async getAllWithFilters(filters: {
@@ -67,6 +73,16 @@ export class SeriesRepository implements Transactional<SeriesRepository> {
     this.replaceTranslations(seriesData, series);
 
     return this.repository.save(series);
+  }
+
+  async updateSeriesArtworks(
+    series: Series,
+    artworks: { id: string; order: number }[],
+  ): Promise<Series> {
+    await this.removeExistingSeriesArtworks(series);
+    await this.createNewSeriesArtworks(series.id, artworks);
+
+    return this.findOneWithDetails(series.id);
   }
 
   async deleteMany(series: Series[]): Promise<void> {
@@ -141,5 +157,30 @@ export class SeriesRepository implements Transactional<SeriesRepository> {
         existingTranslation.title = newTranslation.title;
       }
     });
+  }
+
+  private async removeExistingSeriesArtworks(series: Series): Promise<void> {
+    if (series.seriesArtworks && series.seriesArtworks.length > 0) {
+      await this.seriesArtworkRepository.remove(series.seriesArtworks);
+    }
+  }
+
+  private async createNewSeriesArtworks(
+    seriesId: string,
+    artworks: { id: string; order: number }[],
+  ): Promise<SeriesArtwork[]> {
+    if (artworks.length === 0) {
+      return [];
+    }
+
+    const newSeriesArtworks = artworks.map((artwork) => {
+      return this.seriesArtworkRepository.create({
+        seriesId: seriesId,
+        artworkId: artwork.id,
+        order: artwork.order,
+      });
+    });
+
+    return this.seriesArtworkRepository.save(newSeriesArtworks);
   }
 }

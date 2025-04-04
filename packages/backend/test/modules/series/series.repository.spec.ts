@@ -616,6 +616,115 @@ describeWithDeps('SeriesRepository', () => {
     });
   });
 
+  describe('updateSeriesArtworks', () => {
+    let series: Series;
+    let artworks: Artwork[];
+    let seriesArtworks: SeriesArtwork[];
+
+    beforeEach(async () => {
+      await clearTables(dataSource, [Series, Artwork]);
+
+      [series] = await saveEntities(seriesRepo.repository, [
+        SeriesFactory.createTestData({ id: 'series-1' }, [
+          SeriesTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '파이널 판타지',
+          }),
+        ]),
+      ]);
+
+      artworks = await saveEntities(artworkRepo, [
+        ArtworksFactory.createTestData({ id: 'artwork-1' }),
+        ArtworksFactory.createTestData({ id: 'artwork-2' }),
+        ArtworksFactory.createTestData({ id: 'artwork-3' }),
+      ]);
+
+      seriesArtworks = await saveEntities(seriesArtworkRepo, [
+        {
+          seriesId: series.id,
+          artworkId: artworks[0].id,
+          order: 0,
+          series,
+          artwork: artworks[0],
+        } as SeriesArtwork,
+      ]);
+
+      series.seriesArtworks = seriesArtworks;
+    });
+
+    it('새로운 작품 연결로 업데이트됨', async () => {
+      const newArtworks = [
+        { id: artworks[1].id, order: 0 },
+        { id: artworks[2].id, order: 1 },
+      ];
+
+      const result = await seriesRepo.updateSeriesArtworks(series, newArtworks);
+
+      expect(result.id).toBe('series-1');
+      const connections = await seriesArtworkRepo.find({
+        where: { seriesId: series.id },
+      });
+      expect(connections).toHaveLength(2);
+
+      const sortedConnections = [...connections].sort(
+        (a, b) => a.order - b.order,
+      );
+      expect(sortedConnections[0].artworkId).toBe(artworks[1].id);
+      expect(sortedConnections[1].artworkId).toBe(artworks[2].id);
+      expect(sortedConnections[0].order).toBe(0);
+      expect(sortedConnections[1].order).toBe(1);
+
+      const oldConnection = await seriesArtworkRepo.findOne({
+        where: {
+          seriesId: series.id,
+          artworkId: artworks[0].id,
+        },
+      });
+      expect(oldConnection).toBeNull();
+    });
+
+    it('빈 작품 목록으로 모든 연결이 제거됨', async () => {
+      const emptyArtworks = [];
+
+      await seriesRepo.updateSeriesArtworks(series, emptyArtworks);
+
+      const connections = await seriesArtworkRepo.find({
+        where: { seriesId: series.id },
+      });
+      expect(connections).toHaveLength(0);
+    });
+
+    it('순서가 변경된 경우 정상적으로 업데이트됨', async () => {
+      await saveEntities(seriesArtworkRepo, [
+        {
+          seriesId: series.id,
+          artworkId: artworks[1].id,
+          order: 1,
+          series,
+          artwork: artworks[1],
+        } as SeriesArtwork,
+      ]);
+
+      const reorderedArtworks = [
+        { id: artworks[1].id, order: 0 }, // 원래 순서 1 -> 0
+        { id: artworks[0].id, order: 1 }, // 원래 순서 0 -> 1
+      ];
+
+      await seriesRepo.updateSeriesArtworks(series, reorderedArtworks);
+
+      const connections = await seriesArtworkRepo.find({
+        where: { seriesId: series.id },
+        order: { order: 'ASC' },
+      });
+
+      expect(connections).toHaveLength(2);
+      expect(connections[0].artworkId).toBe(artworks[1].id);
+      expect(connections[1].artworkId).toBe(artworks[0].id);
+      expect(connections[0].order).toBe(0);
+      expect(connections[1].order).toBe(1);
+    });
+  });
+
   describe('deleteMany', () => {
     let series: Series[];
     let artworks: Artwork[];

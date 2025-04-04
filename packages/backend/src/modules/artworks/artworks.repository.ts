@@ -43,6 +43,8 @@ export class ArtworksRepository implements Transactional<ArtworksRepository> {
   }
 
   async findManyWithDetails(ids: string[]): Promise<Artwork[]> {
+    if (ids.length === 0) return [];
+
     return this.repository.find({
       where: { id: In(ids) },
       relations: ['translations', 'genres'],

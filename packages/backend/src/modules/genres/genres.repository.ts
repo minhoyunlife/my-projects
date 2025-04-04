@@ -54,6 +54,8 @@ export class GenresRepository implements Transactional<GenresRepository> {
   }
 
   async findManyWithDetails(ids: string[]): Promise<Genre[]> {
+    if (ids.length === 0) return [];
+
     return this.repository.find({
       where: { id: In(ids) },
       relations: ['translations', 'artworks'],
