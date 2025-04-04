@@ -2,9 +2,11 @@ import { Injectable } from '@nestjs/common';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { EntityList } from '@/src/common/interfaces/entity-list.interface';
+import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { CreateSeriesDto } from '@/src/modules/series/dtos/create-series.dto';
 import { DeleteSeriesDto } from '@/src/modules/series/dtos/delete-series.dto';
 import { GetSeriesQueryDto } from '@/src/modules/series/dtos/get-series-query.dto';
+import { UpdateSeriesArtworksDto } from '@/src/modules/series/dtos/update-series-artworks.dto';
 import { UpdateSeriesDto } from '@/src/modules/series/dtos/update-series.dto';
 import { Series } from '@/src/modules/series/entities/series.entity';
 import { SeriesMapper } from '@/src/modules/series/series.mapper';
@@ -16,6 +18,7 @@ import { TransactionService } from '@/src/modules/transaction/transaction.servic
 export class SeriesService {
   constructor(
     private readonly seriesRepository: SeriesRepository,
+    private readonly artworksRepository: ArtworksRepository,
     private readonly transactionService: TransactionService,
     private readonly seriesMapper: SeriesMapper,
     private readonly seriesValidator: SeriesValidator,
@@ -68,6 +71,31 @@ export class SeriesService {
       this.seriesValidator.assertDuplicatesNotExist(duplicates);
 
       return await seriesTxRepo.updateOne(seriesData, series);
+    });
+  }
+
+  async updateSeriesArtworks(
+    id: string,
+    dto: UpdateSeriesArtworksDto,
+  ): Promise<Series> {
+    return this.transactionService.executeInTransaction(async (manager) => {
+      const seriesTxRepo = this.seriesRepository.withTransaction(manager);
+      const artworksTxRepo = this.artworksRepository.withTransaction(manager);
+
+      const series = await seriesTxRepo.findOneWithDetails(id);
+      this.seriesValidator.assertSeriesExists(series);
+
+      if (dto.artworks?.length > 0) {
+        const artworkIds = dto.artworks.map((artwork) => artwork.id);
+        const existingArtworks =
+          await artworksTxRepo.findManyWithDetails(artworkIds);
+        this.seriesValidator.assertAllArtworksExist(
+          existingArtworks,
+          artworkIds,
+        );
+      }
+
+      return seriesTxRepo.updateSeriesArtworks(series, dto.artworks || []);
     });
   }
 
