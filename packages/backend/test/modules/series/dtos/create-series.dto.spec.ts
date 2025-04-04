@@ -14,7 +14,6 @@ describeWithoutDeps('CreateSeriesDto', () => {
     it('값이 유효한 경우, 에러가 발생하지 않음', async () => {
       const dto = createDto(CreateSeriesDto, validDtoData);
       const errors = await validate(dto);
-      console.log(errors);
 
       expect(errors).toHaveLength(0);
     });
