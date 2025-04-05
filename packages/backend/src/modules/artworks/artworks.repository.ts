@@ -38,7 +38,13 @@ export class ArtworksRepository implements Transactional<ArtworksRepository> {
   async findOneWithDetails(id: string): Promise<Artwork> {
     return this.repository.findOne({
       where: { id },
-      relations: ['translations', 'genres'],
+      relations: [
+        'translations',
+        'genres',
+        'seriesArtworks',
+        'seriesArtworks.series',
+        'seriesArtworks.series.translations',
+      ],
     });
   }
 
@@ -47,7 +53,13 @@ export class ArtworksRepository implements Transactional<ArtworksRepository> {
 
     return this.repository.find({
       where: { id: In(ids) },
-      relations: ['translations', 'genres'],
+      relations: [
+        'translations',
+        'genres',
+        'seriesArtworks',
+        'seriesArtworks.series',
+        'seriesArtworks.series.translations',
+      ],
     });
   }
 
@@ -82,7 +94,10 @@ export class ArtworksRepository implements Transactional<ArtworksRepository> {
       .createQueryBuilder('artwork')
       .leftJoinAndSelect('artwork.genres', 'genre')
       .leftJoinAndSelect('genre.translations', 'translation')
-      .leftJoinAndSelect('artwork.translations', 'artworkTranslation');
+      .leftJoinAndSelect('artwork.translations', 'artworkTranslation')
+      .leftJoinAndSelect('artwork.seriesArtworks', 'seriesArtwork')
+      .leftJoinAndSelect('seriesArtwork.series', 'series')
+      .leftJoinAndSelect('series.translations', 'seriesTranslation');
   }
 
   private applyGenreFilter(

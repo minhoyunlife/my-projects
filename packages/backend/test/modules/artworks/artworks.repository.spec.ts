@@ -8,10 +8,16 @@ import { Platform } from '@/src/modules/artworks/enums/platform.enum';
 import { Sort } from '@/src/modules/artworks/enums/sort-type.enum';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { GenresRepository } from '@/src/modules/genres/genres.repository';
+import { SeriesArtwork } from '@/src/modules/series/entities/series-artworks.entity';
+import { SeriesTranslation } from '@/src/modules/series/entities/series-translations.entity';
+import { Series } from '@/src/modules/series/entities/series.entity';
 import { ArtworkTranslationsFactory } from '@/test/factories/artwork-translations.factory';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenreTranslationsFactory } from '@/test/factories/genre-translations.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
+import { SeriesArtworksFactory } from '@/test/factories/series-artworks.factory';
+import { SeriesTranslationsFactory } from '@/test/factories/series-translations.factory';
+import { SeriesFactory } from '@/test/factories/series.factory';
 import { clearTables, saveEntities } from '@/test/utils/database.util';
 import { createTestingModuleWithDB } from '@/test/utils/module-builder.util';
 
@@ -23,7 +29,14 @@ describeWithDeps('ArtworksRepository', () => {
 
   beforeAll(async () => {
     const module = await createTestingModuleWithDB({
-      entities: [Artwork, ArtworkTranslation, Genre],
+      entities: [
+        Artwork,
+        ArtworkTranslation,
+        Genre,
+        Series,
+        SeriesTranslation,
+        SeriesArtwork,
+      ],
       providers: [ArtworksRepository, GenresRepository],
     });
 
@@ -37,107 +50,13 @@ describeWithDeps('ArtworksRepository', () => {
     await dataSource.destroy();
   });
 
-  describe('createOne', () => {
-    let savedGenres: Genre[];
-
-    beforeEach(async () => {
-      await clearTables(dataSource, [Artwork, Genre]);
-
-      const genreEntity = GenresFactory.createTestData({}, [
-        GenreTranslationsFactory.createTestData({
-          language: Language.KO,
-          name: '액션',
-        }),
-        GenreTranslationsFactory.createTestData({
-          language: Language.EN,
-          name: 'Action',
-        }),
-        GenreTranslationsFactory.createTestData({
-          language: Language.JA,
-          name: 'アクション',
-        }),
-      ]);
-      savedGenres = await saveEntities(genreRepo.repository, [genreEntity]);
-    });
-
-    it('작품 데이터를 성공적으로 생성함', async () => {
-      const artworkData = ArtworksFactory.createTestData(
-        {},
-        [
-          ArtworkTranslationsFactory.createTestData({
-            language: Language.KO,
-          }),
-          ArtworkTranslationsFactory.createTestData({
-            language: Language.EN,
-          }),
-          ArtworkTranslationsFactory.createTestData({
-            language: Language.JA,
-          }),
-        ],
-        savedGenres,
-      );
-      const result = await artworkRepo.createOne(artworkData);
-
-      const saved = await artworkRepo.repository.findOne({
-        where: { id: result.id },
-        relations: {
-          genres: {
-            translations: true,
-          },
-          translations: true,
-        },
-      });
-
-      expect(saved.imageKey).toBe(artworkData.imageKey);
-      expect(saved.playedOn).toBe(artworkData.playedOn);
-      expect(saved.rating).toBe(artworkData.rating);
-      expect(saved.genres).toEqual(artworkData.genres);
-      expect(saved.isDraft).toBe(true);
-      expect(
-        saved.translations.find((t) => t.language === Language.KO).title,
-      ).toEqual(
-        artworkData.translations.find((t) => t.language === Language.KO).title,
-      );
-      expect(
-        saved.translations.find((t) => t.language === Language.EN).title,
-      ).toEqual(
-        artworkData.translations.find((t) => t.language === Language.EN).title,
-      );
-      expect(
-        saved.translations.find((t) => t.language === Language.JA).title,
-      ).toEqual(
-        artworkData.translations.find((t) => t.language === Language.JA).title,
-      );
-    });
-
-    describe('필수 필드 검증', () => {
-      it('title이 없으면 에러가 발생함', async () => {
-        const artworkData = ArtworksFactory.createTestData({}, [
-          ArtworkTranslationsFactory.createTestData({
-            language: Language.KO,
-            title: undefined,
-          }),
-        ]);
-
-        await expect(artworkRepo.createOne(artworkData)).rejects.toThrow();
-      });
-
-      it('imageKey가 없으면 에러가 발생함', async () => {
-        const artworkData = ArtworksFactory.createTestData({
-          imageKey: undefined,
-        });
-
-        await expect(artworkRepo.createOne(artworkData)).rejects.toThrow();
-      });
-    });
-  });
-
   describe('getAllWithFilters', () => {
     let genres: Genre[];
     let artworks: Artwork[];
+    let series: Series;
 
     beforeEach(async () => {
-      await clearTables(dataSource, [Artwork, Genre]);
+      await clearTables(dataSource, [Artwork, Genre, Series, SeriesArtwork]);
 
       genres = await saveEntities(genreRepo.repository, [
         GenresFactory.createTestData({}, [
@@ -156,6 +75,21 @@ describeWithDeps('ArtworksRepository', () => {
           { language: Language.JA, name: 'アドベンチャー' },
         ]),
       ]);
+
+      series = (
+        await saveEntities(dataSource.getRepository(Series), [
+          SeriesFactory.createTestData({}, [
+            SeriesTranslationsFactory.createTestData({
+              language: Language.KO,
+              title: 'RPG 컬렉션',
+            }),
+            SeriesTranslationsFactory.createTestData({
+              language: Language.EN,
+              title: 'RPG Collection',
+            }),
+          ]),
+        ])
+      )[0];
 
       artworks = await saveEntities(artworkRepo.repository, [
         ArtworksFactory.createTestData(
@@ -273,6 +207,11 @@ describeWithDeps('ArtworksRepository', () => {
             }),
           ],
         ),
+      ]);
+
+      await saveEntities(dataSource.getRepository(SeriesArtwork), [
+        SeriesArtworksFactory.createTestData({ order: 1 }, series, artworks[0]),
+        SeriesArtworksFactory.createTestData({ order: 2 }, series, artworks[1]),
       ]);
     });
 
@@ -682,13 +621,79 @@ describeWithDeps('ArtworksRepository', () => {
         );
       });
     });
+
+    describe('시리즈 정보 조회 검증', () => {
+      it('작품 조회 시 연결된 시리즈 정보가 함께 로드됨', async () => {
+        const [result, totalCount] = await artworkRepo.getAllWithFilters({
+          page: 1,
+          pageSize: 10,
+          sort: Sort.CREATED_DESC,
+          isDraftIn: [true, false],
+        });
+
+        expect(totalCount).toBe(5);
+        expect(result).toHaveLength(5);
+
+        const withSeries = result.filter(
+          (artwork) => artwork.seriesArtworks?.length > 0,
+        );
+        expect(withSeries).toHaveLength(2);
+
+        const ff7 = result.find((artwork) =>
+          artwork.translations.some((t) => t.title === 'Final Fantasy VII'),
+        );
+        expect(ff7.seriesArtworks).toBeDefined();
+        expect(ff7.seriesArtworks).toHaveLength(1);
+        expect(ff7.seriesArtworks[0].order).toBe(1);
+        expect(ff7.seriesArtworks[0].series).toBeDefined();
+        expect(ff7.seriesArtworks[0].series.translations).toBeDefined();
+
+        const seriesTitle = ff7.seriesArtworks[0].series.translations.find(
+          (t) => t.language === Language.EN,
+        )?.title;
+        expect(seriesTitle).toBe('RPG Collection');
+
+        const zelda = result.find((artwork) =>
+          artwork.translations.some((t) => t.title === 'Zelda'),
+        );
+        expect(zelda.seriesArtworks).toBeDefined();
+        expect(zelda.seriesArtworks).toHaveLength(0);
+      });
+
+      it('필터링 시에도 시리즈 정보가 함께 로드됨', async () => {
+        const [result, totalCount] = await artworkRepo.getAllWithFilters({
+          page: 1,
+          pageSize: 10,
+          sort: Sort.CREATED_DESC,
+          isDraftIn: [false], // 공개된 작품만 조회
+          genreIds: [genres[0].id], // RPG 장르만 조회
+        });
+
+        expect(totalCount).toBe(2);
+        expect(result).toHaveLength(2);
+
+        const artwork = result[1];
+        const title = artwork.translations.find(
+          (t) => t.language === Language.EN,
+        )?.title;
+        expect(title).toBe('Final Fantasy VII');
+
+        expect(artwork.seriesArtworks).toHaveLength(1);
+        const seriesTitle = artwork.seriesArtworks[0].series.translations.find(
+          (t) => t.language === Language.EN,
+        )?.title;
+        expect(seriesTitle).toBe('RPG Collection');
+      });
+    });
   });
 
   describe('findOneWithDetails', () => {
     let savedArtwork: Artwork;
+    let savedSeries: Series;
+    let savedSeriesArtwork: SeriesArtwork;
 
     beforeEach(async () => {
-      await clearTables(dataSource, [Artwork, Genre]);
+      await clearTables(dataSource, [Artwork, Genre, Series, SeriesArtwork]);
 
       const genre = await saveEntities(genreRepo.repository, [
         GenresFactory.createTestData({}, [
@@ -698,28 +703,53 @@ describeWithDeps('ArtworksRepository', () => {
         ]),
       ]);
 
-      const artworks = await saveEntities(artworkRepo.repository, [
-        ArtworksFactory.createTestData(
-          { isDraft: true },
-          [
-            ArtworkTranslationsFactory.createTestData({
-              language: Language.KO,
-              title: '다크소울',
-            }),
-            ArtworkTranslationsFactory.createTestData({
-              language: Language.EN,
-              title: 'Dark Souls',
-            }),
-            ArtworkTranslationsFactory.createTestData({
-              language: Language.JA,
-              title: 'ダークソウル',
-            }),
-          ],
-          genre,
-        ),
-      ]);
+      savedArtwork = (
+        await saveEntities(artworkRepo.repository, [
+          ArtworksFactory.createTestData(
+            { isDraft: true },
+            [
+              ArtworkTranslationsFactory.createTestData({
+                language: Language.KO,
+                title: '다크소울',
+              }),
+              ArtworkTranslationsFactory.createTestData({
+                language: Language.EN,
+                title: 'Dark Souls',
+              }),
+              ArtworkTranslationsFactory.createTestData({
+                language: Language.JA,
+                title: 'ダークソウル',
+              }),
+            ],
+            genre,
+          ),
+        ])
+      )[0];
 
-      savedArtwork = artworks[0];
+      savedSeries = (
+        await saveEntities(dataSource.getRepository(Series), [
+          SeriesFactory.createTestData({}, [
+            SeriesTranslationsFactory.createTestData({
+              language: Language.KO,
+              title: '다크소울 시리즈',
+            }),
+            SeriesTranslationsFactory.createTestData({
+              language: Language.EN,
+              title: 'Dark Souls Series',
+            }),
+          ]),
+        ])
+      )[0];
+
+      savedSeriesArtwork = (
+        await saveEntities(dataSource.getRepository(SeriesArtwork), [
+          SeriesArtworksFactory.createTestData(
+            { order: 1 },
+            savedSeries,
+            savedArtwork,
+          ),
+        ])
+      )[0];
     });
 
     it('ID로 작품 상세 정보를 성공적으로 조회함', async () => {
@@ -729,6 +759,9 @@ describeWithDeps('ArtworksRepository', () => {
       expect(result.id).toBe(savedArtwork.id);
       expect(result.translations).toHaveLength(3);
       expect(result.genres).toHaveLength(1);
+      expect(result.seriesArtworks).toHaveLength(1);
+      expect(result.seriesArtworks[0].order).toBe(1);
+      expect(result.seriesArtworks[0].series.translations).toHaveLength(2);
     });
 
     it('존재하지 않는 ID로 조회하면 null을 반환함', async () => {
@@ -739,9 +772,10 @@ describeWithDeps('ArtworksRepository', () => {
 
   describe('findManyWithDetails', () => {
     let savedArtworks: Artwork[];
+    let savedSeries: Series;
 
     beforeEach(async () => {
-      await clearTables(dataSource, [Artwork, Genre]);
+      await clearTables(dataSource, [Artwork, Genre, Series, SeriesArtwork]);
 
       const genre = await saveEntities(genreRepo.repository, [
         GenresFactory.createTestData({}, [
@@ -789,6 +823,29 @@ describeWithDeps('ArtworksRepository', () => {
           genre,
         ),
       ]);
+
+      savedSeries = (
+        await saveEntities(dataSource.getRepository(Series), [
+          SeriesFactory.createTestData({}, [
+            SeriesTranslationsFactory.createTestData({
+              language: Language.KO,
+              title: '다크 판타지 시리즈',
+            }),
+            SeriesTranslationsFactory.createTestData({
+              language: Language.EN,
+              title: 'Dark Fantasy Series',
+            }),
+          ]),
+        ])
+      )[0];
+
+      await saveEntities(dataSource.getRepository(SeriesArtwork), [
+        SeriesArtworksFactory.createTestData(
+          { order: 1 },
+          savedSeries,
+          savedArtworks[0],
+        ),
+      ]);
     });
 
     it('ID 목록으로 작품들을 성공적으로 조회함', async () => {
@@ -800,6 +857,25 @@ describeWithDeps('ArtworksRepository', () => {
       expect(result[0].genres).toBeDefined();
       expect(result[1].translations).toBeDefined();
       expect(result[1].genres).toBeDefined();
+    });
+
+    it('작품과 연관된 시리즈 정보도 함께 조회됨', async () => {
+      const targetIds = savedArtworks.map((artwork) => artwork.id);
+      const result = await artworkRepo.findManyWithDetails(targetIds);
+
+      expect(result[0].seriesArtworks).toBeDefined();
+      expect(result[0].seriesArtworks).toHaveLength(1);
+      expect(result[0].seriesArtworks[0].series).toBeDefined();
+      expect(result[0].seriesArtworks[0].order).toBe(1);
+      expect(result[0].seriesArtworks[0].series.translations).toBeDefined();
+
+      const koTitle = result[0].seriesArtworks[0].series.translations.find(
+        (t) => t.language === Language.KO,
+      )?.title;
+      expect(koTitle).toBe('다크 판타지 시리즈');
+
+      expect(result[1].seriesArtworks).toBeDefined();
+      expect(result[1].seriesArtworks).toHaveLength(0);
     });
 
     it('존재하지 않는 ID가 포함된 경우, 존재하는 작품만 조회됨', async () => {

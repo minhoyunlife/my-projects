@@ -2,14 +2,20 @@ import { Language } from '@/src/common/enums/language.enum';
 import {
   ArtworkListResponseDto,
   ArtworkResponseDto,
+  ArtworkSeriesDto,
 } from '@/src/modules/artworks/dtos/artwork-response.dto';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { GenreResponseDto } from '@/src/modules/genres/dtos/genre-response.dto';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
+import { SeriesArtwork } from '@/src/modules/series/entities/series-artworks.entity';
+import { Series } from '@/src/modules/series/entities/series.entity';
 import { StorageService } from '@/src/modules/storage/storage.service';
 import { ArtworkTranslationsFactory } from '@/test/factories/artwork-translations.factory';
 import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { GenresFactory } from '@/test/factories/genres.factory';
+import { SeriesArtworksFactory } from '@/test/factories/series-artworks.factory';
+import { SeriesTranslationsFactory } from '@/test/factories/series-translations.factory';
+import { SeriesFactory } from '@/test/factories/series.factory';
 
 describeWithoutDeps('ArtworkResponse', () => {
   const domain = 'https://test-cdn.example.com/';
@@ -17,10 +23,27 @@ describeWithoutDeps('ArtworkResponse', () => {
     getImageUrl: vi.fn((imageKey: string) => `${domain}/${imageKey}`),
   } as unknown as StorageService;
 
-  const genres = [GenresFactory.createTestData({ id: 'some-nanoid' }) as Genre];
+  const genres = [GenresFactory.createTestData({ id: 'genre-id' }) as Genre];
+
+  const seriesTranslations = [
+    SeriesTranslationsFactory.createTestData({
+      language: Language.KO,
+      title: 'Test Series KO',
+    }),
+    SeriesTranslationsFactory.createTestData({
+      language: Language.EN,
+      title: 'Test Series EN',
+    }),
+  ];
+
+  const series = SeriesFactory.createTestData(
+    { id: 'series-id' },
+    seriesTranslations,
+  ) as Series;
+
   const artwork = ArtworksFactory.createTestData(
     {
-      id: 'some-nanoid',
+      id: 'artwork-id',
       isDraft: true,
     },
     [
@@ -36,6 +59,43 @@ describeWithoutDeps('ArtworkResponse', () => {
     ],
     genres,
   ) as Artwork;
+
+  const seriesArtwork = SeriesArtworksFactory.createTestData(
+    { order: 3 },
+    series,
+    artwork,
+  ) as SeriesArtwork;
+
+  artwork.seriesArtworks = [seriesArtwork];
+
+  describe('ArtworkSeriesDto', () => {
+    it('시리즈 작품 엔티티로부터 DTO를 정확히 생성함', () => {
+      const dto = new ArtworkSeriesDto(seriesArtwork);
+
+      expect(dto.id).toBe(series.id);
+      expect(dto.order).toBe(3);
+      expect(dto.translations).toEqual(seriesTranslations);
+    });
+
+    it('series 속성이 없는 경우 빈 배열을 translations로 설정함', () => {
+      const artworkWithoutSeriesTranslations = {
+        ...seriesArtwork,
+        series: { translations: null },
+      };
+      const dto = new ArtworkSeriesDto(
+        artworkWithoutSeriesTranslations as SeriesArtwork,
+      );
+
+      expect(dto.translations).toEqual([]);
+    });
+
+    it('series 속성이 null인 경우 빈 배열을 translations로 설정함', () => {
+      const artworkWithNullSeries = { ...seriesArtwork, series: null };
+      const dto = new ArtworkSeriesDto(artworkWithNullSeries as SeriesArtwork);
+
+      expect(dto.translations).toEqual([]);
+    });
+  });
 
   describe('ArtworkResponse', () => {
     const response = new ArtworkResponseDto(mockStorageService, artwork);
@@ -164,6 +224,38 @@ describeWithoutDeps('ArtworkResponse', () => {
         );
 
         expect(responseWithEmptyGenres.genres).toEqual([]);
+      });
+    });
+
+    describe('series', () => {
+      it('작품이 시리즈에 속한 경우, ArtworkSeriesDto 인스턴스가 반환됨', () => {
+        expect(response.series).toEqual(new ArtworkSeriesDto(seriesArtwork));
+      });
+
+      it('작품이 시리즈에 속하지 않은 경우, null이 반환됨', () => {
+        const artworkWithoutSeries = ArtworksFactory.createTestData({
+          seriesArtworks: [],
+        }) as Artwork;
+
+        const responseWithoutSeries = new ArtworkResponseDto(
+          mockStorageService,
+          artworkWithoutSeries,
+        );
+
+        expect(responseWithoutSeries.series).toBeNull();
+      });
+
+      it('seriesArtworks가 undefined인 경우, null이 반환됨', () => {
+        const artworkWithUndefinedSeries = ArtworksFactory.createTestData({
+          seriesArtworks: undefined,
+        }) as Artwork;
+
+        const responseWithUndefinedSeries = new ArtworkResponseDto(
+          mockStorageService,
+          artworkWithUndefinedSeries,
+        );
+
+        expect(responseWithUndefinedSeries.series).toBeNull();
       });
     });
   });
