@@ -1,11 +1,22 @@
-import { Injectable } from '@nestjs/common';
-
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { GenreResponseDto } from '@/src/modules/genres/dtos/genre-response.dto';
+import { SeriesArtwork } from '@/src/modules/series/entities/series-artworks.entity';
+import { SeriesTranslation } from '@/src/modules/series/entities/series-translations.entity';
 import { StorageService } from '@/src/modules/storage/storage.service';
 
-@Injectable()
+export class ArtworkSeriesDto {
+  id: string;
+  order: number;
+  translations: SeriesTranslation[];
+
+  constructor(seriesArtwork: SeriesArtwork) {
+    this.id = seriesArtwork.seriesId;
+    this.order = seriesArtwork.order;
+    this.translations = seriesArtwork.series?.translations || [];
+  }
+}
+
 export class ArtworkResponseDto {
   id: string;
   imageUrl: string;
@@ -16,9 +27,12 @@ export class ArtworkResponseDto {
   isVertical: boolean;
   translations: ArtworkTranslation[];
   genres: GenreResponseDto[];
-  series: string | null; // TODO: SeriesArtworkResponseDto 구현 시 수정할 것
+  series: ArtworkSeriesDto | null;
 
   constructor(storageService: StorageService, artwork: Artwork) {
+    const seriesArtwork =
+      artwork.seriesArtworks?.length > 0 ? artwork.seriesArtworks[0] : null;
+
     this.id = artwork.id;
     this.imageUrl = storageService.getImageUrl(artwork.imageKey);
     this.createdAt = artwork.createdAt?.toISOString() ?? '';
@@ -29,11 +43,10 @@ export class ArtworkResponseDto {
     this.translations = artwork.translations ?? [];
     this.genres =
       artwork.genres?.map((genre) => new GenreResponseDto(genre)) ?? [];
-    this.series = null; // TODO: SeriesArtworkResponseDto 구현 시 수정할 것
+    this.series = seriesArtwork ? new ArtworkSeriesDto(seriesArtwork) : null;
   }
 }
 
-@Injectable()
 export class ArtworkListResponseDto {
   items: ArtworkResponseDto[];
   metadata: {
