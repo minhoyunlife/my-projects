@@ -31,7 +31,7 @@ export class ArtworkResponseDto {
 
   constructor(storageService: StorageService, artwork: Artwork) {
     const seriesArtwork =
-      artwork.seriesArtworks?.length > 0 ? artwork.seriesArtworks[0] : null;
+      artwork.seriesArtworks?.length > 0 ? artwork.seriesArtworks[0] : null; // NOTE: 작품에 연결되는 시리즈는 하나만 존재
 
     this.id = artwork.id;
     this.imageUrl = storageService.getImageUrl(artwork.imageKey);
