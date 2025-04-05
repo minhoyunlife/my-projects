@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -21,6 +22,7 @@ import {
   SeriesListResponseDto,
   SeriesResponseDto,
 } from '@/src/modules/series/dtos/series-response.dto';
+import { UpdateSeriesArtworksDto } from '@/src/modules/series/dtos/update-series-artworks.dto';
 import { UpdateSeriesDto } from '@/src/modules/series/dtos/update-series.dto';
 import { SeriesService } from '@/src/modules/series/series.service';
 
@@ -59,6 +61,17 @@ export class SeriesController {
     @Body() dto: UpdateSeriesDto,
   ): Promise<SeriesResponseDto> {
     const series = await this.seriesService.updateSeries(id, dto);
+    return new SeriesResponseDto(series);
+  }
+
+  @Put(':id/artworks')
+  @UseGuards(BearerAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async updateSeriesArtwork(
+    @Param('id') id: string,
+    @Body() dto: UpdateSeriesArtworksDto,
+  ): Promise<SeriesResponseDto> {
+    const series = await this.seriesService.updateSeriesArtworks(id, dto);
     return new SeriesResponseDto(series);
   }
 

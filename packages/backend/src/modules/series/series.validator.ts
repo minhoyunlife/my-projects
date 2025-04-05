@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { Language } from '@/src/common/enums/language.enum';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { UpdateSeriesDto } from '@/src/modules/series/dtos/update-series.dto';
 import { Series } from '@/src/modules/series/entities/series.entity';
 import {
@@ -91,6 +92,18 @@ export class SeriesValidator {
     throw new SeriesException(
       SeriesErrorCode.NOT_FOUND,
       'The series with the provided ID does not exist',
+    );
+  }
+
+  assertAllArtworksExist(artworks: Artwork[], ids: string[]) {
+    if (artworks.length === ids.length) return;
+
+    throw new SeriesException(
+      SeriesErrorCode.NOT_FOUND,
+      'Some of the provided artworks do not exist',
+      {
+        ids: ids.filter((id) => !new Set(artworks.map((a) => a.id)).has(id)),
+      },
     );
   }
 }

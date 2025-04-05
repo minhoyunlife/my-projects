@@ -5,12 +5,14 @@ import { DataSource, Repository } from 'typeorm';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { Language } from '@/src/common/enums/language.enum';
+import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
 import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { AuthService } from '@/src/modules/auth/auth.service';
 import { Administrator } from '@/src/modules/auth/entities/administrator.entity';
 import { TokenErrorCode } from '@/src/modules/auth/exceptions/token.exception';
 import { INVALID_INPUT_DATA } from '@/src/modules/config/settings/validation-pipe.config';
 import { CreateSeriesDto } from '@/src/modules/series/dtos/create-series.dto';
+import { UpdateSeriesArtworksDto } from '@/src/modules/series/dtos/update-series-artworks.dto';
 import { UpdateSeriesDto } from '@/src/modules/series/dtos/update-series.dto';
 import { SeriesArtwork } from '@/src/modules/series/entities/series-artworks.entity';
 import { SeriesTranslation } from '@/src/modules/series/entities/series-translations.entity';
@@ -56,6 +58,7 @@ describeWithDeps('SeriesController', () => {
       providers: [
         SeriesService,
         SeriesRepository,
+        ArtworksRepository,
         SeriesMapper,
         SeriesValidator,
       ],
@@ -518,6 +521,175 @@ describeWithDeps('SeriesController', () => {
       await expect(response).toMatchOpenAPISpec();
 
       expect(response.body.code).toBe(SeriesErrorCode.DUPLICATE_TITLE);
+    });
+  });
+
+  describe('PUT /series/:id/artworks', () => {
+    let series: Series;
+    let artworks: Artwork[];
+    let seriesArtworks: SeriesArtwork[];
+
+    beforeEach(async () => {
+      series = (
+        await saveEntities(seriesRepository, [
+          SeriesFactory.createTestData({}, [
+            SeriesTranslationsFactory.createTestData({
+              language: Language.KO,
+              title: '파이널 판타지',
+            }),
+            SeriesTranslationsFactory.createTestData({
+              language: Language.EN,
+              title: 'Final Fantasy',
+            }),
+            SeriesTranslationsFactory.createTestData({
+              language: Language.JA,
+              title: 'ファイナルファンタジー',
+            }),
+          ]),
+        ])
+      )[0];
+
+      artworks = await saveEntities(artworkRepository, [
+        ArtworksFactory.createTestData({}, [
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '파이널 판타지 7',
+          }),
+        ]),
+        ArtworksFactory.createTestData({}, [
+          ArtworkTranslationsFactory.createTestData({
+            language: Language.KO,
+            title: '파이널 판타지 8',
+          }),
+        ]),
+      ]);
+
+      seriesArtworks = await saveEntities(seriesArtworkRepository, [
+        SeriesArtworksFactory.createTestData({ order: 0 }, series, artworks[0]),
+      ]);
+
+      series.seriesArtworks = seriesArtworks;
+    });
+
+    it('유효한 DTO로 시리즈 아트워크 수정 시 200 응답으로 성공함', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const updateSeriesArtworksDto: UpdateSeriesArtworksDto = {
+        artworks: [
+          {
+            id: artworks[1].id,
+            order: 1,
+          },
+        ],
+      };
+
+      const response = await request(app.getHttpServer())
+        .put(`/series/${series.id}/artworks`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateSeriesArtworksDto)
+        .expect(200);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      const updatedSeries = await seriesRepository.findOne({
+        where: { id: series.id },
+        relations: { seriesArtworks: true },
+      });
+
+      expect(updatedSeries.seriesArtworks).toHaveLength(1);
+      expect(updatedSeries.seriesArtworks).toContainEqual(
+        expect.objectContaining({
+          seriesId: series.id,
+          artworkId: artworks[1].id,
+          order: 1,
+        }),
+      );
+    });
+
+    it('리퀘스트 바디가 비어있을 경우에도, 200 응답으로 성공함', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const response = await request(app.getHttpServer())
+        .put(`/series/${series.id}/artworks`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({})
+        .expect(200);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      const updatedSeries = await seriesRepository.findOne({
+        where: { id: series.id },
+        relations: { seriesArtworks: true },
+      });
+
+      expect(updatedSeries.seriesArtworks).toHaveLength(0);
+    });
+
+    it('인증에 실패한 경우, 401 에러가 반환됨', async () => {
+      const updateSeriesArtworksDto: UpdateSeriesArtworksDto = {
+        artworks: [
+          {
+            id: artworks[1].id,
+            order: 1,
+          },
+        ],
+      };
+
+      const response = await request(app.getHttpServer())
+        .put(`/series/${series.id}/artworks`)
+        .set('Authorization', 'Bearer invalid-token')
+        .send(updateSeriesArtworksDto)
+        .expect(401);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      expect(response.body.code).toBe(TokenErrorCode.INVALID_TOKEN);
+    });
+
+    it('존재하지 않는 시리즈 ID를 요청할 경우, 404 에러가 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const updateSeriesArtworksDto: UpdateSeriesArtworksDto = {
+        artworks: [
+          {
+            id: artworks[1].id,
+            order: 1,
+          },
+        ],
+      };
+
+      const response = await request(app.getHttpServer())
+        .put(`/series/non-existent-id/artworks`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateSeriesArtworksDto)
+        .expect(404);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      expect(response.body.code).toBe(SeriesErrorCode.NOT_FOUND);
+    });
+
+    it('존재하지 않는 작품 ID를 요청할 경우, 404 에러가 반환됨', async () => {
+      const token = await createTestAccessToken(authService, administrator);
+
+      const updateSeriesArtworksDto: UpdateSeriesArtworksDto = {
+        artworks: [
+          {
+            id: 'non-existent-id',
+            order: 1,
+          },
+        ],
+      };
+
+      const response = await request(app.getHttpServer())
+        .put(`/series/${series.id}/artworks`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(updateSeriesArtworksDto)
+        .expect(404);
+
+      await expect(response).toMatchOpenAPISpec();
+
+      expect(response.body.code).toBe(SeriesErrorCode.NOT_FOUND);
     });
   });
 

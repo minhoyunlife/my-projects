@@ -223,4 +223,34 @@ describeWithoutDeps('SeriesValidator', () => {
       }
     });
   });
+
+  describe('assertAllArtworksExist', () => {
+    it('모든 아트워크가 존재하면 예외를 발생시키지 않음', () => {
+      const artworks = [
+        ArtworksFactory.createTestData({ id: 'artwork-1' }) as Artwork,
+        ArtworksFactory.createTestData({ id: 'artwork-2' }) as Artwork,
+      ];
+      const ids = ['artwork-1', 'artwork-2'];
+
+      expect(() =>
+        validator.assertAllArtworksExist(artworks, ids),
+      ).not.toThrow();
+    });
+
+    it('일부 아트워크가 존재하지 않으면 예외를 발생시킴', () => {
+      const artworks = [
+        ArtworksFactory.createTestData({ id: 'artwork-1' }) as Artwork,
+      ];
+      const ids = ['artwork-1', 'non-existent-artwork'];
+
+      try {
+        validator.assertAllArtworksExist(artworks, ids);
+      } catch (e) {
+        expect(e).toBeInstanceOf(SeriesException);
+        expect(e.getCode()).toBe(SeriesErrorCode.NOT_FOUND);
+        expect(e.getErrors()).toHaveProperty('ids');
+        expect(e.getErrors().ids).toContain('non-existent-artwork');
+      }
+    });
+  });
 });

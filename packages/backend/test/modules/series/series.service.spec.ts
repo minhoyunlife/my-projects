@@ -2,10 +2,14 @@ import { TestingModule } from '@nestjs/testing';
 
 import { PAGE_SIZE } from '@/src/common/constants/page-size.constant';
 import { Language } from '@/src/common/enums/language.enum';
+import { ArtworksRepository } from '@/src/modules/artworks/artworks.repository';
+import { Artwork } from '@/src/modules/artworks/entities/artworks.entity';
 import { CreateSeriesDto } from '@/src/modules/series/dtos/create-series.dto';
 import { DeleteSeriesDto } from '@/src/modules/series/dtos/delete-series.dto';
 import { GetSeriesQueryDto } from '@/src/modules/series/dtos/get-series-query.dto';
+import { UpdateSeriesArtworksDto } from '@/src/modules/series/dtos/update-series-artworks.dto';
 import { UpdateSeriesDto } from '@/src/modules/series/dtos/update-series.dto';
+import { SeriesArtwork } from '@/src/modules/series/entities/series-artworks.entity';
 import { SeriesTranslation } from '@/src/modules/series/entities/series-translations.entity';
 import { Series } from '@/src/modules/series/entities/series.entity';
 import {
@@ -17,11 +21,13 @@ import { SeriesRepository } from '@/src/modules/series/series.repository';
 import { SeriesService } from '@/src/modules/series/series.service';
 import { SeriesValidator } from '@/src/modules/series/series.validator';
 import { TransactionService } from '@/src/modules/transaction/transaction.service';
+import { ArtworksFactory } from '@/test/factories/artworks.factory';
 import { createTestingModuleWithoutDB } from '@/test/utils/module-builder.util';
 
 describeWithoutDeps('SeriesService', () => {
   let service: SeriesService;
   let seriesRepository: Partial<SeriesRepository>;
+  let artworksRepository: Partial<ArtworksRepository>;
   let seriesValidator: Partial<SeriesValidator>;
   let transactionService: Partial<TransactionService>;
 
@@ -33,7 +39,13 @@ describeWithoutDeps('SeriesService', () => {
       findManyWithDetails: vi.fn(),
       createOne: vi.fn(),
       updateOne: vi.fn(),
+      updateSeriesArtworks: vi.fn(),
       deleteMany: vi.fn(),
+      withTransaction: vi.fn(),
+    };
+
+    artworksRepository = {
+      findManyWithDetails: vi.fn(),
       withTransaction: vi.fn(),
     };
 
@@ -44,14 +56,24 @@ describeWithoutDeps('SeriesService', () => {
       assertSeriesNotInUse: vi.fn(),
       assertAtLeastOneTranslationTitleExist: vi.fn(),
       assertSeriesExists: vi.fn(),
+      assertAllArtworksExist: vi.fn(),
     };
 
     transactionService = {
-      executeInTransaction: vi.fn((callback) => callback(seriesRepository)),
+      executeInTransaction: vi.fn((callback) =>
+        callback({
+          seriesRepository,
+          artworksRepository,
+        }),
+      ),
     };
 
     (seriesRepository.withTransaction as any).mockImplementation(
       () => seriesRepository,
+    );
+
+    (artworksRepository.withTransaction as any).mockImplementation(
+      () => artworksRepository,
     );
 
     const module: TestingModule = await createTestingModuleWithoutDB({
@@ -60,6 +82,10 @@ describeWithoutDeps('SeriesService', () => {
         {
           provide: SeriesRepository,
           useValue: seriesRepository,
+        },
+        {
+          provide: ArtworksRepository,
+          useValue: artworksRepository,
         },
         {
           provide: TransactionService,
@@ -421,6 +447,135 @@ describeWithoutDeps('SeriesService', () => {
 
       expect(transactionService.executeInTransaction).toHaveBeenCalled();
       expect(seriesRepository.withTransaction).toHaveBeenCalled();
+    });
+  });
+
+  describe('updateSeriesArtworks', () => {
+    const seriesId = 'series-1';
+    const updateSeriesArtworksDto: UpdateSeriesArtworksDto = {
+      artworks: [
+        { id: 'artwork-1', order: 0 },
+        { id: 'artwork-2', order: 1 },
+      ],
+    };
+
+    const existingSeries: Partial<Series> = {
+      id: seriesId,
+      translations: [
+        { language: Language.KO, title: '파이널 판타지' },
+        { language: Language.EN, title: 'Final Fantasy' },
+        { language: Language.JA, title: 'ファイナルファンタジー' },
+      ] as SeriesTranslation[],
+      seriesArtworks: [],
+    };
+
+    const mockArtworks: Partial<Artwork>[] = [
+      ArtworksFactory.createTestData({ id: 'artwork-1' }) as Artwork,
+      ArtworksFactory.createTestData({ id: 'artwork-2' }) as Artwork,
+    ];
+
+    const updatedSeries: Partial<Series> = {
+      ...existingSeries,
+      seriesArtworks: [
+        { seriesId, artworkId: 'artwork-1', order: 0 },
+        { seriesId, artworkId: 'artwork-2', order: 1 },
+      ] as SeriesArtwork[],
+    };
+
+    beforeEach(() => {
+      (seriesRepository.findOneWithDetails as any).mockResolvedValue(
+        existingSeries,
+      );
+      (artworksRepository.findManyWithDetails as any).mockResolvedValue(
+        mockArtworks,
+      );
+      (seriesRepository.updateSeriesArtworks as any).mockResolvedValue(
+        updatedSeries,
+      );
+    });
+
+    it('시리즈의 작품 구성이 성공적으로 업데이트됨', async () => {
+      const result = await service.updateSeriesArtworks(
+        seriesId,
+        updateSeriesArtworksDto,
+      );
+
+      expect(seriesRepository.findOneWithDetails).toHaveBeenCalledWith(
+        seriesId,
+      );
+      expect(seriesValidator.assertSeriesExists).toHaveBeenCalledWith(
+        existingSeries,
+      );
+      expect(artworksRepository.findManyWithDetails).toHaveBeenCalledWith([
+        'artwork-1',
+        'artwork-2',
+      ]);
+      expect(seriesValidator.assertAllArtworksExist).toHaveBeenCalledWith(
+        mockArtworks,
+        ['artwork-1', 'artwork-2'],
+      );
+      expect(seriesRepository.updateSeriesArtworks).toHaveBeenCalledWith(
+        existingSeries,
+        updateSeriesArtworksDto.artworks,
+      );
+      expect(result).toEqual(updatedSeries);
+    });
+
+    it('빈 작품 목록으로 모든 작품 연결을 제거', async () => {
+      const emptyArtworksDto: UpdateSeriesArtworksDto = { artworks: [] };
+
+      await service.updateSeriesArtworks(seriesId, emptyArtworksDto);
+
+      expect(artworksRepository.findManyWithDetails).not.toHaveBeenCalled();
+      expect(seriesValidator.assertAllArtworksExist).not.toHaveBeenCalled();
+      expect(seriesRepository.updateSeriesArtworks).toHaveBeenCalledWith(
+        existingSeries,
+        [],
+      );
+    });
+
+    it('시리즈가 존재하지 않으면 검증 에러가 발생함', async () => {
+      (seriesRepository.findOneWithDetails as any).mockResolvedValue(null);
+      (seriesValidator.assertSeriesExists as any).mockImplementation(() => {
+        throw new SeriesException(
+          SeriesErrorCode.NOT_FOUND,
+          'The series with the provided ID does not exist',
+        );
+      });
+
+      await expect(
+        service.updateSeriesArtworks(seriesId, updateSeriesArtworksDto),
+      ).rejects.toThrow(SeriesException);
+
+      expect(seriesRepository.updateSeriesArtworks).not.toHaveBeenCalled();
+    });
+
+    it('존재하지 않는 작품 ID가 있으면 검증 에러가 발생함', async () => {
+      const partialArtworks = [mockArtworks[0]];
+      (artworksRepository.findManyWithDetails as any).mockResolvedValue(
+        partialArtworks,
+      );
+      (seriesValidator.assertAllArtworksExist as any).mockImplementation(() => {
+        throw new SeriesException(
+          SeriesErrorCode.NOT_FOUND,
+          'Some of the provided artworks do not exist',
+          { ids: ['artwork-2'] },
+        );
+      });
+
+      await expect(
+        service.updateSeriesArtworks(seriesId, updateSeriesArtworksDto),
+      ).rejects.toThrow(SeriesException);
+
+      expect(seriesRepository.updateSeriesArtworks).not.toHaveBeenCalled();
+    });
+
+    it('트랜잭션 내에서 작품 연결이 업데이트됨', async () => {
+      await service.updateSeriesArtworks(seriesId, updateSeriesArtworksDto);
+
+      expect(transactionService.executeInTransaction).toHaveBeenCalled();
+      expect(seriesRepository.withTransaction).toHaveBeenCalled();
+      expect(artworksRepository.withTransaction).toHaveBeenCalled();
     });
   });
 
