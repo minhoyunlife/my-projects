@@ -192,8 +192,8 @@ importers:
         specifier: ^10.2.0
         version: 10.2.0(react@18.2.0)
       '@minhoyunlife/my-ts-client':
-        specifier: 1.8.1
-        version: 1.8.1
+        specifier: 1.9.4
+        version: 1.9.4
       '@radix-ui/react-alert-dialog':
         specifier: ^1.1.4
         version: 1.1.4(@types/react-dom@18.3.1)(@types/react@18.3.12)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -1384,6 +1384,9 @@ packages:
 
   '@minhoyunlife/my-ts-client@1.8.1':
     resolution: {integrity: sha512-tCmHmujPgHuSrSusbWIT1jC5buRNmwCHZohHdGDMsBV1NwkoRDifkegQrmpofJ7bRskdz4m/wWUZF1PG2xSdIw==, tarball: https://npm.pkg.github.com/download/@minhoyunlife/my-ts-client/1.8.1/91123d094c097fb5b696863769670801386dce41}
+
+  '@minhoyunlife/my-ts-client@1.9.4':
+    resolution: {integrity: sha512-k5AvCEuvmPKPQWiQZkRqjWmNUooR581oeWw+4F9OBSLJqo0yIg18DT8XAR1trrxHJxccR4kgbdFpJDc2YrerFQ==, tarball: https://npm.pkg.github.com/download/@minhoyunlife/my-ts-client/1.9.4/7c0f9cf555ce4c20f76705cdabde0f7d42fd0982}
 
   '@napi-rs/nice-android-arm-eabi@1.0.1':
     resolution: {integrity: sha512-5qpvOu5IGwDo7MEKVqqyAxF90I6aLj4n07OzpARdgDRfz8UbBztTByBp0RC59r3J1Ij8uzYi6jI7r5Lws7nn6w==}
@@ -8384,6 +8387,12 @@ snapshots:
   '@lukeed/csprng@1.1.0': {}
 
   '@minhoyunlife/my-ts-client@1.8.1':
+    dependencies:
+      axios: 1.7.8
+    transitivePeerDependencies:
+      - debug
+
+  '@minhoyunlife/my-ts-client@1.9.4':
     dependencies:
       axios: 1.7.8
     transitivePeerDependencies:
