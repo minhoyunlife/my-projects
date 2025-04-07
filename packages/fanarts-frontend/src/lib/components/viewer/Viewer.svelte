@@ -72,26 +72,21 @@
   });
 </script>
 
-<div
-  class="bg-primary-darkest fixed inset-0 z-30"
+<button
+  class="bg-primary-darkest fixed inset-0 z-20 h-full w-full cursor-default border-0"
   transition:fade={{ duration: 300 }}
   style="background-image: linear-gradient(to right, transparent 3px, rgba(0, 0, 0, 0.7) 1px), linear-gradient(to bottom, transparent 3px, rgba(0, 0, 0, 0.7) 1px); background-size: 4px 4px;"
-></div>
+  onclick={onClose}
+  aria-label={t('common.close')}
+></button>
 
 <div
-  class="fixed inset-0 z-30 flex items-center justify-center"
+  class="pointer-events-none fixed inset-0 z-30 flex cursor-default items-center justify-center"
   transition:fade={{ duration: 300 }}
   role="dialog"
   aria-modal="true"
 >
-  <!-- 배경 클릭 시 닫기 처리 -->
-  <button
-    class="absolute inset-0 z-0 h-full w-full cursor-default bg-transparent"
-    aria-label={t('common.close')}
-    onclick={onClose}
-  ></button>
-
-  <div class="relative flex w-full flex-col items-center justify-center sm:flex-row">
+  <div class="pointer-events-auto relative flex flex-col items-center justify-center sm:flex-row">
     <!-- 닫기 버튼 -->
     <button
       class="bg-primary-light hover:bg-primary absolute -bottom-10 z-50 flex h-14 w-14 cursor-pointer flex-col items-center justify-center rounded-full p-2 text-white"

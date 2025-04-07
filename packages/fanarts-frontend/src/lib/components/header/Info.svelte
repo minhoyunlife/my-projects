@@ -63,7 +63,7 @@
 
   <!-- 모달 컨테이너 -->
   <div
-    class="pointer-events-none fixed inset-0 z-40 flex cursor-default items-center justify-center p-4"
+    class="pointer-events-none fixed inset-0 z-40 flex cursor-default items-center justify-center"
     transition:fade={{ duration: 200 }}
     role="dialog"
     aria-modal="true"
