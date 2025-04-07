@@ -10,6 +10,7 @@ export const ROUTES = {
   DASHBOARD: "/",
   FANARTS: "/fanarts",
   GENRES: "/genres",
+  SERIES: "/series",
 } as const;
 
 // 미인증시에만 접근 가능한 경로

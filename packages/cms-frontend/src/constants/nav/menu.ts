@@ -15,6 +15,10 @@ export const menu = {
           name: "장르 목록",
           url: ROUTES.GENRES,
         },
+        {
+          name: "시리즈 목록",
+          url: ROUTES.SERIES,
+        },
       ],
     },
   ],

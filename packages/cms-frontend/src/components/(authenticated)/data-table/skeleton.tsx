@@ -130,3 +130,10 @@ export const genreSkeletonColumns: ColumnSkeleton[] = [
   { content: "text", align: "center", width: "w-1/3" },
   { content: "action", align: "center", width: "w-10" },
 ];
+
+export const seriesSkeletonColumns: ColumnSkeleton[] = [
+  { content: "text", align: "center", width: "w-1/4" },
+  { content: "text", align: "center", width: "w-1/4" },
+  { content: "text", align: "center", width: "w-1/4" },
+  { content: "text", align: "center", width: "w-1/4" },
+];
