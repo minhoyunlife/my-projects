@@ -1,4 +1,4 @@
-export const GENRE_REGEX = {
+export const LANGUAGE_REGEX = {
   // 한글이 최소 1자 이상 포함 (영문, 숫자, 공백, 하이픈 허용)
   KOREAN: /^(?=.*[가-힣])[가-힣A-Za-z0-9\s-]+$/,
 

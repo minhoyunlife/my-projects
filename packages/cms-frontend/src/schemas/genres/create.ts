@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { GENRE_REGEX } from "@/src/lib/utils/regex";
+import { LANGUAGE_REGEX } from "@/src/lib/utils/regex";
 
 export type CreateGenreFormData = z.infer<typeof createGenreSchema>;
 
@@ -13,7 +13,7 @@ export const createGenreSchema = z.object({
     .min(1, "한국어 장르명은 필수입니다")
     .max(30, "30자 이내로 입력해주세요")
     .refine(
-      (value) => GENRE_REGEX.KOREAN.test(value),
+      (value) => LANGUAGE_REGEX.KOREAN.test(value),
       "한글을 포함해야 합니다 (영문, 숫자 포함 가능)",
     ),
   enName: z
@@ -21,7 +21,7 @@ export const createGenreSchema = z.object({
     .min(1, "영어 장르명은 필수입니다")
     .max(30, "30자 이내로 입력해주세요")
     .refine(
-      (value) => GENRE_REGEX.ENGLISH.test(value),
+      (value) => LANGUAGE_REGEX.ENGLISH.test(value),
       "영문자만 입력 가능합니다",
     ),
   jaName: z
@@ -29,7 +29,7 @@ export const createGenreSchema = z.object({
     .min(1, "일본어 장르명은 필수입니다")
     .max(30, "30자 이내로 입력해주세요")
     .refine(
-      (value) => GENRE_REGEX.JAPANESE.test(value),
+      (value) => LANGUAGE_REGEX.JAPANESE.test(value),
       "일본어를 포함해야 합니다 (영문, 숫자 포함 가능)",
     ),
 });

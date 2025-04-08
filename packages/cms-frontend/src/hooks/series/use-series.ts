@@ -1,7 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useDebounce } from "@/src/hooks/use-debounce";
 import { seriesApi } from "@/src/lib/api/client";
+import type { CreateSeriesFormData } from "@/src/schemas/series/create";
 
 export interface SeriesListParams {
   page?: number;
@@ -9,6 +10,8 @@ export interface SeriesListParams {
 }
 
 export function useSeries() {
+  const queryClient = useQueryClient();
+
   // 리스트 조회
   const useList = (params: SeriesListParams) => {
     const debouncedSearch = useDebounce(params.search || "", 300);
@@ -22,7 +25,17 @@ export function useSeries() {
     });
   };
 
+  // 생성
+  const useCreate = () =>
+    useMutation({
+      mutationFn: (data: CreateSeriesFormData) => seriesApi.createSeries(data),
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({ queryKey: ["series"] });
+      },
+    });
+
   return {
     useList,
+    useCreate,
   };
 }
