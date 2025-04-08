@@ -5,6 +5,7 @@ const mockUseSeriesListQuery = vi.fn();
 vi.mock("@/src/hooks/series/use-series", () => ({
   useSeries: () => ({
     useList: (params: any) => mockUseSeriesListQuery(params),
+    useCreate: () => vi.fn(),
   }),
 }));
 
@@ -75,6 +76,23 @@ describe("SeriesListPage", () => {
         expect(
           reactScreen.getByTestId("data-table-skeleton"),
         ).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("UI 상호작용 검증", () => {
+    describe("시리즈 생성", () => {
+      it("추가 버튼 클릭 시 슬라이드오버가 열림", async () => {
+        render(<SeriesListPage />, { wrapper });
+
+        const addButton = reactScreen.getByRole("button", {
+          name: "시리즈 추가",
+        });
+        await userEvent.click(addButton);
+
+        expect(reactScreen.getByRole("dialog")).toHaveTextContent(
+          "시리즈 추가",
+        );
       });
     });
   });

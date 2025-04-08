@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from "react";
 
+import { CreateSeriesForm } from "@/src/app/(authenticated)/series/(actions)/create";
 import { seriesColumns } from "@/src/app/(authenticated)/series/columns";
+import { ActionButton } from "@/src/components/(authenticated)/action-button";
 import { seriesSkeletonColumns } from "@/src/components/(authenticated)/data-table/skeleton";
 import { DataTable } from "@/src/components/(authenticated)/data-table/table";
 import { FilterContainer } from "@/src/components/(authenticated)/filter/filter-container";
 import { PageWrapper } from "@/src/components/(authenticated)/page-wrapper";
+import { SlideOver } from "@/src/components/(authenticated)/slide-over";
 import { useSeries } from "@/src/hooks/series/use-series";
 import { useToast } from "@/src/hooks/use-toast";
 
@@ -14,8 +17,12 @@ export default function SeriesListPage() {
   const { toast } = useToast();
   const { useList } = useSeries();
 
+  // 페이징 및 검색 관련
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState<string>("");
+
+  // 시리즈 추가 슬라이드오버 관련
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
   const {
     data: seriesResult,
@@ -55,6 +62,17 @@ export default function SeriesListPage() {
             onSearch: handleSearch,
           }}
         />
+
+        {/* 시리즈 생성 시 표시될 슬라이드오버 */}
+        <SlideOver
+          open={isAddOpen}
+          onOpenChange={setIsAddOpen}
+          trigger={<ActionButton action="add">시리즈 추가</ActionButton>}
+          title="시리즈 추가"
+          description="새로운 시리즈를 추가합니다."
+        >
+          <CreateSeriesForm onSuccess={() => setIsAddOpen(false)} />
+        </SlideOver>
       </div>
 
       {/* 시리즈 목록 테이블 */}
