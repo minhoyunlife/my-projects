@@ -30,7 +30,7 @@ export function useSeries() {
     useMutation({
       mutationFn: (data: CreateSeriesFormData) => seriesApi.createSeries(data),
       onSuccess: async () => {
-        await queryClient.invalidateQueries({ queryKey: ["genres"] });
+        await queryClient.invalidateQueries({ queryKey: ["series"] });
       },
     });
 
