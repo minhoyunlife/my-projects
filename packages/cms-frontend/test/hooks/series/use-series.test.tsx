@@ -7,6 +7,7 @@ import { wrapper } from "@/test/utils/test-query-client";
 vi.mock("@/src/lib/api/client", () => ({
   seriesApi: {
     getSeries: vi.fn(),
+    createSeries: vi.fn(),
   },
 }));
 
@@ -125,6 +126,45 @@ describe("useSeries", () => {
         });
 
         expect(result.current.error).toBe(mockError);
+      });
+    });
+  });
+
+  describe("useCreate", () => {
+    const mockCreateSeriesData = {
+      koTitle: "타이틀",
+      enTitle: "Title",
+      jaTitle: "タイトル",
+    };
+
+    describe("기본 동작", () => {
+      it("시리즈 생성 API를 호출함", async () => {
+        vi.mocked(seriesApi.createSeries).mockResolvedValueOnce({} as any);
+
+        const { result } = renderHook(() => useSeries().useCreate(), {
+          wrapper,
+        });
+
+        await result.current.mutateAsync(mockCreateSeriesData);
+
+        expect(seriesApi.createSeries).toHaveBeenCalledWith(
+          mockCreateSeriesData,
+        );
+      });
+    });
+
+    describe("에러 처리", () => {
+      it("API 호출에 실패할 경우, 에러를 반환함", async () => {
+        const mockError = new Error("API Error");
+        vi.mocked(seriesApi.createSeries).mockRejectedValueOnce(mockError);
+
+        const { result } = renderHook(() => useSeries().useCreate(), {
+          wrapper,
+        });
+
+        await expect(
+          result.current.mutateAsync(mockCreateSeriesData),
+        ).rejects.toThrow(mockError);
       });
     });
   });
