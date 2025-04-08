@@ -2,13 +2,17 @@
 
 import { useEffect, useState } from "react";
 
+import { Trash2 } from "lucide-react";
+
 import { CreateSeriesForm } from "@/src/app/(authenticated)/series/(actions)/create";
+import { DeleteSeriesDialog } from "@/src/app/(authenticated)/series/(actions)/delete";
 import { seriesColumns } from "@/src/app/(authenticated)/series/columns";
 import { ActionButton } from "@/src/components/(authenticated)/action-button";
 import { seriesSkeletonColumns } from "@/src/components/(authenticated)/data-table/skeleton";
 import { DataTable } from "@/src/components/(authenticated)/data-table/table";
 import { FilterContainer } from "@/src/components/(authenticated)/filter/filter-container";
 import { PageWrapper } from "@/src/components/(authenticated)/page-wrapper";
+import { SelectionActionBar } from "@/src/components/(authenticated)/selection-action-bar";
 import { SlideOver } from "@/src/components/(authenticated)/slide-over";
 import { useSeries } from "@/src/hooks/series/use-series";
 import { useToast } from "@/src/hooks/use-toast";
@@ -23,6 +27,10 @@ export default function SeriesListPage() {
 
   // 시리즈 추가 슬라이드오버 관련
   const [isAddOpen, setIsAddOpen] = useState(false);
+
+  // 행 선택 및 삭제 관련
+  const [selectedSeriesIds, setSelectedSeriesIds] = useState<string[]>([]);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const {
     data: seriesResult,
@@ -42,6 +50,11 @@ export default function SeriesListPage() {
     setSearch(value);
   };
 
+  const handleSingleDelete = (id: string) => {
+    setSelectedSeriesIds([id]);
+    setIsDeleteDialogOpen(true);
+  };
+
   useEffect(() => {
     if (error) {
       toast({
@@ -54,6 +67,30 @@ export default function SeriesListPage() {
 
   return (
     <PageWrapper title="시리즈 목록">
+      {/* 행 선택 후 상단에 표시할 액션 바 */}
+      {selectedSeriesIds.length > 0 && (
+        <SelectionActionBar
+          selectedCount={selectedSeriesIds.length}
+          itemLabel="시리즈"
+          actions={[
+            {
+              label: "삭제",
+              icon: Trash2,
+              variant: "destructive",
+              onClick: () => setIsDeleteDialogOpen(true),
+            },
+          ]}
+        />
+      )}
+
+      {/* 시리즈 삭제 확인 다이얼로그 */}
+      <DeleteSeriesDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        selectedIds={selectedSeriesIds}
+        onSuccess={() => setSelectedSeriesIds([])}
+      />
+
       <div className="flex justify-between items-center mb-6">
         {/* 검색 등 필터 컨테이너 */}
         <FilterContainer
@@ -77,14 +114,18 @@ export default function SeriesListPage() {
 
       {/* 시리즈 목록 테이블 */}
       <DataTable
-        columns={seriesColumns()}
+        columns={seriesColumns({
+          onDeleteClick: handleSingleDelete,
+        })}
         data={seriesResult?.data.items ?? []}
         isLoading={isSeriesLoading}
         pageCount={seriesResult?.data.metadata.totalPages}
         currentPage={seriesResult?.data.metadata.currentPage}
         onPageChange={handlePageChange}
         skeletonColumns={seriesSkeletonColumns}
-        enableRowSelection={false}
+        enableRowSelection={true}
+        selectedIds={selectedSeriesIds}
+        onSelectedIdsChange={setSelectedSeriesIds}
       />
     </PageWrapper>
   );

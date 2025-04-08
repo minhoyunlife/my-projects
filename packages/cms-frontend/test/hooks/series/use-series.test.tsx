@@ -8,6 +8,7 @@ vi.mock("@/src/lib/api/client", () => ({
   seriesApi: {
     getSeries: vi.fn(),
     createSeries: vi.fn(),
+    deleteSeries: vi.fn(),
   },
 }));
 
@@ -164,6 +165,43 @@ describe("useSeries", () => {
 
         await expect(
           result.current.mutateAsync(mockCreateSeriesData),
+        ).rejects.toThrow(mockError);
+      });
+    });
+  });
+
+  describe("useDelete", () => {
+    const mockIds = ["series-1", "series-2"];
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    describe("기본 동작", () => {
+      it("장르 삭제 API를 호출함", async () => {
+        vi.mocked(seriesApi.deleteSeries).mockResolvedValueOnce({} as any);
+
+        const { result } = renderHook(() => useSeries().useDelete(), {
+          wrapper,
+        });
+
+        await result.current.mutateAsync({ ids: new Set(mockIds) });
+
+        expect(seriesApi.deleteSeries).toHaveBeenCalledWith({ ids: mockIds });
+      });
+    });
+
+    describe("에러 처리", () => {
+      it("API 호출에 실패할 경우, 에러를 반환함", async () => {
+        const mockError = new Error("API Error");
+        vi.mocked(seriesApi.deleteSeries).mockRejectedValueOnce(mockError);
+
+        const { result } = renderHook(() => useSeries().useDelete(), {
+          wrapper,
+        });
+
+        await expect(
+          result.current.mutateAsync({ ids: new Set(mockIds) }),
         ).rejects.toThrow(mockError);
       });
     });

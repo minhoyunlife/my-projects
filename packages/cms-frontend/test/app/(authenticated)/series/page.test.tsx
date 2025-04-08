@@ -6,6 +6,7 @@ vi.mock("@/src/hooks/series/use-series", () => ({
   useSeries: () => ({
     useList: (params: any) => mockUseSeriesListQuery(params),
     useCreate: () => vi.fn(),
+    useDelete: () => vi.fn(),
   }),
 }));
 
@@ -93,6 +94,73 @@ describe("SeriesListPage", () => {
         expect(reactScreen.getByRole("dialog")).toHaveTextContent(
           "시리즈 추가",
         );
+      });
+    });
+
+    describe("시리즈 삭제", () => {
+      it("삭제 메뉴 클릭 시 확인 다이얼로그가 열림", async () => {
+        mockUseSeriesListQuery.mockReturnValue({
+          data: {
+            data: {
+              items: [
+                {
+                  id: "1",
+                  translations: [{ language: "ko", name: "타이틀" }],
+                  seriesArtworks: [],
+                },
+              ],
+              metadata: { totalPages: 1, currentPage: 1 },
+            },
+          },
+          isLoading: false,
+          error: null,
+        });
+
+        render(<SeriesListPage />, { wrapper });
+
+        const menuButton = reactScreen.getByLabelText("more");
+        await userEvent.click(menuButton);
+
+        const deleteButton = reactScreen.getByRole("menuitem", {
+          name: /삭제/i,
+        });
+        await userEvent.click(deleteButton);
+
+        expect(reactScreen.getByRole("alertdialog")).toBeInTheDocument();
+      });
+
+      it("여러 행 선택 후 삭제 버튼 클릭 시 확인 다이얼로그가 열림", async () => {
+        mockUseSeriesListQuery.mockReturnValue({
+          data: {
+            data: {
+              items: [
+                {
+                  id: "1",
+                  translations: [{ language: "ko", name: "타이틀1" }],
+                  seriesArtworks: [],
+                },
+                {
+                  id: "2",
+                  translations: [{ language: "ko", name: "타이틀2" }],
+                  seriesArtworks: [],
+                },
+              ],
+              metadata: { totalPages: 1, currentPage: 1 },
+            },
+          },
+          isLoading: false,
+          error: null,
+        });
+
+        render(<SeriesListPage />, { wrapper });
+
+        const checkboxes = reactScreen.getAllByRole("checkbox");
+        await userEvent.click(checkboxes[1]!); // 첫 번째 행 선택
+
+        const deleteButton = reactScreen.getByRole("button", { name: /삭제/i });
+        await userEvent.click(deleteButton);
+
+        expect(reactScreen.getByRole("alertdialog")).toBeInTheDocument();
       });
     });
   });
