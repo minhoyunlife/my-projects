@@ -9,6 +9,10 @@ export interface SeriesListParams {
   search?: string;
 }
 
+export interface SeriesDeleteParams {
+  ids: Set<string>;
+}
+
 export function useSeries() {
   const queryClient = useQueryClient();
 
@@ -34,8 +38,19 @@ export function useSeries() {
       },
     });
 
+  // 삭제
+  const useDelete = () =>
+    useMutation({
+      mutationFn: ({ ids }: SeriesDeleteParams) =>
+        seriesApi.deleteSeries({ ids: Array.from(ids) }),
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({ queryKey: ["series"] });
+      },
+    });
+
   return {
     useList,
     useCreate,
+    useDelete,
   };
 }
