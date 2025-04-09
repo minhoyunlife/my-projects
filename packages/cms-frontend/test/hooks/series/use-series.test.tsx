@@ -8,6 +8,7 @@ vi.mock("@/src/lib/api/client", () => ({
   seriesApi: {
     getSeries: vi.fn(),
     createSeries: vi.fn(),
+    updateSeries: vi.fn(),
     deleteSeries: vi.fn(),
   },
 }));
@@ -165,6 +166,49 @@ describe("useSeries", () => {
 
         await expect(
           result.current.mutateAsync(mockCreateSeriesData),
+        ).rejects.toThrow(mockError);
+      });
+    });
+  });
+
+  describe("useUpdate", () => {
+    const mockUpdateData = {
+      id: "series-1",
+      data: {
+        koTitle: "타이틀",
+        enTitle: "Title",
+        jaTitle: "タイトル",
+      },
+    };
+
+    describe("기본 동작", () => {
+      it("시리즈 수정 API를 호출함", async () => {
+        vi.mocked(seriesApi.updateSeries).mockResolvedValueOnce({} as any);
+
+        const { result } = renderHook(() => useSeries().useUpdate(), {
+          wrapper,
+        });
+
+        await result.current.mutateAsync(mockUpdateData);
+
+        expect(seriesApi.updateSeries).toHaveBeenCalledWith(
+          mockUpdateData.id,
+          mockUpdateData.data,
+        );
+      });
+    });
+
+    describe("에러 처리", () => {
+      it("API 호출에 실패할 경우, 에러를 반환함", async () => {
+        const mockError = new Error("API Error");
+        vi.mocked(seriesApi.updateSeries).mockRejectedValueOnce(mockError);
+
+        const { result } = renderHook(() => useSeries().useUpdate(), {
+          wrapper,
+        });
+
+        await expect(
+          result.current.mutateAsync(mockUpdateData),
         ).rejects.toThrow(mockError);
       });
     });
