@@ -44,11 +44,11 @@ export function UpdateSeriesForm({ series, onSuccess }: UpdateSeriesFormProps) {
     },
   });
 
-  const updateGenreMutation = useUpdate();
+  const updateSeriesMutation = useUpdate();
 
   const onSubmit = async (data: UpdateSeriesFormData) => {
     try {
-      await updateGenreMutation.mutateAsync({
+      await updateSeriesMutation.mutateAsync({
         id: series.id,
         data,
       });
@@ -66,7 +66,7 @@ export function UpdateSeriesForm({ series, onSuccess }: UpdateSeriesFormProps) {
   return (
     <Form
       onSubmit={handleSubmit(onSubmit)}
-      isSubmitting={updateGenreMutation.isPending}
+      isSubmitting={updateSeriesMutation.isPending}
       submitText="시리즈 수정"
       disabled={!isValid}
     >

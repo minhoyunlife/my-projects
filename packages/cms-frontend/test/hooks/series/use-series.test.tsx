@@ -9,6 +9,7 @@ vi.mock("@/src/lib/api/client", () => ({
     getSeries: vi.fn(),
     createSeries: vi.fn(),
     updateSeries: vi.fn(),
+    updateSeriesArtworks: vi.fn(),
     deleteSeries: vi.fn(),
   },
 }));
@@ -209,6 +210,58 @@ describe("useSeries", () => {
 
         await expect(
           result.current.mutateAsync(mockUpdateData),
+        ).rejects.toThrow(mockError);
+      });
+    });
+  });
+
+  describe("useUpdateArtworks", () => {
+    const mockSeriesId = "series-1";
+    const mockArtworks = [
+      { id: "artwork-1", order: 0 },
+      { id: "artwork-2", order: 1 },
+    ];
+    const mockUpdateArtworksData = {
+      seriesId: mockSeriesId,
+      artworks: mockArtworks,
+    };
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    describe("기본 동작", () => {
+      it("시리즈 아트워크 업데이트 API를 호출함", async () => {
+        vi.mocked(seriesApi.updateSeriesArtworks).mockResolvedValueOnce(
+          {} as any,
+        );
+
+        const { result } = renderHook(() => useSeries().useUpdateArtworks(), {
+          wrapper,
+        });
+
+        await result.current.mutateAsync(mockUpdateArtworksData);
+
+        expect(seriesApi.updateSeriesArtworks).toHaveBeenCalledWith(
+          mockSeriesId,
+          { artworks: mockArtworks },
+        );
+      });
+    });
+
+    describe("에러 처리", () => {
+      it("API 호출에 실패할 경우, 에러를 반환함", async () => {
+        const mockError = new Error("API Error");
+        vi.mocked(seriesApi.updateSeriesArtworks).mockRejectedValueOnce(
+          mockError,
+        );
+
+        const { result } = renderHook(() => useSeries().useUpdateArtworks(), {
+          wrapper,
+        });
+
+        await expect(
+          result.current.mutateAsync(mockUpdateArtworksData),
         ).rejects.toThrow(mockError);
       });
     });
