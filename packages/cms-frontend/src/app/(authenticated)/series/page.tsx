@@ -6,6 +6,8 @@ import { Trash2 } from "lucide-react";
 
 import { CreateSeriesForm } from "@/src/app/(authenticated)/series/(actions)/create";
 import { DeleteSeriesDialog } from "@/src/app/(authenticated)/series/(actions)/delete";
+import type { Series } from "@/src/app/(authenticated)/series/(actions)/update";
+import { UpdateSeriesForm } from "@/src/app/(authenticated)/series/(actions)/update";
 import { seriesColumns } from "@/src/app/(authenticated)/series/columns";
 import { ActionButton } from "@/src/components/(authenticated)/action-button";
 import { seriesSkeletonColumns } from "@/src/components/(authenticated)/data-table/skeleton";
@@ -28,8 +30,12 @@ export default function SeriesListPage() {
   // 시리즈 추가 슬라이드오버 관련
   const [isAddOpen, setIsAddOpen] = useState(false);
 
+  // 시리즈 수정 슬라이드오버 관련
+  const [isEditOpen, setIsEditOpen] = useState(false);
+
   // 행 선택 및 삭제 관련
   const [selectedSeriesIds, setSelectedSeriesIds] = useState<string[]>([]);
+  const [selectedSeries, setSelectedSeries] = useState<Series | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const {
@@ -42,12 +48,19 @@ export default function SeriesListPage() {
   });
 
   const handlePageChange = (newPage: number) => {
+    setSelectedSeriesIds([]);
     setPage(newPage);
   };
 
   const handleSearch = (value: string) => {
+    setSelectedSeriesIds([]);
     setPage(1);
     setSearch(value);
+  };
+
+  const handleSingleEdit = (series: Series) => {
+    setSelectedSeries(series);
+    setIsEditOpen(true);
   };
 
   const handleSingleDelete = (id: string) => {
@@ -112,9 +125,28 @@ export default function SeriesListPage() {
         </SlideOver>
       </div>
 
+      {/* 시리즈 수정을 위한 슬라이드오버 */}
+      <SlideOver
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        title="시리즈 수정"
+        description="시리즈의 정보를 수정합니다."
+      >
+        {selectedSeries && (
+          <UpdateSeriesForm
+            series={selectedSeries}
+            onSuccess={() => {
+              setIsEditOpen(false);
+              setSelectedSeries(null);
+            }}
+          />
+        )}
+      </SlideOver>
+
       {/* 시리즈 목록 테이블 */}
       <DataTable
         columns={seriesColumns({
+          onEditClick: handleSingleEdit,
           onDeleteClick: handleSingleDelete,
         })}
         data={seriesResult?.data.items ?? []}

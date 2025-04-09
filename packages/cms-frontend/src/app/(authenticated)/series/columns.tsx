@@ -5,6 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { GetSeries200ResponseItemsInner } from "@minhoyunlife/my-ts-client";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
+import type { Series } from "@/src/app/(authenticated)/series/(actions)/update";
 import { Button } from "@/src/components/base/button";
 import {
   DropdownMenu,
@@ -14,10 +15,12 @@ import {
 } from "@/src/components/base/dropdown-menu";
 
 interface SeriesColumnProps {
+  onEditClick: (series: Series) => void;
   onDeleteClick: (id: string) => void;
 }
 
 export const seriesColumns = ({
+  onEditClick,
   onDeleteClick,
 }: SeriesColumnProps): ColumnDef<GetSeries200ResponseItemsInner>[] => [
   {
@@ -60,7 +63,7 @@ export const seriesColumns = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEditClick(row.original)}>
                 <Pencil className="mr-2 h-4 w-4" />
                 <span>수정</span>
               </DropdownMenuItem>

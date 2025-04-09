@@ -3,10 +3,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/src/hooks/use-debounce";
 import { seriesApi } from "@/src/lib/api/client";
 import type { CreateSeriesFormData } from "@/src/schemas/series/create";
+import type { UpdateSeriesFormData } from "@/src/schemas/series/update";
 
 export interface SeriesListParams {
   page?: number;
   search?: string;
+}
+
+export interface SeriesUpdateParams {
+  id: string;
+  data: UpdateSeriesFormData;
 }
 
 export interface SeriesDeleteParams {
@@ -38,6 +44,16 @@ export function useSeries() {
       },
     });
 
+  // 타이틀 수정
+  const useUpdate = () =>
+    useMutation({
+      mutationFn: ({ id, data }: SeriesUpdateParams) =>
+        seriesApi.updateSeries(id, data),
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({ queryKey: ["series"] });
+      },
+    });
+
   // 삭제
   const useDelete = () =>
     useMutation({
@@ -51,6 +67,7 @@ export function useSeries() {
   return {
     useList,
     useCreate,
+    useUpdate,
     useDelete,
   };
 }

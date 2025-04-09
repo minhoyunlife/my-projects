@@ -6,6 +6,7 @@ vi.mock("@/src/hooks/series/use-series", () => ({
   useSeries: () => ({
     useList: (params: any) => mockUseSeriesListQuery(params),
     useCreate: () => vi.fn(),
+    useUpdate: () => vi.fn(),
     useDelete: () => vi.fn(),
   }),
 }));
@@ -93,6 +94,43 @@ describe("SeriesListPage", () => {
 
         expect(reactScreen.getByRole("dialog")).toHaveTextContent(
           "시리즈 추가",
+        );
+      });
+    });
+
+    describe("장르 수정", () => {
+      it("수정 메뉴 클릭 시 슬라이드오버가 열림", async () => {
+        mockUseSeriesListQuery.mockReturnValue({
+          data: {
+            data: {
+              items: [
+                {
+                  id: "1",
+                  translations: [
+                    { language: "ko", title: "타이틀" },
+                    { language: "en", title: "Title" },
+                    { language: "ja", title: "タイトル" },
+                  ],
+                  seriesArtworks: [],
+                },
+              ],
+              metadata: { totalPages: 1, currentPage: 1 },
+            },
+          },
+          isLoading: false,
+          error: null,
+        });
+
+        render(<SeriesListPage />, { wrapper });
+
+        const menuButton = reactScreen.getByLabelText("more");
+        await userEvent.click(menuButton);
+
+        const editButton = reactScreen.getByRole("menuitem", { name: /수정/i });
+        await userEvent.click(editButton);
+
+        expect(reactScreen.getByRole("dialog")).toHaveTextContent(
+          "시리즈 수정",
         );
       });
     });
