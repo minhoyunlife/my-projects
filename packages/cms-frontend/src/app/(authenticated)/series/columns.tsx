@@ -3,7 +3,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 
 import type { GetSeries200ResponseItemsInner } from "@minhoyunlife/my-ts-client";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Layers } from "lucide-react";
 
 import type { Series } from "@/src/app/(authenticated)/series/(actions)/update";
 import { Button } from "@/src/components/base/button";
@@ -17,11 +17,13 @@ import {
 interface SeriesColumnProps {
   onEditClick: (series: Series) => void;
   onDeleteClick: (id: string) => void;
+  onManageArtworksClick: (series: Series) => void;
 }
 
 export const seriesColumns = ({
   onEditClick,
   onDeleteClick,
+  onManageArtworksClick,
 }: SeriesColumnProps): ColumnDef<GetSeries200ResponseItemsInner>[] => [
   {
     id: "koTitle",
@@ -66,6 +68,12 @@ export const seriesColumns = ({
               <DropdownMenuItem onClick={() => onEditClick(row.original)}>
                 <Pencil className="mr-2 h-4 w-4" />
                 <span>수정</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onManageArtworksClick(row.original)}
+              >
+                <Layers className="mr-2 h-4 w-4" />
+                <span>작품 연결 관리</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-destructive"

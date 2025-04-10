@@ -6,6 +6,7 @@ import { Trash2 } from "lucide-react";
 
 import { CreateSeriesForm } from "@/src/app/(authenticated)/series/(actions)/create";
 import { DeleteSeriesDialog } from "@/src/app/(authenticated)/series/(actions)/delete";
+import { ManageSeriesArtworksForm } from "@/src/app/(authenticated)/series/(actions)/manage-artworks";
 import type { Series } from "@/src/app/(authenticated)/series/(actions)/update";
 import { UpdateSeriesForm } from "@/src/app/(authenticated)/series/(actions)/update";
 import { seriesColumns } from "@/src/app/(authenticated)/series/columns";
@@ -32,6 +33,9 @@ export default function SeriesListPage() {
 
   // 시리즈 수정 슬라이드오버 관련
   const [isEditOpen, setIsEditOpen] = useState(false);
+
+  // 아트워크 관리 슬라이드오버 관련
+  const [isManageArtworksOpen, setIsManageArtworksOpen] = useState(false);
 
   // 행 선택 및 삭제 관련
   const [selectedSeriesIds, setSelectedSeriesIds] = useState<string[]>([]);
@@ -66,6 +70,11 @@ export default function SeriesListPage() {
   const handleSingleDelete = (id: string) => {
     setSelectedSeriesIds([id]);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleManageArtworks = (series: Series) => {
+    setSelectedSeries(series);
+    setIsManageArtworksOpen(true);
   };
 
   useEffect(() => {
@@ -143,11 +152,30 @@ export default function SeriesListPage() {
         )}
       </SlideOver>
 
+      {/* 시리즈 아트워크 관리를 위한 슬라이드오버 */}
+      <SlideOver
+        open={isManageArtworksOpen}
+        onOpenChange={setIsManageArtworksOpen}
+        title="시리즈 아트워크 관리"
+        description={`'${selectedSeries?.translations.find((t) => t.language === "ko")?.title || ""}' 시리즈의 아트워크를 관리합니다.`}
+      >
+        {selectedSeries && (
+          <ManageSeriesArtworksForm
+            series={selectedSeries}
+            onSuccess={() => {
+              setIsManageArtworksOpen(false);
+              setSelectedSeries(null);
+            }}
+          />
+        )}
+      </SlideOver>
+
       {/* 시리즈 목록 테이블 */}
       <DataTable
         columns={seriesColumns({
           onEditClick: handleSingleEdit,
           onDeleteClick: handleSingleDelete,
+          onManageArtworksClick: handleManageArtworks,
         })}
         data={seriesResult?.data.items ?? []}
         isLoading={isSeriesLoading}
