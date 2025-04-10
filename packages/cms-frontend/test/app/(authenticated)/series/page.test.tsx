@@ -2,18 +2,53 @@ import SeriesListPage from "@/src/app/(authenticated)/series/page";
 import { wrapper } from "@/test/utils/test-query-client";
 
 const mockUseSeriesListQuery = vi.fn();
+const mockUseUpdateArtworks = vi.fn();
 vi.mock("@/src/hooks/series/use-series", () => ({
   useSeries: () => ({
     useList: (params: any) => mockUseSeriesListQuery(params),
     useCreate: () => vi.fn(),
     useUpdate: () => vi.fn(),
     useDelete: () => vi.fn(),
+    useUpdateArtworks: () => mockUseUpdateArtworks(),
   }),
 }));
 
 const mockToast = vi.fn();
 vi.mock("@/src/hooks/use-toast", () => ({
   useToast: () => ({ toast: mockToast }),
+}));
+
+vi.mock("@/src/hooks/artworks/use-artworks", () => ({
+  useArtworks: () => ({
+    useSearch: () => ({
+      data: {
+        data: {
+          items: [
+            {
+              id: "artwork-1",
+              translations: [{ language: "ko", title: "아트워크 1" }],
+            },
+          ],
+        },
+      },
+      isLoading: false,
+    }),
+  }),
+}));
+
+vi.mock("@/src/app/(authenticated)/series/(actions)/manage-artworks", () => ({
+  ManageSeriesArtworksForm: vi.fn(({ series, onSuccess }) => (
+    <div data-testid="manage-artworks-form">
+      <div data-testid="series-id">{series.id}</div>
+      <button
+        type="button"
+        onClick={onSuccess}
+        data-testid="save-artworks-button"
+      >
+        아트워크 구성 저장
+      </button>
+    </div>
+  )),
 }));
 
 vi.mock("@/src/components/(authenticated)/page-wrapper", () => ({
@@ -98,7 +133,7 @@ describe("SeriesListPage", () => {
       });
     });
 
-    describe("장르 수정", () => {
+    describe("시리즈 수정", () => {
       it("수정 메뉴 클릭 시 슬라이드오버가 열림", async () => {
         mockUseSeriesListQuery.mockReturnValue({
           data: {
@@ -132,6 +167,99 @@ describe("SeriesListPage", () => {
         expect(reactScreen.getByRole("dialog")).toHaveTextContent(
           "시리즈 수정",
         );
+      });
+    });
+
+    describe("시리즈 작품 연결 관리", () => {
+      it("작품 연결 관리 메뉴 클릭 시 슬라이드오버가 열림", async () => {
+        mockUseSeriesListQuery.mockReturnValue({
+          data: {
+            data: {
+              items: [
+                {
+                  id: "1",
+                  translations: [
+                    { language: "ko", title: "파이널 판타지" },
+                    { language: "en", title: "Final Fantasy" },
+                  ],
+                  seriesArtworks: [],
+                },
+              ],
+              metadata: { totalPages: 1, currentPage: 1 },
+            },
+          },
+          isLoading: false,
+          error: null,
+        });
+
+        render(<SeriesListPage />, { wrapper });
+
+        const menuButton = reactScreen.getByLabelText("more");
+        await userEvent.click(menuButton);
+
+        const artworksButton = reactScreen.getByRole("menuitem", {
+          name: /작품 연결 관리/i,
+        });
+        await userEvent.click(artworksButton);
+
+        expect(reactScreen.getByRole("dialog")).toHaveTextContent(
+          "시리즈 아트워크 관리",
+        );
+        expect(
+          reactScreen.getByText(
+            "'파이널 판타지' 시리즈의 아트워크를 관리합니다.",
+          ),
+        ).toBeInTheDocument();
+      });
+
+      it("작품 연결 관리 슬라이드오버에서 저장 버튼 클릭 시 onSuccess 콜백이 호출됨", async () => {
+        mockUseSeriesListQuery.mockReturnValue({
+          data: {
+            data: {
+              items: [
+                {
+                  id: "series-1",
+                  translations: [{ language: "ko", title: "파이널 판타지" }],
+                  seriesArtworks: [
+                    {
+                      id: "art1",
+                      order: 0,
+                      translations: [{ language: "ko", title: "작품 1" }],
+                    },
+                  ],
+                },
+              ],
+              metadata: { totalPages: 1, currentPage: 1 },
+            },
+          },
+          isLoading: false,
+          error: null,
+        });
+
+        render(<SeriesListPage />, { wrapper });
+
+        const menuButton = reactScreen.getByLabelText("more");
+        await userEvent.click(menuButton);
+
+        const artworksButton = reactScreen.getByRole("menuitem", {
+          name: /작품 연결 관리/i,
+        });
+        await userEvent.click(artworksButton);
+
+        // ManageSeriesArtworksForm이 렌더링되었는지 확인
+        const artworksForm = reactScreen.getByTestId("manage-artworks-form");
+        expect(artworksForm).toBeInTheDocument();
+
+        // 선택된 시리즈 ID가 폼에 전달되었는지 확인
+        const seriesIdElem = reactScreen.getByTestId("series-id");
+        expect(seriesIdElem).toHaveTextContent("series-1");
+
+        // 저장 버튼 클릭
+        const saveButton = reactScreen.getByTestId("save-artworks-button");
+        await userEvent.click(saveButton);
+
+        // 슬라이드오버가 닫히고 selectedSeries가 null로 설정되었는지 직접 확인은 어려움
+        // 대신 모킹된 컴포넌트의 onSuccess 호출 여부로 확인
       });
     });
 

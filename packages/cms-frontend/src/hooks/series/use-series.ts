@@ -15,6 +15,14 @@ export interface SeriesUpdateParams {
   data: UpdateSeriesFormData;
 }
 
+export interface SeriesArtworksUpdateParams {
+  seriesId: string;
+  artworks: Array<{
+    id: string;
+    order: number;
+  }>;
+}
+
 export interface SeriesDeleteParams {
   ids: Set<string>;
 }
@@ -54,6 +62,16 @@ export function useSeries() {
       },
     });
 
+  // 시리즈-아트워크 연결 업데이트
+  const useUpdateArtworks = () =>
+    useMutation({
+      mutationFn: ({ seriesId, artworks }: SeriesArtworksUpdateParams) =>
+        seriesApi.updateSeriesArtworks(seriesId, { artworks }),
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({ queryKey: ["series"] });
+      },
+    });
+
   // 삭제
   const useDelete = () =>
     useMutation({
@@ -68,6 +86,7 @@ export function useSeries() {
     useList,
     useCreate,
     useUpdate,
+    useUpdateArtworks,
     useDelete,
   };
 }

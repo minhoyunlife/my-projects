@@ -11,12 +11,22 @@ import {
   type UpdateSeriesFormData,
 } from "@/src/schemas/series/update";
 
+export interface SeriesArtwork {
+  id: string;
+  order: number;
+  translations: Array<{
+    language: string;
+    title: string;
+  }>;
+}
+
 export interface Series {
   id: string;
   translations: Array<{
     language: string;
     title: string;
   }>;
+  seriesArtworks: Array<SeriesArtwork>;
 }
 
 interface UpdateSeriesFormProps {
@@ -44,11 +54,11 @@ export function UpdateSeriesForm({ series, onSuccess }: UpdateSeriesFormProps) {
     },
   });
 
-  const updateGenreMutation = useUpdate();
+  const updateSeriesMutation = useUpdate();
 
   const onSubmit = async (data: UpdateSeriesFormData) => {
     try {
-      await updateGenreMutation.mutateAsync({
+      await updateSeriesMutation.mutateAsync({
         id: series.id,
         data,
       });
@@ -66,7 +76,7 @@ export function UpdateSeriesForm({ series, onSuccess }: UpdateSeriesFormProps) {
   return (
     <Form
       onSubmit={handleSubmit(onSubmit)}
-      isSubmitting={updateGenreMutation.isPending}
+      isSubmitting={updateSeriesMutation.isPending}
       submitText="시리즈 수정"
       disabled={!isValid}
     >

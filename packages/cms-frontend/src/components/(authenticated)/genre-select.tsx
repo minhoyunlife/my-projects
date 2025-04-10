@@ -1,18 +1,10 @@
 import { useEffect, useState } from "react";
 
-import { ChevronDown, X } from "lucide-react";
+import { X } from "lucide-react";
 
 import type { Genre } from "@/src/app/(authenticated)/genres/(actions)/update";
+import { ComboBox } from "@/src/components/(authenticated)/combo-box";
 import { Badge } from "@/src/components/base/badge";
-import { Button } from "@/src/components/base/button";
-import { Checkbox } from "@/src/components/base/checkbox";
-import { Input } from "@/src/components/base/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/src/components/base/popover";
-import { Spinner } from "@/src/components/common/spinner";
 import { useGenres } from "@/src/hooks/genres/use-genres";
 
 interface GenreSelectProps {
@@ -30,8 +22,7 @@ export function GenreSelect({
   disabled = false,
   error,
 }: GenreSelectProps) {
-  const [search, setSearch] = useState("");
-
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedGenreDetails, setSelectedGenreDetails] = useState<
     Array<{
       id: string;
@@ -40,8 +31,9 @@ export function GenreSelect({
   >([]);
 
   const { useSearch } = useGenres();
-  const { data: searchResults, isLoading } = useSearch(search);
+  const { data: searchResults, isLoading } = useSearch(searchTerm);
 
+  // 초기 장르 목록 설정
   useEffect(() => {
     if (defaultGenres.length > 0) {
       setSelectedGenreDetails(
@@ -51,30 +43,46 @@ export function GenreSelect({
         })),
       );
     }
-  }, []);
+  }, [defaultGenres]);
 
-  const handleGenreToggle = (genre: Genre) => {
-    const newValue = value.includes(genre.id)
-      ? value.filter((id) => id !== genre.id)
-      : [...value, genre.id];
+  // 검색어 변경 핸들러
+  const handleSearchChange = (term: string) => {
+    setSearchTerm(term);
+  };
 
+  // 장르 선택 핸들러
+  const handleGenreSelect = (genreId: string, genreName: string) => {
+    // 이미 선택된 장르인지 확인
+    if (value.includes(genreId)) {
+      return;
+    }
+
+    // 장르 추가
+    const newValue = [...value, genreId];
     onChange(newValue);
 
-    if (!value.includes(genre.id)) {
-      setSelectedGenreDetails((prev) => [
-        ...prev,
-        {
-          id: genre.id,
-          name: genre.translations.find((t) => t.language === "ko")?.name || "",
-        },
-      ]);
-    } else {
-      setSelectedGenreDetails((prev) => prev.filter((g) => g.id !== genre.id));
-    }
+    // 장르 상세 정보 추가
+    setSelectedGenreDetails((prev) => [
+      ...prev,
+      { id: genreId, name: genreName },
+    ]);
+
+    // 검색어 초기화
+    setSearchTerm("");
+  };
+
+  // 장르 제거 핸들러
+  const handleGenreRemove = (genreId: string) => {
+    // 선택된 장르에서 제거
+    const newValue = value.filter((id) => id !== genreId);
+    onChange(newValue);
+
+    // 장르 상세 정보에서 제거
+    setSelectedGenreDetails((prev) => prev.filter((g) => g.id !== genreId));
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       {/* 선택된 장르 배지 표시 */}
       {selectedGenreDetails.length > 0 && (
         <div className="flex flex-wrap gap-2">
@@ -88,12 +96,7 @@ export function GenreSelect({
               {!disabled && (
                 <X
                   className="h-3 w-3 cursor-pointer"
-                  onClick={() => {
-                    onChange(value.filter((id) => id !== genre.id));
-                    setSelectedGenreDetails((prev) =>
-                      prev.filter((g) => g.id !== genre.id),
-                    );
-                  }}
+                  onClick={() => handleGenreRemove(genre.id)}
                 />
               )}
             </Badge>
@@ -101,57 +104,23 @@ export function GenreSelect({
         </div>
       )}
 
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            disabled={disabled}
-            variant="outline"
-            className="w-full justify-between"
-          >
-            <span>장르 선택</span>
-            <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[300px] p-3">
-          <div className="space-y-4">
-            {/* 검색 입력 */}
-            <Input
-              placeholder="장르 검색..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-
-            {/* 검색 결과 */}
-            <div className="max-h-[200px] overflow-auto space-y-1">
-              {isLoading ? (
-                <div className="flex justify-center p-2">
-                  <Spinner size={12} />
-                </div>
-              ) : searchResults?.data?.items.length === 0 ? (
-                <div className="text-center text-sm text-muted-foreground p-2">
-                  검색 결과가 없습니다
-                </div>
-              ) : (
-                searchResults?.data?.items.map((genre) => (
-                  <div
-                    key={genre.id}
-                    className="flex items-center gap-2 p-2 hover:bg-accent rounded-sm cursor-pointer"
-                    onClick={() => handleGenreToggle(genre)}
-                  >
-                    <Checkbox checked={value.includes(genre.id)} />
-                    <span>
-                      {
-                        genre.translations.find((t) => t.language === "ko")
-                          ?.name
-                      }
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </PopoverContent>
-      </Popover>
+      {/* 장르 검색 콤보 박스 */}
+      <ComboBox
+        items={
+          searchResults?.data?.items.map((genre) => ({
+            value: genre.id,
+            label:
+              genre.translations.find((t) => t.language === "ko")?.name ||
+              "이름 없음",
+          })) || []
+        }
+        placeholder="장르 검색..."
+        inputValue={searchTerm}
+        onInputChange={handleSearchChange}
+        onSelect={handleGenreSelect}
+        isLoading={isLoading}
+        disabled={disabled}
+      />
 
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>

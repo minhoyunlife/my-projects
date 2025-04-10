@@ -62,7 +62,12 @@ describe("UpdateArtworkForm", () => {
     );
 
     expect(reactScreen.getByDisplayValue("2024-02-06")).toBeInTheDocument();
-    expect(reactScreen.getByRole("combobox")).toHaveTextContent("Steam");
+    // 시각적 요소로 플랫폼 코박스를 확인
+    const platformElements = reactScreen.getAllByRole("combobox");
+    const platformSelect = platformElements.find((el) =>
+      el.textContent?.includes("Steam"),
+    );
+    expect(platformSelect).toBeTruthy();
     expect(reactScreen.getByPlaceholderText("평점 (0-20)")).toHaveValue(15);
 
     expect(reactScreen.getByPlaceholderText("한줄평(한국어)")).toHaveValue(
@@ -173,7 +178,14 @@ describe("UpdateArtworkForm", () => {
   it("플랫폼 선택이 올바르게 동작함", async () => {
     render(<UpdateArtworkForm artwork={mockArtwork} />, { wrapper });
 
-    const combobox = reactScreen.getByRole("combobox");
+    // 플랫폼 셀렉트의 값이 "Steam"인 콤보박스 찾기
+    const combobox = reactScreen
+      .getAllByRole("combobox")
+      .find((el) => el.textContent?.includes("Steam"));
+
+    expect(combobox).toBeDefined();
+    if (!combobox) return; // TypeScript를 위한 가드
+
     await userEvent.click(combobox);
 
     const switchOption = reactScreen.getByRole("option", { name: "Switch" });
