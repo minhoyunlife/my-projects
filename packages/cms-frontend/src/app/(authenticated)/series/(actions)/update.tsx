@@ -11,12 +11,22 @@ import {
   type UpdateSeriesFormData,
 } from "@/src/schemas/series/update";
 
+export interface SeriesArtwork {
+  id: string;
+  order: number;
+  translations: Array<{
+    language: string;
+    title: string;
+  }>;
+}
+
 export interface Series {
   id: string;
   translations: Array<{
     language: string;
     title: string;
   }>;
+  seriesArtworks: Array<SeriesArtwork>;
 }
 
 interface UpdateSeriesFormProps {

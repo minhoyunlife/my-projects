@@ -16,6 +16,7 @@
     "test:watch": "vitest --watch --config test/vitest.config.ts"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
     "@hookform/resolvers": "^3.10.0",
     "@icons-pack/react-simple-icons": "^10.2.0",
     "@minhoyunlife/my-ts-client": "1.9.4",

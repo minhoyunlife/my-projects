@@ -129,12 +129,34 @@ export function useArtworks() {
       },
     });
 
+  // 작품 검색 (타이틀 기준)
+  const useSearch = (search: string) => {
+    const debouncedSearch = useDebounce(search, 300);
+
+    return useQuery({
+      queryKey: ["artworks", "search", debouncedSearch],
+      queryFn: () =>
+        artworksApi.getArtworks(
+          1, // 첫 페이지만 검색
+          undefined,
+          undefined,
+          undefined,
+          debouncedSearch || undefined,
+          undefined,
+        ),
+      enabled: !!debouncedSearch && debouncedSearch.length >= 2,
+      staleTime: 1000 * 60, // 1분
+      gcTime: 1000 * 60 * 5, // 5분
+    });
+  };
+
   return {
     useList,
     useCreate,
     useUpdate,
     useChangeStatus,
     useDelete,
+    useSearch,
   };
 }
 
