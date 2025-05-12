@@ -1,7 +1,6 @@
 name: CD
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - "main"
@@ -11,13 +10,6 @@ on:
       - "docker-compose.yml"
       - ".github/**"
       - "!.github/workflows/cd.yml" # 편의를 위해, 본 워크플로우의 변경 시에는 트리거되도록
-
-env:
-  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-  GITHUB_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
-  NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-  AWS_CLOUDFRONT_DOMAIN: ${{ secrets.AWS_CLOUDFRONT_DOMAIN }}
-  VITE_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
 
 jobs:
   detect-changes:
@@ -49,90 +41,15 @@ jobs:
         with:
           base-ref: ${{ github.event.before }}
 
-  build-images:
-    needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.packages != '[]' && needs.detect-changes.outputs.packages != '' }}
-    strategy:
-      matrix:
-        packages: ${{ fromJson(needs.detect-changes.outputs.packages) }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: "recursive"
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
-      - name: Build and push images
-        id: build
-        run: |
-          IMAGE_TAG=my-project/${{ matrix.packages }}:${GITHUB_SHA::7}
-          FULL_IMAGE_PATH=$ECR_REGISTRY/${IMAGE_TAG}
-          docker build \
-            --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} \
-            --build-arg NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
-            --build-arg AWS_CLOUDFRONT_DOMAIN=${AWS_CLOUDFRONT_DOMAIN} \
-            --build-arg VITE_API_URL=${VITE_API_URL} \
-            -f docker/${{ matrix.packages }}.prod.Dockerfile \
-            -t $FULL_IMAGE_PATH .
-          docker push $FULL_IMAGE_PATH
-          echo "image-tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
-      - name: Save build outputs
-        uses: cloudposse/github-action-matrix-outputs-write@v1
-        id: write-output
-        with:
-          matrix-step-name: ${{ github.job }}
-          matrix-key: ${{ matrix.packages }}
-          outputs: |-
-            image-tag: ${{ steps.build.outputs.image-tag }}
-
-  read-tags:
-    runs-on: ubuntu-latest
-    needs: [build-images]
-    outputs:
-      backend-image-tag: ${{ steps.get-backend-tag.outputs.tag }}
-      cms-frontend-image-tag: ${{ steps.get-cms-frontend-tag.outputs.tag }}
-      fanarts-frontend-image-tag: ${{ steps.get-fanarts-frontend-tag.outputs.tag }}
-    steps:
-      - name: Get build outputs
-        uses: cloudposse/github-action-matrix-outputs-read@v1
-        id: read-output
-        with:
-          matrix-step-name: build-images
-      - name: Extract backend image tag
-        id: get-backend-tag
-        run: |
-          echo "tag=${{ fromJson(steps.read-output.outputs.result).image-tag.backend }}" >> $GITHUB_OUTPUT
-      - name: Extract cms-frontend image tag
-        id: get-cms-frontend-tag
-        run: |
-          echo "tag=${{ fromJson(steps.read-output.outputs.result).image-tag.cms-frontend }}" >> $GITHUB_OUTPUT
-      - name: Extract fanarts-frontend image tag
-        id: get-fanarts-frontend-tag
-        run: |
-          echo "tag=${{ fromJson(steps.read-output.outputs.result).image-tag.fanarts-frontend }}" >> $GITHUB_OUTPUT
-
   deploy-backend:
-    needs: [detect-changes, read-tags]
-    if: ${{ needs.read-tags.outputs.backend-image-tag != '' }}
+    needs: [detect-changes]
+    if: ${{ contains(fromJson(needs.detect-changes.outputs.packages), 'backend') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
       - name: Log Migration Details
         if: ${{ needs.detect-changes.outputs.migrations == 'true' }}
         run: |
@@ -143,113 +60,38 @@ jobs:
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
       - name: Run Database Migration
         if: ${{ needs.detect-changes.outputs.migrations == 'true' }}
-        run: |
-          echo "Starting database migration..."
-
-          mkdir -p ./task-definitions
-          aws ecs describe-task-definition \
-            --task-definition my-projects-migration \
-            --query 'taskDefinition' \
-            --output json > ./task-definitions/migration.json
-      - name: Update migration task definition
-        if: ${{ needs.detect-changes.outputs.migrations == 'true' }}
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        id: update-migration-task
+        uses: JorgeLNJunior/render-deploy@v1.4.5
         with:
-          task-definition: ./task-definitions/migration.json
-          container-name: migration
-          image: ${{ env.ECR_REGISTRY }}/${{ needs.read-tags.outputs.backend-image-tag }}
-      - name: Run Database Migration
-        if: ${{ needs.detect-changes.outputs.migrations == 'true' }}
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+          service_id: ${{ secrets.RENDER_MIGRATION_SERVICE_ID }}
+          api_key: ${{ secrets.RENDER_API_KEY }}
+          wait_deploy: true # 마이그레이션 완료까지 대기
+      - name: Deploy Backend
+        uses: JorgeLNJunior/render-deploy@v1.4.5
         with:
-          task-definition: ${{ steps.update-migration-task.outputs.task-definition }}
-          cluster: my-projects-cluster
-          wait-for-service-stability: false
-          run-task: true
-          wait-for-task-stopped: true
-          run-task-launch-type: EC2
-      - name: Get current task definition
-        id: get-task-def
-        run: |
-          mkdir -p ./task-definitions
-          TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition my-projects-backend --query 'taskDefinition' --output json)
-          echo "$TASK_DEFINITION" > ./task-definitions/backend.json
-      - name: Fill in the new image ID in the Amazon ECS task definition
-        id: update-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: ./task-definitions/backend.json
-          container-name: backend
-          image: ${{ env.ECR_REGISTRY }}/${{ needs.read-tags.outputs.backend-image-tag }}
-      - name: Deploy Amazon ECS task definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.update-task-def.outputs.task-definition }}
-          service: my-projects-backend
-          cluster: my-projects-cluster
-          wait-for-service-stability: true
+          service_id: ${{ secrets.RENDER_BACKEND_SERVICE_ID }}
+          api_key: ${{ secrets.RENDER_API_KEY }}
+          wait_deploy: true # 배포 완료까지 대기
 
   deploy-cms-frontend:
-    needs: [read-tags]
-    if: ${{ needs.read-tags.outputs.cms-frontend-image-tag != '' }}
+    needs: [detect-changes]
+    if: ${{ contains(fromJson(needs.detect-changes.outputs.packages), 'cms-frontend') }}
     runs-on: ubuntu-latest
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Deploy CMS Frontend
+        uses: JorgeLNJunior/render-deploy@v1.4.5
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-      - name: Get current task definition
-        id: get-task-def
-        run: |
-          mkdir -p ./task-definitions
-          TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition my-projects-cms-frontend --query 'taskDefinition' --output json)
-          echo "$TASK_DEFINITION" > ./task-definitions/cms-frontend.json
-      - name: Fill in the new image ID in the Amazon ECS task definition
-        id: update-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: ./task-definitions/cms-frontend.json
-          container-name: cms-frontend
-          image: ${{ env.ECR_REGISTRY }}/${{ needs.read-tags.outputs.cms-frontend-image-tag }}
-      - name: Deploy Amazon ECS task definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.update-task-def.outputs.task-definition }}
-          service: my-projects-cms-frontend
-          cluster: my-projects-cluster
-          wait-for-service-stability: true
+          service_id: ${{ secrets.RENDER_CMS_SERVICE_ID }}
+          api_key: ${{ secrets.RENDER_API_KEY }}
+          wait_deploy: true
 
   deploy-fanarts-frontend:
-    needs: [read-tags]
-    if: ${{ needs.read-tags.outputs.fanarts-frontend-image-tag != '' }}
+    needs: [detect-changes]
+    if: ${{ contains(fromJson(needs.detect-changes.outputs.packages), 'fanarts-frontend') }}
     runs-on: ubuntu-latest
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Deploy Fanarts Frontend
+        uses: JorgeLNJunior/render-deploy@v1.4.5
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-      - name: Get current task definition
-        id: get-task-def
-        run: |
-          mkdir -p ./task-definitions
-          TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition my-projects-fanarts-frontend --query 'taskDefinition' --output json)
-          echo "$TASK_DEFINITION" > ./task-definitions/fanarts-frontend.json
-      - name: Fill in the new image ID in the Amazon ECS task definition
-        id: update-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: ./task-definitions/fanarts-frontend.json
-          container-name: fanarts-frontend
-          image: ${{ env.ECR_REGISTRY }}/${{ needs.read-tags.outputs.fanarts-frontend-image-tag }}
-      - name: Deploy Amazon ECS task definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.update-task-def.outputs.task-definition }}
-          service: my-projects-fanarts-frontend
-          cluster: my-projects-cluster
-          wait-for-service-stability: true
+          service_id: ${{ secrets.RENDER_FANARTS_SERVICE_ID }}
+          api_key: ${{ secrets.RENDER_API_KEY }}
+          wait_deploy: true
