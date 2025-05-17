@@ -1,4 +1,11 @@
-import type { Artwork, Genre, TranslatedArtwork, TranslatedGenre } from '$lib/types/artwork';
+import type {
+  Artwork,
+  Genre,
+  Series,
+  TranslatedArtwork,
+  TranslatedGenre,
+  TranslatedSeries
+} from '$lib/types/artwork';
 import type { LanguageCode } from '$lib/types/languages';
 
 export class TranslationService {
@@ -10,17 +17,24 @@ export class TranslationService {
   }
 
   private translationArtwork(artwork: Artwork, language: LanguageCode): TranslatedArtwork {
-    const { translations, genres, ...rest } = artwork;
+    const { translations, genres, series, ...rest } = artwork;
     const translated = {
       ...rest,
       title: '',
       shortReview: '',
-      genres: genres ? genres.map((genre) => this.translateGenre(genre, language)) : []
+      genres: genres ? genres.map((genre) => this.translateGenre(genre, language)) : [],
+      series: series ? this.translateSeries(series, language) : undefined
     };
 
-    const translation = translations.find((t) => t.language === language)!;
-    translated.title = translation.title;
-    translated.shortReview = translation.shortReview!;
+    const translation = translations.find((t) => t.language === language);
+    if (translation) {
+      translated.title = translation.title;
+      translated.shortReview = translation.shortReview || '';
+    } else if (translations.length > 0) {
+      // 해당 언어의 번역이 없으면 첫 번째 번역을 사용
+      translated.title = translations[0].title;
+      translated.shortReview = translations[0].shortReview || '';
+    }
 
     return translated;
   }
@@ -29,8 +43,28 @@ export class TranslationService {
     const { translations, ...rest } = genre;
     const translated = { ...rest, name: '' };
 
-    const translation = translations.find((t) => t.language === language)!;
-    translated.name = translation.name;
+    const translation = translations.find((t) => t.language === language);
+    if (translation) {
+      translated.name = translation.name;
+    } else if (translations.length > 0) {
+      // 해당 언어의 번역이 없으면 첫 번째 번역을 사용
+      translated.name = translations[0].name;
+    }
+
+    return translated;
+  }
+
+  private translateSeries(series: Series, language: LanguageCode): TranslatedSeries {
+    const { translations, ...rest } = series;
+    const translated = { ...rest, name: '' };
+
+    const translation = translations.find((t) => t.language === language);
+    if (translation) {
+      translated.name = translation.title;
+    } else if (translations.length > 0) {
+      // 해당 언어의 번역이 없으면 첫 번째 번역을 사용
+      translated.name = translations[0].title;
+    }
 
     return translated;
   }
