@@ -35,6 +35,7 @@ export default {
   viewer: {
     platform: 'プラットフォーム',
     rating: '相性度',
-    createdAt: '制作日'
+    createdAt: '制作日',
+    series: 'シリーズ'
   }
 };

@@ -35,6 +35,7 @@ export default {
   viewer: {
     platform: 'Platform',
     rating: 'Compatibility',
-    createdAt: 'Created At'
+    createdAt: 'Created At',
+    series: 'Series'
   }
 };
