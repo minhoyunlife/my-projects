@@ -35,6 +35,7 @@ export default {
   viewer: {
     platform: '플랫폼',
     rating: '상성도',
-    createdAt: '작성일'
+    createdAt: '작성일',
+    series: '시리즈'
   }
 };
