@@ -2,7 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { fade } from 'svelte/transition';
   import { Icon } from 'svelte-icons-pack';
-  import { BiX } from 'svelte-icons-pack/bi';
+  import { BiX, BiLink } from 'svelte-icons-pack/bi';
 
   import PlatformIcon from '$lib/components/common/PlatformIcon.svelte';
   import RatingHeart from '$lib/components/common/RatingHeart.svelte';
@@ -133,6 +133,24 @@
       </div>
 
       <div class="overflow-y-auto">
+        <!-- 시리즈 정보 -->
+        {#if artwork.series}
+          <div
+            class="bg-primary mb-3 rounded-lg p-3 text-xs shadow-inner sm:text-sm md:text-sm lg:text-lg"
+          >
+            <div class="text-text-muted mb-1 flex items-center space-x-1">
+              <Icon src={BiLink} className="h-4 w-4" />
+              <span class=" text-xs font-medium tracking-wider uppercase">
+                {t('viewer.series')}
+              </span>
+            </div>
+            <div class="flex items-center">
+              <div class="bg-accent mr-2 h-6 w-1 rounded-full"></div>
+              <span class="text-text font-bold">{artwork.series.name}</span>
+            </div>
+          </div>
+        {/if}
+
         <!-- 장르 -->
         {#if artwork.genres && artwork.genres.length > 0}
           <div class="mb-2 flex flex-wrap gap-2 sm:mb-4">
