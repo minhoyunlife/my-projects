@@ -12,6 +12,7 @@ import {
 import { NanoId } from '@/src/common/decorators/id.decorator';
 import { ArtworkTranslation } from '@/src/modules/artworks/entities/artwork-translations.entity';
 import { Platform } from '@/src/modules/artworks/enums/platform.enum';
+import type { ColorTheme } from '@/src/modules/artworks/interfaces/color-theme.interface';
 import { Genre } from '@/src/modules/genres/entities/genres.entity';
 import { SeriesArtwork } from '@/src/modules/series/entities/series-artworks.entity';
 
@@ -70,6 +71,12 @@ export class Artwork {
    */
   @Column({ default: false })
   isVertical: boolean;
+
+  /**
+   * 작품 이미지에서 추출된 색상 테마 정보
+   */
+  @Column({ type: 'json', nullable: false })
+  colorTheme: ColorTheme;
 
   /**
    * 작품 대상 게임의 장르
